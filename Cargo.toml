@@ -1,0 +1,15 @@
+[package]
+name = "i_triangle"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
+description = "A poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd rule. This algorithm is based on Vatti clipping ideas but is an original implementation."
+license = "MIT"
+repository = "https://github.com/iShape-Rust/iTriangle"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+i_float = "^0.1.0"
+i_shape = "^0.1.1"
+i_overlay = "^0.3.1"
