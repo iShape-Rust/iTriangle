@@ -1,5 +1,5 @@
 mod mpoly;
-mod mslice_buffer;
-mod mnav_node;
+pub (crate) mod mslice_buffer;
+pub (crate) mod mnav_node;
 pub mod nlayout;
-mod mlayout;
+pub (crate) mod mlayout;

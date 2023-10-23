@@ -4,10 +4,10 @@ use crate::monotone::mslice_buffer::MSlice; // To perform vector subtraction
 
 #[derive(Clone, Debug, Copy)]
 pub struct MNavNode {
-    pub(super) next: usize,
-    pub(super) index: usize,
-    pub(super) prev: usize,
-    pub(super) vert: DVertex,
+    pub(crate) next: usize,
+    pub(crate) index: usize,
+    pub(crate) prev: usize,
+    pub(crate) vert: DVertex,
 }
 
 impl MNavNode {

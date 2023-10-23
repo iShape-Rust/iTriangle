@@ -6,20 +6,25 @@ use crate::monotone::mpoly::MPoly;
 use crate::monotone::mslice_buffer::MSlice;
 use crate::monotone::nlayout::{MNodeType, MSpecialNode};
 
-enum MLayoutStatus {
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub(crate) enum MLayoutStatus {
     Empty,
     Success,
     Fail
 }
 
-struct MLayout {
-    start_list: Vec<usize>,
-    nav_nodes: Vec<MNavNode>,
-    slice_list: Vec<MSlice>,
+pub(crate) struct MLayout {
+    pub(crate) start_list: Vec<usize>,
+    pub(crate) nav_nodes: Vec<MNavNode>,
+    pub(crate) slice_list: Vec<MSlice>,
     status: MLayoutStatus
 }
 
 impl MLayout {
+
+    pub(crate) fn status(&self) -> MLayoutStatus {
+        self.status
+    }
 
     fn fail() -> Self {
         MLayout {
@@ -61,7 +66,7 @@ struct MSolution {
 
 impl FlipShape {
 
-    fn mlayout(&self) -> MLayout {
+    pub (crate) fn mlayout(&self) -> MLayout {
         let nlayout = self.nlayout();
 
         let mut specs = nlayout.spec_nodes;

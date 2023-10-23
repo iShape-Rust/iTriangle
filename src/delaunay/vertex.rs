@@ -5,7 +5,7 @@ pub enum DVType {
     Origin,
     ExtraPath,
     ExtraInner,
-    ExtraTessellated
+    ExtraTessellated,
 }
 
 impl DVType {
@@ -16,18 +16,17 @@ impl DVType {
 
 #[derive(Debug, Clone, Copy)]
 pub struct DVertex {
-    pub (crate) index: usize,
-    pub (crate) point: FixVec,
-    pub (crate) dv_type: DVType
+    pub(crate) index: usize,
+    pub(crate) point: FixVec,
+    dv_type: DVType,
 }
 
 impl DVertex {
-
     pub const fn empty() -> Self {
         Self {
             index: usize::MAX,
             point: FixVec::ZERO,
-            dv_type: DVType::Origin
+            dv_type: DVType::Origin,
         }
     }
 

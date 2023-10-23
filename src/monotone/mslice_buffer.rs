@@ -2,8 +2,8 @@ use crate::delaunay::triangle::DTriangle;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MSlice {
-    pub a: usize,
-    pub b: usize
+    a: usize,
+    b: usize
 }
 
 impl MSlice {
@@ -25,20 +25,16 @@ impl Edge {
         edge: 0,
         triangle: 0,
     };
-
-    pub fn is_empty(&self) -> bool {
-        self.triangle == 0
-    }
 }
 
-struct MSliceBuffer {
+pub(crate) struct MSliceBuffer {
     vertex_count: usize,
     edges: Vec<Edge>,
     vertex_marks: Vec<bool>,
 }
 
 impl MSliceBuffer {
-    pub fn new(vertex_count: usize, slices: &[MSlice]) -> Self {
+    pub(crate) fn new(vertex_count: usize, slices: &Vec<MSlice>) -> Self {
         let mut vertex_marks = vec![false; vertex_count];
         let mut edges = vec![Edge::EMPTY; slices.len()];
 
@@ -58,7 +54,7 @@ impl MSliceBuffer {
         }
     }
 
-    pub fn add_connections(&mut self, triangles: &mut [DTriangle; 3]) {
+    pub fn add_connections(&mut self, triangles: &mut Vec<DTriangle>) {
         let n = triangles.len();
 
         for i in 0..n {

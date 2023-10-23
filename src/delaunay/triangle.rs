@@ -4,11 +4,35 @@ use crate::delaunay::vertex::DVertex;
 pub struct DTriangle {
     pub index: usize,
     pub vertices: [DVertex; 3],
-    pub neighbors: [usize; 3]
+    pub neighbors: [usize; 3],
 }
 
 impl DTriangle {
-    pub (crate) fn new() -> Self {
+    pub fn va(&self) -> DVertex {
+        self.vertices[0]
+    }
+
+    pub fn vb(&self) -> DVertex {
+        self.vertices[1]
+    }
+
+    pub fn vc(&self) -> DVertex {
+        self.vertices[2]
+    }
+
+    pub fn na(&self) -> usize {
+        self.neighbors[0]
+    }
+
+    pub fn nb(&self) -> usize {
+        self.neighbors[1]
+    }
+
+    pub fn nc(&self) -> usize {
+        self.neighbors[2]
+    }
+
+    pub fn new() -> Self {
         Self {
             index: usize::MAX,
             vertices: [DVertex::empty(); 3],
@@ -16,7 +40,7 @@ impl DTriangle {
         }
     }
 
-    pub (crate) fn abc(index: usize, a: DVertex, b: DVertex, c: DVertex) -> Self {
+    pub fn abc(index: usize, a: DVertex, b: DVertex, c: DVertex) -> Self {
         Self {
             index,
             vertices: [a, b, c],
