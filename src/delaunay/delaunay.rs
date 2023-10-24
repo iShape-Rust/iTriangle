@@ -139,7 +139,7 @@ impl Delaunay {
                 }
             }
 
-            buffer.clear();
+            origin.clear();
 
             let temp = origin;
             origin = buffer;
@@ -330,7 +330,7 @@ impl Delaunay {
     fn update_neighbor_index(&mut self, index: usize, old_neighbor: usize, new_neighbor: usize) {
         if index.is_not_nil() {
             unsafe {
-                let mut neighbor = *self.triangles.get_unchecked_mut(index);
+                let mut neighbor = self.triangles.get_unchecked_mut(index);
                 neighbor.update_opposite(old_neighbor, new_neighbor);
             }
         }

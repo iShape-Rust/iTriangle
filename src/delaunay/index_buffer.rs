@@ -21,18 +21,21 @@ impl IndexBuffer {
     fn new(count: usize) -> Self {
         if count == 0 {
             return Self {
-                array: vec![],
+                array: Vec::new(),
                 first: NIL_INDEX,
             };
         }
-        let mut array = vec![Link::empty(); count];
-        for i in 0..count {
-            array[i] = Link {
+        let mut array = Vec::with_capacity(count);
+        for i in 1..count {
+            array.push(Link {
                 empty: false,
-                next: i + 1,
-            };
+                next: i,
+            });
         }
-        array[count - 1].next = NIL_INDEX;
+        array.push(Link {
+            empty: false,
+            next: NIL_INDEX,
+        });
         Self { array, first: 0 }
     }
 
@@ -42,23 +45,28 @@ impl IndexBuffer {
 
     fn next(&mut self) -> usize {
         let index = self.first;
-        self.first = self.array[index].next;
-        self.array[index] = Link::empty();
+        unsafe {
+            let pnt = self.array.get_unchecked_mut(index);
+            self.first = pnt.next;
+            *pnt = Link::empty();
+        }
         index
     }
 
     pub(super) fn add(&mut self, index: usize) {
-        let is_overflow = index >= self.array.len();
-        if is_overflow || self.array[index].empty {
-            if is_overflow {
-                let n = index - self.array.len();
-                self.array.resize(self.array.len() + n + 1, Link::empty());
+        if index >= self.array.len() {
+            self.array.resize(index + 1, Link::empty());
+        }
+
+        unsafe {
+            let pnt = self.array.get_unchecked_mut(index);
+            if pnt.empty {
+                *pnt = Link {
+                    empty: false,
+                    next: self.first,
+                };
+                self.first = index;
             }
-            self.array[index] = Link {
-                empty: false,
-                next: self.first
-            };
-            self.first = index;
         }
     }
 }
