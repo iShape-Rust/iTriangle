@@ -161,4 +161,104 @@ mod tests {
         assert_eq!(indices_must_be, triangulation.indices);
     }
 
+    #[test]
+    fn test_5() {
+        let shape = FixShape::new(
+            vec![
+                vec![
+                    FixVec::new_i64(-15, 0),
+                    FixVec::new_i64(0, 15),
+                    FixVec::new_i64(15, 0),
+                    FixVec::new_i64(0, -15),
+                ],
+                vec![
+                    FixVec::new_i64(-5, 0),
+                    FixVec::new_i64(0, -5),
+                    FixVec::new_i64(5, 0),
+                    FixVec::new_i64(0, 5),
+                ],
+            ]
+        );
+
+        let triangulation = shape.into_triangulation(false);
+
+        let points_must_be = [
+            FixVec::new_i64(-15, 0),
+            FixVec::new_i64(0, 15),
+            FixVec::new_i64(15, 0),
+            FixVec::new_i64(0, -15),
+            FixVec::new_i64(0, 5),
+            FixVec::new_i64(5, 0),
+            FixVec::new_i64(0, -5),
+            FixVec::new_i64(-5, 0)
+        ].to_vec();
+
+        let indices_must_be = [
+            0, 1, 3, 3, 1, 2, 7, 4, 6, 6, 4, 5
+        ].to_vec();
+
+        assert_eq!(points_must_be, triangulation.points);
+        assert_eq!(indices_must_be, triangulation.indices);
+    }
+
+    #[test]
+    fn test_6() {
+        let shape = FixShape::new_with_contour(
+            vec![
+                FixVec::new_i64(-10, -10),
+                FixVec::new_i64(0, 0),
+                FixVec::new_i64(-10, 10),
+                FixVec::new_i64(10, 0)
+            ]
+        );
+
+        let triangulation = shape.into_triangulation(false);
+
+        let points_must_be = [
+            FixVec::new_i64(-10, -10),
+            FixVec::new_i64(0, 0),
+            FixVec::new_i64(-10, 10),
+            FixVec::new_i64(10, 0),
+            FixVec::new_i64(0, 0),
+            FixVec::new_i64(10, 0)
+        ].to_vec();
+
+        let indices_must_be = [
+            0, 1, 3, 2, 3, 1
+        ].to_vec();
+
+        assert_eq!(points_must_be, triangulation.points);
+        assert_eq!(indices_must_be, triangulation.indices);
+    }
+
+    #[test]
+    fn test_7() {
+        let shape = FixShape::new_with_contour(
+            vec![
+                FixVec::new_i64(-10, 0),
+                FixVec::new_i64(10, 10),
+                FixVec::new_i64(0, 0),
+                FixVec::new_i64(10, -10)
+            ]
+        );
+
+        let triangulation = shape.into_triangulation(false);
+
+        let points_must_be = [
+            FixVec::new_i64(-10, 0),
+            FixVec::new_i64(10, 10),
+            FixVec::new_i64(0, 0),
+            FixVec::new_i64(10, -10),
+            FixVec::new_i64(-10, 0),
+            FixVec::new_i64(0, 0)
+        ].to_vec();
+
+        let indices_must_be = [
+            0, 1, 2, 0, 2, 3
+        ].to_vec();
+
+        assert_eq!(points_must_be, triangulation.points);
+        assert_eq!(indices_must_be, triangulation.indices);
+
+    }
 }
