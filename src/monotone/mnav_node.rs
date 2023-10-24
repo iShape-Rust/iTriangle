@@ -1,5 +1,6 @@
 use i_float::fix_vec::FixVec;
 use crate::delaunay::vertex::DVertex;
+use crate::index::NIL_INDEX;
 use crate::monotone::mslice_buffer::MSlice; // To perform vector subtraction
 
 #[derive(Clone, Debug, Copy)]
@@ -12,9 +13,9 @@ pub struct MNavNode {
 
 impl MNavNode {
     pub const EMPTY: MNavNode = MNavNode {
-        next: usize::MAX,
-        index: usize::MAX,
-        prev: usize::MAX,
+        next: NIL_INDEX,
+        index: NIL_INDEX,
+        prev: NIL_INDEX,
         vert: DVertex::empty()
     };
 

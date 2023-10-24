@@ -66,7 +66,7 @@ impl Triangulate for FixShape {
 
         for shape in shapes {
             if let Some(delaunay) = shape.into_delaunay() {
-                let sub_triangulation = delaunay.into_triangulation_shifted(offset);
+                let sub_triangulation = delaunay.into_shifted_triangulation(offset);
 
                 let mut sub_indices = sub_triangulation.indices;
                 let mut sub_points = sub_triangulation.points;

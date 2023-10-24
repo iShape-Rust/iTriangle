@@ -1,3 +1,5 @@
+use crate::index::{Index, NIL_INDEX};
+
 pub(super) struct IndexBuffer {
     array: Vec<Link>,
     first: usize,
@@ -11,7 +13,7 @@ struct Link {
 
 impl Link {
     fn empty() -> Self {
-        Self { empty: true, next: usize::MAX }
+        Self { empty: true, next: NIL_INDEX }
     }
 }
 
@@ -20,7 +22,7 @@ impl IndexBuffer {
         if count == 0 {
             return Self {
                 array: vec![],
-                first: usize::MAX,
+                first: NIL_INDEX,
             };
         }
         let mut array = vec![Link::empty(); count];
@@ -30,12 +32,12 @@ impl IndexBuffer {
                 next: i + 1,
             };
         }
-        array[count - 1].next = usize::MAX;
+        array[count - 1].next = NIL_INDEX;
         Self { array, first: 0 }
     }
 
     fn has_next(&self) -> bool {
-        self.first != usize::MAX
+        self.first.is_not_nil()
     }
 
     fn next(&mut self) -> usize {

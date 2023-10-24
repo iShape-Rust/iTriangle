@@ -85,12 +85,14 @@ impl FlipShape {
                     nodes.push(MSpecialNode { index: i, node_type, sort: b1 })
                 }
 
-                verts[i] = MNavNode {
-                    next: i2 + s,
-                    index: i,
-                    prev: i0 + s,
-                    vert: DVertex::new(i, p1, DVType::Origin)
-                };
+                unsafe {
+                    *verts.get_unchecked_mut(i) = MNavNode {
+                        next: i2 + s,
+                        index: i,
+                        prev: i0 + s,
+                        vert: DVertex::new(i, p1, DVType::Origin)
+                    };
+                }
 
                 i0 = i1;
                 i1 = i2;

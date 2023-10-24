@@ -57,26 +57,56 @@ impl DTriangle {
     }
 
     pub fn neighbor(&self, vertex: usize) -> usize {
-        for i in 0..2 {
-            if self.vertices[i].index == vertex {
-                return self.neighbors[i];
+        #[cfg(debug_assertions)]
+        {
+            for i in 0..3 {
+                if self.vertices[i].index == vertex {
+                    return self.neighbors[i];
+                }
             }
+
+            panic!("Neighbor vertex is not present");
         }
-        self.neighbors[2]
+
+        #[cfg(not(debug_assertions))]
+        {
+            for i in 0..2 {
+                if self.vertices[i].index == vertex {
+                    return self.neighbors[i];
+                }
+            }
+            self.neighbors[2]
+        }
     }
 
     pub fn opposite(&self, neighbor: usize) -> usize {
-        for i in 0..3 {
-            if self.neighbors[i] == neighbor {
-                return i;
+        #[cfg(debug_assertions)]
+        {
+            for i in 0..3 {
+                if self.neighbors[i] == neighbor {
+                    return i;
+                }
             }
+
+            panic!("Neighbor is not present");
         }
 
-        panic!("Neighbor is not present");
+        #[cfg(not(debug_assertions))]
+        {
+            for i in 0..2 {
+                if self.neighbors[i] == neighbor {
+                    return i;
+                }
+            }
+
+            2
+        }
     }
 
     pub fn update_opposite(&mut self, old_neighbor: usize, new_neighbor: usize) {
         let index = self.opposite(old_neighbor);
-        self.neighbors[index] = new_neighbor;
+        unsafe {
+            *self.neighbors.get_unchecked_mut(index) = new_neighbor;
+        }
     }
 }

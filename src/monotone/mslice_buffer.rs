@@ -1,4 +1,5 @@
 use crate::delaunay::triangle::DTriangle;
+use crate::index::{Index, NIL_INDEX};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MSlice {
@@ -66,10 +67,10 @@ impl MSliceBuffer {
                 let b = triangle.vertices[j2].index;
 
                 let edge_index = self.find(a, b);
-                if edge_index != usize::MAX {
+                if edge_index.is_not_nil() {
                      let mut edge = self.edges[edge_index];
 
-                    if edge.triangle != usize::MAX {
+                    if edge.triangle.is_not_nil() {
                         edge.triangle = i;
                         edge.edge = j0;
                         self.edges[edge_index] = edge;
@@ -89,7 +90,7 @@ impl MSliceBuffer {
 
     fn find(&self, a: usize, b: usize) -> usize {
         if !(self.vertex_marks[a] && self.vertex_marks[b]) {
-            return usize::MAX
+            return NIL_INDEX;
         }
 
         let id = Self::id(self.vertex_count, a, b);
@@ -98,7 +99,7 @@ impl MSliceBuffer {
             return pos;
         }
 
-        usize::MAX
+        NIL_INDEX
     }
 
     fn id(n: usize, a: usize, b: usize) -> usize {

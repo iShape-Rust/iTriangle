@@ -1,6 +1,7 @@
 use i_float::fix_vec::FixVec;
 use i_shape::triangle::Triangle;
 use crate::flip_shape::FlipShape;
+use crate::index::{Index, NIL_INDEX};
 use crate::monotone::mnav_node::{MNavNode, MNavNodeArray};
 use crate::monotone::mpoly::MPoly;
 use crate::monotone::mslice_buffer::MSlice;
@@ -102,7 +103,7 @@ impl FlipShape {
 
             match spec.node_type {
                 MNodeType::End => {
-                    if !(px.next == px.prev && px.next != usize::MAX) {
+                    if !(px.next == px.prev && px.next.is_not_nil()) {
                         return MLayout::fail();
                     }
                     let p_index = px.next;
@@ -113,7 +114,7 @@ impl FlipShape {
                     mpolies.push(MPoly::new(nav.index));
                 }
                 MNodeType::Split => {
-                    let mut p_index = usize::MAX;
+                    let mut p_index = NIL_INDEX;
                     for i in 0..mpolies.len() {
                         if Self::is_contain(mpolies[i], nav.vert.point, &navs) {
                             p_index = i;
@@ -121,7 +122,7 @@ impl FlipShape {
                         }
                     }
 
-                    if p_index == usize::MAX {
+                    if p_index.is_nil() {
                         return MLayout::fail();
                     }
 
@@ -177,7 +178,7 @@ impl FlipShape {
                     }
                 }
                 MNodeType::Merge => {
-                    if px.next == usize::MAX || px.prev == usize::MAX {
+                    if px.next.is_nil() || px.prev.is_nil() {
                         return MLayout::fail();
                     }
 
@@ -240,8 +241,8 @@ impl FlipShape {
 
     fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64) -> NavIndex {
 
-        let mut next_poly_ix = usize::MAX;
-        let mut prev_poly_ix = usize::MAX;
+        let mut next_poly_ix = NIL_INDEX;
+        let mut prev_poly_ix = NIL_INDEX;
         for i in 0..mpolies.len() {
             let mut mpoly = mpolies[i];
 
@@ -326,9 +327,9 @@ impl FlipShape {
         } else { a1.x < b1.x };
 
         if compare {
-            MSolution{ mtype: MType::Next, a: merge.index, b: next.next, node_index: usize::MAX }
+            MSolution{ mtype: MType::Next, a: merge.index, b: next.next, node_index: NIL_INDEX }
         } else {
-            MSolution{ mtype: MType::Prev, a: merge.index, b: prev.prev, node_index: usize::MAX }
+            MSolution{ mtype: MType::Prev, a: merge.index, b: prev.prev, node_index: NIL_INDEX }
         }
     }
 
