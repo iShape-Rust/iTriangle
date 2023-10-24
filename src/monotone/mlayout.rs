@@ -226,7 +226,16 @@ impl FlipShape {
             j += 1
         }
 
-        MLayout::empty()
+        if j != specs.len() {
+            MLayout::fail()
+        } else {
+            MLayout {
+                start_list,
+                nav_nodes: navs,
+                slice_list,
+                status: MLayoutStatus::Success,
+            }
+        }
     }
 
     fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64) -> NavIndex {

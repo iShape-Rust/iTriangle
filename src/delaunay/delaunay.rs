@@ -3,6 +3,7 @@ use i_shape::triangle::Triangle;
 use crate::delaunay::index_buffer::IndexBuffer;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
+use crate::triangulate::Triangulation;
 
 pub struct Delaunay {
     points: Vec<FixVec>,
@@ -10,12 +11,23 @@ pub struct Delaunay {
 }
 
 impl Delaunay {
-    pub(super) fn new(points: Vec<FixVec>, triangles: Vec<DTriangle>) -> Self {
-        Self { points, triangles }
+
+    pub fn into_triangulation(self) -> Triangulation {
+        let indices = self.triangles_indices();
+        Triangulation { points: self.points, indices }
     }
 
-    pub fn points(self) -> Vec<FixVec> {
-        self.points
+    pub fn into_triangulation_shifted(self, shifted: usize) -> Triangulation {
+        let indices = self.triangles_indices_shifted(shifted);
+        Triangulation { points: self.points, indices }
+    }
+
+    pub fn points(&self) -> &Vec<FixVec> {
+        &self.points
+    }
+
+    pub(super) fn new(points: Vec<FixVec>, triangles: Vec<DTriangle>) -> Self {
+        Self { points, triangles }
     }
 
     pub fn triangles_indices(&self) -> Vec<usize> {

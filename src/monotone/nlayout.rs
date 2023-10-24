@@ -49,7 +49,7 @@ impl FlipShape {
             n += path.len();
         }
 
-        let mut verts = Vec::with_capacity(n);
+        let mut verts = vec!(MNavNode::EMPTY; n);
         let mut nodes = Vec::new();
 
         let mut s = 0;
@@ -85,14 +85,12 @@ impl FlipShape {
                     nodes.push(MSpecialNode { index: i, node_type, sort: b1 })
                 }
 
-                let nav_node = MNavNode {
+                verts[i] = MNavNode {
                     next: i2 + s,
                     index: i,
                     prev: i0 + s,
                     vert: DVertex::new(i, p1, DVType::Origin)
                 };
-
-                verts.push(nav_node);
 
                 i0 = i1;
                 i1 = i2;

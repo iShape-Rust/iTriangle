@@ -20,12 +20,13 @@ impl FlipShape {
 }
 
 pub trait Flip {
-    fn flip(&self) -> FlipShape;
+    fn to_flip(&self) -> FlipShape;
+    fn into_flip(self) -> FlipShape;
 }
 
 impl Flip for FixShape {
 
-    fn flip(&self) -> FlipShape {
+    fn to_flip(&self) -> FlipShape {
         let mut paths = Vec::new();
 
         paths.push(self.contour().clone());
@@ -37,6 +38,16 @@ impl Flip for FixShape {
                 path.reverse();
                 paths.push(path);
             }
+        }
+
+        FlipShape::with_paths(paths)
+    }
+
+    fn into_flip(self) -> FlipShape {
+        let mut paths = self.into_paths();
+        let n = paths.len();
+        for i in 1..n {
+            paths[i].reverse();
         }
 
         FlipShape::with_paths(paths)

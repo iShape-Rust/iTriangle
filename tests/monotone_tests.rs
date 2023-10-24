@@ -16,7 +16,7 @@ mod tests {
                 FixVec::new_f64(25.0,   0.0),
                 FixVec::new_f64(15.0, -15.0)
             ].to_vec()].to_vec()
-        ).flip();
+        ).to_flip();
 
         let layout = shape.nlayout();
 

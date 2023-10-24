@@ -1,3 +1,5 @@
+use std::vec;
+use i_float::fix_vec::FixVec;
 use i_shape::triangle::Triangle;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
@@ -71,6 +73,9 @@ impl TriangleStack {
     }
 
     fn pop(&mut self, a: usize, b: usize) -> Option<Edge> {
+        if self.edges.is_empty() {
+            return None;
+        }
         let last = self.edges.len() - 1;
         let mut i = 0;
         while i <= last {
@@ -85,7 +90,7 @@ impl TriangleStack {
             }
             i += 1;
         }
-        return None;
+        None
     }
 }
 
@@ -111,7 +116,7 @@ impl FlipShape {
             triangle_stack.reset();
         }
 
-        let mut points = Vec::with_capacity(links.len());
+        let mut points = vec!(FixVec::ZERO; links.len());
         for node in links.iter() {
             points[node.index] = node.vert.point;
         }
