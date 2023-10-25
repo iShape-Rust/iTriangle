@@ -40,10 +40,13 @@ impl MSliceBuffer {
         let mut edges = vec![Edge::EMPTY; slices.len()];
 
         for (i, slice) in slices.iter().enumerate() {
-            vertex_marks[slice.a] = true;
-            vertex_marks[slice.b] = true;
-            let id = Self::id(vertex_count, slice.a, slice.b);
-            edges[i] = Edge { id, edge: NIL_INDEX, triangle: NIL_INDEX };
+            unsafe {
+                *vertex_marks.get_unchecked_mut(slice.a) = true;
+                *vertex_marks.get_unchecked_mut(slice.b) = true;
+
+                let id = Self::id(vertex_count, slice.a, slice.b);
+                *edges.get_unchecked_mut(i) = Edge { id, edge: NIL_INDEX, triangle: NIL_INDEX };
+            }
         }
 
         edges.sort_by(|a, b| a.id.cmp(&b.id));
@@ -59,47 +62,55 @@ impl MSliceBuffer {
         let n = triangles.len();
 
         for i in 0..n {
-            let mut triangle = triangles[i];
             let mut j0 = 1;
             let mut j1 = 2;
-            for j2 in 0..3 {
-                let a = triangle.vertices[j1].index;
-                let b = triangle.vertices[j2].index;
 
-                let edge_index = self.find(a, b);
-                if edge_index.is_not_nil() {
-                     let mut edge = self.edges[edge_index];
+            // Using unsafe to bypass bounds checking for performance reasons.
+            // We guarantee safety by ensuring that:
+            // 1. The outer loop iterates only up to the length of the triangles Vec,
+            //    making 'i' a valid index.
+            // 2. The find() function and edge.triangle always produce valid indices.
+            // 3. We are not resizing the triangles array.
+            unsafe {
+                let vertices = triangles.get_unchecked(i).vertices.clone();
+                for j2 in 0..3 {
+                    let a = vertices[j1].index;
+                    let b = vertices[j2].index;
 
-                    if edge.triangle.is_nil() {
-                        edge.triangle = i;
-                        edge.edge = j0;
-                        self.edges[edge_index] = edge;
-                    } else {
-                        triangle.neighbors[j0] = edge.triangle;
-                        let mut neighbor = triangles[edge.triangle];
-                        neighbor.neighbors[edge.edge] = i;
-                        triangles[edge.triangle] = neighbor;
-                        triangles[i] = triangle;
+                    if let Some(edge_index) = self.find(a, b) {
+                        let mut edge = self.edges[edge_index];
+
+                        if edge.triangle.is_nil() {
+                            edge.triangle = i;
+                            edge.edge = j0;
+                            self.edges[edge_index] = edge;
+                        } else {
+                            let triangle = triangles.get_unchecked_mut(i);
+                            triangle.neighbors[j0] = edge.triangle;
+
+                            let neighbor = triangles.get_unchecked_mut(edge.triangle);
+                            neighbor.neighbors[edge.edge] = i;
+                        }
                     }
+                    j0 = j1;
+                    j1 = j2;
                 }
-                j0 = j1;
-                j1 = j2;
             }
         }
     }
 
-    fn find(&self, a: usize, b: usize) -> usize {
+    fn find(&self, a: usize, b: usize) -> Option<usize> {
         if !(self.vertex_marks[a] && self.vertex_marks[b]) {
-            return NIL_INDEX;
+            return None;
         }
 
         let id = Self::id(self.vertex_count, a, b);
 
         if let Ok(pos) = self.edges.binary_search_by(|edge| edge.id.cmp(&id)) {
-            return pos;
+            return Some(pos);
         }
 
-        NIL_INDEX
+        None
     }
 
     fn id(n: usize, a: usize, b: usize) -> usize {
