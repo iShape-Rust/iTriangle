@@ -116,9 +116,9 @@ impl FlipShape {
             triangle_stack.reset();
         }
 
-        let mut points = vec!(FixVec::ZERO; links.len());
+        let mut points = vec!(FixVec::ZERO; verts_count);
         for node in links.iter() {
-            points[node.index] = node.vert.point;
+            points[node.vert.index] = node.vert.point;
         }
 
         let mut triangles = triangle_stack.take_triangles();
