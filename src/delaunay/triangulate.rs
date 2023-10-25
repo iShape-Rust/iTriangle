@@ -1,5 +1,4 @@
 use std::vec;
-use i_float::fix_vec::FixVec;
 use i_shape::triangle::Triangle;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
@@ -116,17 +115,12 @@ impl FlipShape {
             triangle_stack.reset();
         }
 
-        let mut points = vec!(FixVec::ZERO; verts_count);
-        for node in links.iter() {
-            points[node.vert.index] = node.vert.point;
-        }
-
         let mut triangles = triangle_stack.take_triangles();
 
         let mut slice_buffer = MSliceBuffer::new(links.len(), &layout.slice_list);
         slice_buffer.add_connections(&mut triangles);
 
-        let mut delaunay = Delaunay::new(points, triangles);
+        let mut delaunay = Delaunay::new(triangles);
 
         delaunay.build();
 

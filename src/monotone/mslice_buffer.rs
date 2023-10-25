@@ -43,7 +43,7 @@ impl MSliceBuffer {
             vertex_marks[slice.a] = true;
             vertex_marks[slice.b] = true;
             let id = Self::id(vertex_count, slice.a, slice.b);
-            edges[i] = Edge { id, edge: 0, triangle: 0 };
+            edges[i] = Edge { id, edge: NIL_INDEX, triangle: NIL_INDEX };
         }
 
         edges.sort_by(|a, b| a.id.cmp(&b.id));
@@ -70,7 +70,7 @@ impl MSliceBuffer {
                 if edge_index.is_not_nil() {
                      let mut edge = self.edges[edge_index];
 
-                    if edge.triangle.is_not_nil() {
+                    if edge.triangle.is_nil() {
                         edge.triangle = i;
                         edge.edge = j0;
                         self.edges[edge_index] = edge;

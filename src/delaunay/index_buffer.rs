@@ -1,3 +1,4 @@
+/*
 use crate::index::{Index, NIL_INDEX};
 
 pub(super) struct IndexBuffer {
@@ -70,3 +71,4 @@ impl IndexBuffer {
         }
     }
 }
+*/

@@ -12,6 +12,7 @@ pub struct Triangulation {
 pub trait Triangulate {
 
     fn to_triangulation(&self, validate: bool) -> Triangulation;
+
     fn into_triangulation(self, validate: bool) -> Triangulation;
 
     fn to_delaunay(&self) -> Option<Delaunay>;
@@ -24,7 +25,7 @@ impl Triangulate for FixShape {
     fn to_triangulation(&self, validate: bool) -> Triangulation {
         if !validate {
             return if let Some(delaunay) = self.to_flip().delaunay() {
-                delaunay.into_triangulation()
+                delaunay.to_triangulation(0)
             } else {
                 Triangulation { points: Vec::new(), indices: Vec::new() }
             }
@@ -37,13 +38,15 @@ impl Triangulate for FixShape {
 
         for shape in shapes.iter() {
             if let Some(delaunay) = shape.to_delaunay() {
-                let sub_indices = delaunay.triangles_indices_shifted(offset);
-                indices.extend(sub_indices);
+                let sub_triangulation = delaunay.to_triangulation(offset);
 
-                let sub_points = delaunay.points();
+                let mut sub_indices = sub_triangulation.indices;
+                let mut sub_points = sub_triangulation.points;
+
                 offset += sub_points.len();
 
-                points.extend(sub_points);
+                indices.append(&mut sub_indices);
+                points.append(&mut sub_points);
             }
         }
 
@@ -53,7 +56,7 @@ impl Triangulate for FixShape {
     fn into_triangulation(self, validate: bool) -> Triangulation {
         if !validate {
             return if let Some(delaunay) = self.into_delaunay() {
-                delaunay.into_triangulation()
+                delaunay.to_triangulation(0)
             } else {
                 Triangulation { points: Vec::new(), indices: Vec::new() }
             }
@@ -66,7 +69,7 @@ impl Triangulate for FixShape {
 
         for shape in shapes {
             if let Some(delaunay) = shape.into_delaunay() {
-                let sub_triangulation = delaunay.into_shifted_triangulation(offset);
+                let sub_triangulation = delaunay.to_triangulation(offset);
 
                 let mut sub_indices = sub_triangulation.indices;
                 let mut sub_points = sub_triangulation.points;

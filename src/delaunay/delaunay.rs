@@ -1,65 +1,57 @@
 use i_float::fix_vec::FixVec;
 use i_shape::triangle::Triangle;
-use crate::delaunay::index_buffer::IndexBuffer;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};
 use crate::triangulate::Triangulation;
 
 pub struct Delaunay {
-    points: Vec<FixVec>,
-    triangles: Vec<DTriangle>,
+    triangles: Vec<DTriangle>
 }
 
 impl Delaunay {
-    pub fn into_triangulation(self) -> Triangulation {
-        let indices = self.triangles_indices();
-        Triangulation { points: self.points, indices }
-    }
 
-    pub fn into_shifted_triangulation(self, shifted: usize) -> Triangulation {
-        let indices = self.triangles_indices_shifted(shifted);
-        Triangulation { points: self.points, indices }
-    }
+    pub fn to_triangulation(&self, shifted: usize) -> Triangulation {
+        let mut indices = vec![NIL_INDEX; 3 * self.triangles.len()];
+        let i_pnt = indices.as_mut_ptr();
 
-    pub fn points(&self) -> &Vec<FixVec> {
-        &self.points
-    }
-
-    pub(super) fn new(points: Vec<FixVec>, triangles: Vec<DTriangle>) -> Self {
-        Self { points, triangles }
-    }
-
-    pub fn triangles_indices(&self) -> Vec<usize> {
-        let mut result = vec![NIL_INDEX; 3 * self.triangles.len()];
+        let mut max_index = 0;
         let mut j = 0;
-        let pointer = result.as_mut_ptr();
         for triangle in self.triangles.iter() {
+            let a = triangle.vertices[0];
+            let b = triangle.vertices[1];
+            let c = triangle.vertices[2];
+
+            max_index = max_index.max(c.index).max(a.index.max(b.index));
+
             unsafe {
-                *pointer.add(j) = triangle.vertices[0].index;
-                *pointer.add(j + 1) = triangle.vertices[1].index;
-                *pointer.add(j + 2) = triangle.vertices[2].index;
+                *i_pnt.add(j) = a.index + shifted;
+                *i_pnt.add(j + 1) = b.index + shifted;
+                *i_pnt.add(j + 2) = c.index + shifted;
             }
             j += 3;
         }
 
-        return result;
-    }
+        let mut points = vec![FixVec::ZERO; max_index + 1];
+        let p_pnt = points.as_mut_ptr();
 
-    pub fn triangles_indices_shifted(&self, shifted: usize) -> Vec<usize> {
-        let mut result = vec![NIL_INDEX; 3 * self.triangles.len()];
-        let mut j = 0;
-        let pointer = result.as_mut_ptr();
         for triangle in self.triangles.iter() {
+            let a = triangle.vertices[0];
+            let b = triangle.vertices[1];
+            let c = triangle.vertices[2];
+
             unsafe {
-                *pointer.add(j) = triangle.vertices[0].index + shifted;
-                *pointer.add(j + 1) = triangle.vertices[1].index + shifted;
-                *pointer.add(j + 2) = triangle.vertices[2].index + shifted;
+                *p_pnt.add(a.index) = a.point;
+                *p_pnt.add(b.index) = b.point;
+                *p_pnt.add(c.index) = c.point;
             }
-            j += 3;
         }
 
-        return result;
+        Triangulation { points, indices }
+    }
+
+    pub(super) fn new(triangles: Vec<DTriangle>) -> Self {
+        Self { triangles }
     }
 
     pub(crate) fn build(&mut self) {
@@ -146,7 +138,7 @@ impl Delaunay {
             buffer = temp;
         }
     }
-
+/*
     fn fix(&mut self, indices: Vec<usize>, index_buffer: &mut IndexBuffer) {
         let mut origin = indices.clone();
         let mut buffer = Vec::with_capacity(64);
@@ -208,7 +200,7 @@ impl Delaunay {
             buffer = temp;
         }
     }
-
+*/
     fn swap(&mut self, abc: DTriangle, pbc: DTriangle) -> bool {
         let pi = pbc.opposite(abc.index);
         unsafe {
@@ -330,7 +322,7 @@ impl Delaunay {
     fn update_neighbor_index(&mut self, index: usize, old_neighbor: usize, new_neighbor: usize) {
         if index.is_not_nil() {
             unsafe {
-                let mut neighbor = self.triangles.get_unchecked_mut(index);
+                let neighbor = self.triangles.get_unchecked_mut(index);
                 neighbor.update_opposite(old_neighbor, new_neighbor);
             }
         }
