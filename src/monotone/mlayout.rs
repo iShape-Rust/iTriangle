@@ -97,7 +97,7 @@ impl FlipShape {
         while j < specs.len() && !mpolies.is_empty() {
             let spec = specs[j];
 
-            let px = Self::fill(&mut mpolies, &navs, spec.sort);
+            let px = Self::fill(&mut mpolies, &navs, spec.sort, spec.index);
 
             let nav = navs[spec.index];
 
@@ -239,7 +239,7 @@ impl FlipShape {
         }
     }
 
-    fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64) -> NavIndex {
+    fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64, stop_index: usize) -> NavIndex {
 
         let mut next_poly_ix = NIL_INDEX;
         let mut prev_poly_ix = NIL_INDEX;
@@ -254,7 +254,7 @@ impl FlipShape {
                 n1 = verts[n1.next];
             }
 
-            if n1.vert.point.bit_pack() == stop {
+            if n1.vert.index == stop_index {
                 mpoly.next = n1.index;
                 prev_poly_ix = i;
             } else {
@@ -269,7 +269,7 @@ impl FlipShape {
                 p1 = verts[p1.prev];
             }
 
-            if p1.vert.point.bit_pack() == stop {
+            if p1.vert.index == stop_index {
                 mpoly.prev = p1.index;
                 next_poly_ix = i;
             } else {
@@ -284,8 +284,8 @@ impl FlipShape {
 
     fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_node: usize, specs: &Vec<MSpecialNode>, navs: &Vec<MNavNode>) -> MSolution {
         let a0 = next.vert.point;
-        let a1 = navs[next.next].vert.point;
-        let b1 = navs[prev.prev].vert.point;
+        let va1 = navs[next.next].vert;
+        let vb1 = navs[prev.prev].vert;
         let b0 = prev.vert.point;
 
         let m = merge.vert.point;
@@ -298,33 +298,37 @@ impl FlipShape {
             // middle: m, a1, b1
             // bottom: m, b1, b0
 
-            let min_x = a1.x.min(b1.x);
+            let min_x = va1.point.x.min(vb1.point.x);
 
             let mut i = start_node;
 
             while i < specs.len() {
                 let spec = specs[i];
                 let nav = navs[spec.index];
-                let p = nav.vert.point;
-                if p.x > min_x {
+                let v = nav.vert;
+                if v.point.x > min_x {
                     break;
                 }
                 if spec.node_type == MNodeType::Split || spec.node_type == MNodeType::End {
-                    let is_contain = Triangle::is_contain(p, m, a0, a1)
-                        || Triangle::is_contain(p, m, a1, b1)
-                        || Triangle::is_contain(p, m, b1, b0);
+                    // if it end it can be unreachable (same point for different vertices!)
+                    let is_unreachable = v.point == va1.point && v.index != va1.index || v.point == vb1.point && v.index != vb1.index;
+                    if !is_unreachable {
+                        let is_contain = Triangle::is_contain(v.point, m, a0, va1.point)
+                            || Triangle::is_contain(v.point, m, va1.point, vb1.point)
+                            || Triangle::is_contain(v.point, m, vb1.point, b0);
 
-                    if is_contain {
-                        return MSolution{ mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
+                        if is_contain {
+                            return MSolution { mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
+                        }
                     }
                 }
                 i += 1;
             }
         }
 
-        let compare = if a1.x == b1.x {
-            m.sqr_distance(a1) < m.sqr_distance(b1)
-        } else { a1.x < b1.x };
+        let compare = if va1.point.x == vb1.point.x {
+            m.sqr_distance(va1.point) < m.sqr_distance(vb1.point)
+        } else { va1.point.x < vb1.point.x };
 
         if compare {
             MSolution{ mtype: MType::Next, a: merge.index, b: next.next, node_index: NIL_INDEX }

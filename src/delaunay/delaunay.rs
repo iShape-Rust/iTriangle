@@ -6,7 +6,7 @@ use crate::index::{NIL_INDEX, Index};
 use crate::triangulate::Triangulation;
 
 pub struct Delaunay {
-    triangles: Vec<DTriangle>
+    pub triangles: Vec<DTriangle>
 }
 
 impl Delaunay {

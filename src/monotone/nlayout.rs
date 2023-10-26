@@ -1,5 +1,5 @@
 use i_shape::triangle::Triangle;
-use crate::delaunay::vertex::{DVertex, DVType};
+use crate::delaunay::vertex::DVertex;
 use crate::flip_shape::FlipShape;
 use crate::monotone::mnav_node::MNavNode;
 
@@ -90,7 +90,7 @@ impl FlipShape {
                         next: i2 + s,
                         index: i,
                         prev: i0 + s,
-                        vert: DVertex::new(i, p1, DVType::Origin)
+                        vert: DVertex::new(i, p1)
                     };
                 }
 

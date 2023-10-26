@@ -65,16 +65,13 @@ impl Triangulate for FixShape {
 
         let mut points = Vec::new();
         let mut indices = Vec::new();
-        let mut offset = 0;
 
         for shape in shapes {
             if let Some(delaunay) = shape.into_delaunay() {
-                let sub_triangulation = delaunay.to_triangulation(offset);
+                let sub_triangulation = delaunay.to_triangulation(points.len());
 
                 let mut sub_indices = sub_triangulation.indices;
                 let mut sub_points = sub_triangulation.points;
-
-                offset += sub_points.len();
 
                 indices.append(&mut sub_indices);
                 points.append(&mut sub_points);
