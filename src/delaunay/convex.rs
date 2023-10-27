@@ -4,7 +4,7 @@ use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::index::Index;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConvexSide {
     Inner,
     Outer,
@@ -20,9 +20,16 @@ impl ConvexSide {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ConvexPath {
     pub path: FixPath,
     pub side: Vec<ConvexSide>,
+}
+
+impl PartialEq for ConvexPath {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path && self.side == other.side
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -58,9 +65,9 @@ impl ConvexPolygonBuilder {
         let mut side = Vec::with_capacity(count);
 
         let mut node = self.nodes[count - 1];
-        for i in 0..count {
-            path[i] = node.point;
-            side[i] = node.next_side;
+        for _ in 0..count {
+            path.push(node.point);
+            side.push(node.next_side);
             node = self.nodes[node.next];
         }
 

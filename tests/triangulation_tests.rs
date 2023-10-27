@@ -318,4 +318,55 @@ mod tests {
     fn test_60() {
         execute(60);
     }
+
+    #[test]
+    fn test_61() {
+        execute(61);
+    }
+
+    #[test]
+    fn test_62() {
+        execute(62);
+    }
+
+    #[test]
+    fn test_63() {
+        execute(63);
+    }
+
+    #[test]
+    fn test_64() {
+        execute(64);
+    }
+
+    #[test]
+    fn test_65() {
+        execute(65);
+    }
+
+    #[test]
+    fn test_66() {
+        execute(66);
+    }
+
+    #[test]
+    fn test_67() {
+        execute(67);
+    }
+
+    #[test]
+    fn test_68() {
+        execute(68);
+    }
+
+    #[test]
+    fn test_69() {
+        execute(69);
+    }
+
+    #[test]
+    fn test_70() {
+        execute(70);
+    }
+
 }
