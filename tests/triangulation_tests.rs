@@ -1,12 +1,12 @@
-mod triangulation;
+mod data;
 
 #[cfg(test)]
 mod tests {
     use i_triangle::triangulate::Triangulate;
-    use crate::triangulation::triangulation::Tests;
+    use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
-        let test = Tests::test_at_index(index);
+        let test = Test::load(index);
         let triangulation = test.shape.into_triangulation(true);
         assert_eq!(triangulation.indices.is_empty(), false);
 

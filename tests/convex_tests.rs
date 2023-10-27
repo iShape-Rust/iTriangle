@@ -1,15 +1,14 @@
-mod triangulation;
+mod data;
 
 #[cfg(test)]
 mod tests {
     use i_triangle::triangulate::Triangulate;
-    use crate::triangulation::triangulation::Tests;
+    use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
-        let test = Tests::test_at_index(index);
+        let test = Test::load(index);
         let polygons = test.shape.into_convex_polygons(true);
         assert_eq!(polygons.is_empty(), false);
-
         assert_eq!(test.polygons, polygons);
     }
 

@@ -1,7 +1,8 @@
 use i_float::fix_vec::FixVec;
 use i_overlay::bool::self_intersection::SelfIntersection;
+use i_shape::fix_path::FixPathExtension;
 use i_shape::fix_shape::FixShape;
-use crate::delaunay::convex::ConvexPath;
+use crate::delaunay::convex::{ConvexPath, ConvexSide};
 use crate::delaunay::delaunay::Delaunay;
 use crate::flip_shape::Flip;
 
@@ -57,7 +58,7 @@ impl Triangulate for FixShape {
                 Vec::new()
             }
         }
-        shape_to_convex_polygons(&self)
+        shape_to_convex_polygons(self)
     }
 
     fn into_convex_polygons(self, validate: bool) -> Vec<ConvexPath> {
@@ -69,7 +70,7 @@ impl Triangulate for FixShape {
             }
         }
 
-        shape_to_convex_polygons(&self)
+        shape_into_convex_polygons(self)
     }
 
     fn to_delaunay(&self) -> Option<Delaunay> {
@@ -103,9 +104,32 @@ fn shape_to_triangulation(shape: &FixShape) -> Triangulation {
     Triangulation { points, indices }
 }
 
+fn shape_into_convex_polygons(shape: FixShape) -> Vec<ConvexPath> {
+    let mut shapes = shape.resolve_self_intersection();
+    if shapes.len() == 1 && shapes[0].is_convex_polygon() {
+        let mut paths = shapes.pop().unwrap().into_paths();
+        let mut path = paths.pop().unwrap();
+        path.remove_degenerates();
+        if path.area() < 0 {
+            path.reverse()
+        }
+
+        let side = vec![ConvexSide::Outer; path.len()];
+
+        let polygon = ConvexPath { path, side };
+
+        [polygon].to_vec()
+    } else {
+        shapes_to_convex_polygons(shapes)
+    }
+}
+
 fn shape_to_convex_polygons(shape: &FixShape) -> Vec<ConvexPath> {
     let shapes = shape.resolve_self_intersection();
+    shapes_to_convex_polygons(shapes)
+}
 
+fn shapes_to_convex_polygons(shapes: Vec<FixShape>) -> Vec<ConvexPath> {
     let mut polygons = Vec::new();
 
     for shape in shapes {
