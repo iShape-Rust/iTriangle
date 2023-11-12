@@ -1,10 +1,11 @@
 use i_float::fix_vec::FixVec;
 use i_shape::fix_path::FixPath;
+use serde::{Deserialize, Serialize};
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::index::Index;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum ConvexSide {
     Inner,
     Outer,
@@ -20,7 +21,7 @@ impl ConvexSide {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConvexPath {
     pub path: FixPath,
     pub side: Vec<ConvexSide>,

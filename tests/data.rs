@@ -1,10 +1,9 @@
 pub mod triangulation {
     use std::path::PathBuf;
-    use i_float::fix_vec::FixVec;
     use i_shape::fix_path::FixPath;
     use i_shape::fix_shape::FixShape;
     use i_triangle::delaunay::convex::{ConvexPath, ConvexSide};
-    use serde::{Deserialize, Deserializer, Serializer};
+    use serde::{Deserialize, Deserializer};
 
     #[derive(Debug)]
     pub struct Test {
@@ -16,28 +15,15 @@ pub mod triangulation {
 
     #[derive(Debug, Deserialize)]
     struct TestData {
-        pub shape: FixShapeData,
-        pub points: FixPathData,
+        pub shape: FixShape,
+        pub points: FixPath,
         pub indices: Vec<usize>,
         pub polygons: Vec<ConvexPathData>
     }
 
     #[derive(Debug, Deserialize)]
-    struct FixShapeData {
-        paths: Vec<FixPathData>,
-    }
-
-    type FixPathData = Vec<FixVecData>;
-
-    #[derive(Debug, Clone, Deserialize)]
-    struct FixVecData {
-        x: i64,
-        y: i64
-    }
-
-    #[derive(Debug, Deserialize)]
     struct ConvexPathData {
-        path: FixPathData,
+        path: FixPath,
         side: Vec<ConvexSideData>,
     }
 
@@ -61,26 +47,10 @@ pub mod triangulation {
         }
     }
 
-    impl From<FixShapeData> for FixShape {
-        fn from(data: FixShapeData) -> Self {
-            let paths: Vec<FixPath> = data.paths.into_iter().map(|path_data| {
-                path_data.into_iter().map(FixVec::from).collect::<Vec<FixVec>>()
-            }).collect();
-            FixShape::new(paths)
-        }
-    }
-
-    impl From<FixVecData> for FixVec {
-        fn from(data: FixVecData) -> Self {
-            FixVec::new_i64(data.x, data.y)
-        }
-    }
-
     impl From<ConvexPathData> for ConvexPath {
         fn from(data: ConvexPathData) -> Self {
-            let path: FixPath = data.path.into_iter().map(FixVec::from).collect();  // Explicitly handle conversion
             let side: Vec<ConvexSide> = data.side.into_iter().map(ConvexSide::from).collect();
-            ConvexPath { path, side }
+            ConvexPath { path: data.path, side }
         }
     }
 
@@ -96,8 +66,8 @@ pub mod triangulation {
     impl From<TestData> for Test {
         fn from(data: TestData) -> Self {
             Self {
-                shape: FixShape::from(data.shape),
-                points: data.points.into_iter().map(FixVec::from).collect(),
+                shape: data.shape,
+                points: data.points,
                 indices: data.indices,
                 polygons: data.polygons.into_iter().map(|it| ConvexPath::from(it)).collect(),
             }
