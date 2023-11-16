@@ -10,6 +10,7 @@ repository = "https://github.com/iShape-Rust/iTriangle"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = { version = "^1.0", features = ["derive"] }
 #i_float = { path = "../iFloat" }
 #i_shape = { path = "../iShape" }
 #i_overlay = { path = "../iOverlay" }
@@ -19,5 +20,4 @@ i_shape = "^0.3.0"
 i_overlay = "^0.5.0"
 
 [dev-dependencies]
-serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
