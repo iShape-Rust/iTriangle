@@ -107,7 +107,7 @@ fn shape_to_triangulation(shape: &FixShape) -> Triangulation {
 fn shape_into_convex_polygons(shape: FixShape) -> Vec<ConvexPath> {
     let mut shapes = shape.resolve_self_intersection();
     if shapes.len() == 1 && shapes[0].is_convex_polygon() {
-        let mut paths = shapes.pop().unwrap().into_paths();
+        let mut paths = shapes.pop().unwrap().paths;
         let mut path = paths.pop().unwrap();
         path.remove_degenerates();
         if path.area() < 0 {

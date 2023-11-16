@@ -31,10 +31,10 @@ impl Flip for FixShape {
 
         paths.push(self.contour().clone());
 
-        let n = self.paths().len();
+        let n = self.paths.len();
         if n > 1 {
             for i in 1..n {
-                let mut path = self.paths()[i].clone();
+                let mut path = self.paths[i].clone();
                 path.reverse();
                 paths.push(path);
             }
@@ -44,7 +44,7 @@ impl Flip for FixShape {
     }
 
     fn into_flip(self) -> FlipShape {
-        let mut paths = self.into_paths();
+        let mut paths = self.paths;
         let n = paths.len();
         for i in 1..n {
             paths[i].reverse();
