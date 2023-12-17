@@ -2,12 +2,13 @@ mod data;
 
 #[cfg(test)]
 mod tests {
+    use i_overlay::bool::fill_rule::FillRule;
     use i_triangle::triangulate::Triangulate;
     use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
-        let triangulation = test.shape.into_triangulation(true);
+        let triangulation = test.shape.into_triangulation(Some(FillRule::EvenOdd));
         assert_eq!(triangulation.indices.is_empty(), false);
 
         assert_eq!(test.points, triangulation.points);

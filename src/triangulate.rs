@@ -1,5 +1,6 @@
 use i_float::fix_vec::FixVec;
-use i_overlay::bool::self_intersection::SelfIntersection;
+use i_overlay::bool::fill_rule::FillRule;
+use i_overlay::ext::simplify::Simplify;
 use i_shape::fix_path::FixPathExtension;
 use i_shape::fix_shape::FixShape;
 use crate::delaunay::convex::{ConvexPath, ConvexSide};
@@ -13,13 +14,13 @@ pub struct Triangulation {
 
 pub trait Triangulate {
 
-    fn to_triangulation(&self, validate: bool) -> Triangulation;
+    fn to_triangulation(&self, validate_rule: Option<FillRule>) -> Triangulation;
 
-    fn into_triangulation(self, validate: bool) -> Triangulation;
+    fn into_triangulation(self, validate_rule: Option<FillRule>) -> Triangulation;
 
-    fn to_convex_polygons(&self, validate: bool) -> Vec<ConvexPath>;
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<ConvexPath>;
 
-    fn into_convex_polygons(self, validate: bool) -> Vec<ConvexPath>;
+    fn into_convex_polygons(self, validate_rule: Option<FillRule>) -> Vec<ConvexPath>;
 
     fn to_delaunay(&self) -> Option<Delaunay>;
 
@@ -28,49 +29,52 @@ pub trait Triangulate {
 
 impl Triangulate for FixShape {
 
-    fn to_triangulation(&self, validate: bool) -> Triangulation {
-        if !validate {
-            return if let Some(delaunay) = self.to_flip().delaunay() {
+    fn to_triangulation(&self, validate_rule: Option<FillRule>) -> Triangulation {
+        if let Some(fill_rule) = validate_rule {
+            shape_to_triangulation(&self, fill_rule)
+        } else {
+            if let Some(delaunay) = self.to_flip().delaunay() {
                 delaunay.to_triangulation(0)
             } else {
                 Triangulation { points: Vec::new(), indices: Vec::new() }
             }
         }
-        shape_to_triangulation(&self)
     }
 
-    fn into_triangulation(self, validate: bool) -> Triangulation {
-        if !validate {
-            return if let Some(delaunay) = self.into_delaunay() {
+    fn into_triangulation(self, validate_rule: Option<FillRule>) -> Triangulation {
+        if let Some(fill_rule) = validate_rule {
+            shape_to_triangulation(&self, fill_rule)
+        } else {
+            if let Some(delaunay) = self.into_delaunay() {
                 delaunay.to_triangulation(0)
             } else {
                 Triangulation { points: Vec::new(), indices: Vec::new() }
             }
         }
-        shape_to_triangulation(&self)
     }
 
-    fn to_convex_polygons(&self, validate: bool) -> Vec<ConvexPath> {
-        if !validate {
-            return if let Some(delaunay) = self.to_delaunay() {
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<ConvexPath> {
+        if let Some(fill_rule) = validate_rule {
+            shape_to_convex_polygons(self, fill_rule)
+        } else {
+            if let Some(delaunay) = self.to_delaunay() {
                 delaunay.to_convex_polygons()
             } else {
                 Vec::new()
             }
         }
-        shape_to_convex_polygons(self)
     }
 
-    fn into_convex_polygons(self, validate: bool) -> Vec<ConvexPath> {
-        if !validate {
-            return if let Some(delaunay) = self.into_delaunay() {
+    fn into_convex_polygons(self, validate_rule: Option<FillRule>) -> Vec<ConvexPath> {
+        if let Some(fill_rule) = validate_rule {
+            shape_into_convex_polygons(self, fill_rule)
+        } else {
+            if let Some(delaunay) = self.into_delaunay() {
                 delaunay.to_convex_polygons()
             } else {
                 Vec::new()
             }
         }
-
-        shape_into_convex_polygons(self)
     }
 
     fn to_delaunay(&self) -> Option<Delaunay> {
@@ -83,8 +87,8 @@ impl Triangulate for FixShape {
 
 }
 
-fn shape_to_triangulation(shape: &FixShape) -> Triangulation {
-    let shapes = shape.resolve_self_intersection();
+fn shape_to_triangulation(shape: &FixShape, fill_rule: FillRule) -> Triangulation {
+    let shapes = shape.simplify(fill_rule);
 
     let mut points = Vec::new();
     let mut indices = Vec::new();
@@ -104,8 +108,9 @@ fn shape_to_triangulation(shape: &FixShape) -> Triangulation {
     Triangulation { points, indices }
 }
 
-fn shape_into_convex_polygons(shape: FixShape) -> Vec<ConvexPath> {
-    let mut shapes = shape.resolve_self_intersection();
+
+fn shape_into_convex_polygons(shape: FixShape, fill_rule: FillRule) -> Vec<ConvexPath> {
+    let mut shapes = shape.simplify(fill_rule);
     if shapes.len() == 1 && shapes[0].is_convex_polygon() {
         let mut paths = shapes.pop().unwrap().paths;
         let mut path = paths.pop().unwrap();
@@ -124,9 +129,8 @@ fn shape_into_convex_polygons(shape: FixShape) -> Vec<ConvexPath> {
     }
 }
 
-fn shape_to_convex_polygons(shape: &FixShape) -> Vec<ConvexPath> {
-    let shapes = shape.resolve_self_intersection();
-    shapes_to_convex_polygons(shapes)
+fn shape_to_convex_polygons(shape: &FixShape, fill_rule: FillRule) -> Vec<ConvexPath> {
+    shapes_to_convex_polygons(shape.simplify(fill_rule))
 }
 
 fn shapes_to_convex_polygons(shapes: Vec<FixShape>) -> Vec<ConvexPath> {

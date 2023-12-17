@@ -1,9 +1,9 @@
 [package]
 name = "i_triangle"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
-description = "A poly-bool library that supports main operations such as union, intersection, difference, xor, and self-intersection by the even-odd rule. This algorithm is based on Vatti clipping ideas but is an original implementation."
+description = "Polygon Triangulation Library: Efficient Delaunay Triangulation for Complex Shapes."
 license = "MIT"
 repository = "https://github.com/iShape-Rust/iTriangle"
 
@@ -16,8 +16,8 @@ serde = { version = "^1.0", features = ["derive"] }
 #i_overlay = { path = "../iOverlay" }
 
 i_float = "^0.2.0"
-i_shape = "^0.3.0"
-i_overlay = "^0.5.0"
+i_shape = "^0.4.0"
+i_overlay = "^0.6.0"
 
 [dev-dependencies]
 serde_json = "^1.0"
