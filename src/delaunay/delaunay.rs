@@ -3,7 +3,7 @@ use i_shape::triangle::Triangle;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};
-use crate::triangulate::Triangulation;
+use crate::triangulation::triangulate::Triangulation;
 
 pub struct Delaunay {
     pub triangles: Vec<DTriangle>
@@ -138,69 +138,7 @@ impl Delaunay {
             buffer = temp;
         }
     }
-/*
-    fn fix(&mut self, indices: Vec<usize>, index_buffer: &mut IndexBuffer) {
-        let mut origin = indices.clone();
-        let mut buffer = Vec::with_capacity(64);
 
-        while !origin.is_empty() {
-            let mut j = 0;
-            while j < origin.len() {
-                let i = origin[j];
-                j += 1;
-                let mut triangle = self.triangles[i];
-                for k in 0..3 {
-                    let neighbor_index = triangle.neighbors[k];
-                    if neighbor_index.is_not_nil() {
-                        let mut neighbor = self.triangles[neighbor_index];
-                        if self.swap(triangle, neighbor) {
-                            index_buffer.add(triangle.index);
-                            index_buffer.add(neighbor.index);
-
-                            triangle = self.triangles[triangle.index];
-                            neighbor = self.triangles[neighbor.index];
-
-                            let tna = triangle.na();
-                            if tna.is_not_nil() && tna != neighbor.index {
-                                buffer.push(tna);
-                            }
-
-                            let tnb = triangle.nb();
-                            if tnb.is_not_nil() && tnb != neighbor.index {
-                                buffer.push(tnb);
-                            }
-
-                            let tnc = triangle.nc();
-                            if tnc.is_not_nil() && tnc != neighbor.index {
-                                buffer.push(tnc);
-                            }
-
-                            let nna = neighbor.na();
-                            if nna.is_not_nil() && nna != triangle.index {
-                                buffer.push(nna);
-                            }
-
-                            let nnb = neighbor.nb();
-                            if nnb.is_not_nil() && nnb != triangle.index {
-                                buffer.push(nnb);
-                            }
-
-                            let nnc = neighbor.nc();
-                            if nnc.is_not_nil() && nnc != triangle.index {
-                                buffer.push(nnc);
-                            }
-                        }
-                    }
-                }
-            }
-            origin.clear();
-
-            let temp = origin;
-            origin = buffer;
-            buffer = temp;
-        }
-    }
-*/
     fn swap(&mut self, abc: DTriangle, pbc: DTriangle) -> bool {
         let pi = pbc.opposite(abc.index);
         unsafe {

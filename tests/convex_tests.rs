@@ -3,12 +3,12 @@ mod data;
 #[cfg(test)]
 mod tests {
     use i_overlay::bool::fill_rule::FillRule;
-    use i_triangle::triangulate::Triangulate;
+    use i_triangle::triangulation::triangulate::Triangulate;
     use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
-        let polygons = test.shape.into_convex_polygons(Some(FillRule::EvenOdd));
+        let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd));
         assert_eq!(polygons.is_empty(), false);
         assert_eq!(test.polygons, polygons);
     }

@@ -1,12 +1,13 @@
 use std::vec;
+use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
-use crate::flip_shape::FlipShape;
-use crate::monotone::mlayout::MLayoutStatus;
+use crate::monotone::monotone_layout::{MonotoneLayoutStatus, ShapeLayout};
 use crate::monotone::mnav_node::MNavNode;
 use crate::monotone::mslice_buffer::MSliceBuffer;
+use crate::triangulation::triangulate::Triangulation;
 
 #[derive(Debug, Clone, Copy)]
 struct Edge {
@@ -93,25 +94,30 @@ impl TriangleStack {
     }
 }
 
+pub trait ShapeTriangulate {
+    fn delaunay(&self) -> Option<Delaunay>;
 
-impl FlipShape {
+    fn triangulation(&self) -> Triangulation;
+}
 
-    pub(crate) fn delaunay(&self) -> Option<Delaunay> {
-        let layout = self.mlayout();
+impl ShapeTriangulate for FixShape {
 
-        if layout.status() != MLayoutStatus::Success {
+    fn delaunay(&self) -> Option<Delaunay> {
+        let layout = self.monotone_layout();
+
+        if layout.status() != MonotoneLayoutStatus::Success {
             return None;
         }
 
-        let holes_count = self.paths().len() - 1;
-        let verts_count: usize = self.paths().iter().map(|path| path.len()).sum();
+        let holes_count = self.paths.len() - 1;
+        let verts_count: usize = self.paths.iter().map(|path| path.len()).sum();
         let total_count = verts_count + holes_count * 2;
 
         let mut triangle_stack = TriangleStack::with_count(total_count);
 
         let mut links = layout.nav_nodes;
-        for index in layout.start_list.iter() {
-            Self::triangulate(*index, &mut links, &mut triangle_stack);
+        for &index in layout.start_list.iter() {
+            triangulate(index, &mut links, &mut triangle_stack);
             triangle_stack.reset();
         }
 
@@ -127,131 +133,139 @@ impl FlipShape {
         Some(delaunay)
     }
 
-    fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut TriangleStack) {
-        let mut c = links[index];
+    fn triangulation(&self) -> Triangulation {
+        if let Some(delaunay) = self.delaunay() {
+            delaunay.to_triangulation(0)
+        } else {
+            Triangulation { points: Vec::new(), indices: Vec::new() }
+        }
+    }
+}
 
-        let mut a0 = links[c.next];
-        let mut b0 = links[c.prev];
+fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut TriangleStack) {
+    let mut c = links[index];
 
-        while a0.index != b0.index {
-            let a1 = links[a0.next];
-            let b1 = links[b0.prev];
+    let mut a0 = links[c.next];
+    let mut b0 = links[c.prev];
 
-            let mut a_bit0 = a0.vert.point.bit_pack();
-            let mut a_bit1 = a1.vert.point.bit_pack();
-            if a_bit1 < a_bit0 {
-                a_bit1 = a_bit0;
-            }
+    while a0.index != b0.index {
+        let a1 = links[a0.next];
+        let b1 = links[b0.prev];
 
-            let mut b_bit0 = b0.vert.point.bit_pack();
-            let mut b_bit1 = b1.vert.point.bit_pack();
-            if b_bit1 < b_bit0 {
-                b_bit1 = b_bit0;
-            }
+        let mut a_bit0 = a0.vert.point.bit_pack();
+        let mut a_bit1 = a1.vert.point.bit_pack();
+        if a_bit1 < a_bit0 {
+            a_bit1 = a_bit0;
+        }
 
-            if a_bit0 <= b_bit1 && b_bit0 <= a_bit1 {
-                triangle_stack.add(c.vert, a0.vert, b0.vert);
+        let mut b_bit0 = b0.vert.point.bit_pack();
+        let mut b_bit1 = b1.vert.point.bit_pack();
+        if b_bit1 < b_bit0 {
+            b_bit1 = b_bit0;
+        }
 
-                a0.prev = b0.index;
-                b0.next = a0.index;
-                links[a0.index] = a0;
-                links[b0.index] = b0;
+        if a_bit0 <= b_bit1 && b_bit0 <= a_bit1 {
+            triangle_stack.add(c.vert, a0.vert, b0.vert);
 
-                if b_bit0 < a_bit0 {
-                    c = b0;
-                    b0 = b1;
-                } else {
-                    c = a0;
-                    a0 = a1;
-                }
+            a0.prev = b0.index;
+            b0.next = a0.index;
+            links[a0.index] = a0;
+            links[b0.index] = b0;
+
+            if b_bit0 < a_bit0 {
+                c = b0;
+                b0 = b1;
             } else {
-                if a_bit1 < b_bit1 {
-                    let mut cx = c;
-                    let mut ax0 = a0;
-                    let mut ax1 = a1;
-                    let mut ax1_bit = i64::MIN;
-                    while ax1_bit < b_bit0 {
-                        let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, ax0.vert.point, ax1.vert.point);
+                c = a0;
+                a0 = a1;
+            }
+        } else {
+            if a_bit1 < b_bit1 {
+                let mut cx = c;
+                let mut ax0 = a0;
+                let mut ax1 = a1;
+                let mut ax1_bit = i64::MIN;
+                while ax1_bit < b_bit0 {
+                    let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, ax0.vert.point, ax1.vert.point);
 
-                        if is_cw_or_line {
-                            triangle_stack.add(ax0.vert, ax1.vert, cx.vert);
+                    if is_cw_or_line {
+                        triangle_stack.add(ax0.vert, ax1.vert, cx.vert);
 
-                            ax1.prev = cx.index;
-                            cx.next = ax1.index;
-                            links[cx.index] = cx;
-                            links[ax1.index] = ax1;
+                        ax1.prev = cx.index;
+                        cx.next = ax1.index;
+                        links[cx.index] = cx;
+                        links[ax1.index] = ax1;
 
-                            if cx.index != c.index {
-                                // move back
-                                ax0 = cx;
-                                cx = links[cx.prev];
-                            } else {
-                                // move forward
-                                ax0 = ax1;
-                                ax1 = links[ax1.next];
-                            }
+                        if cx.index != c.index {
+                            // move back
+                            ax0 = cx;
+                            cx = links[cx.prev];
                         } else {
-                            cx = ax0;
+                            // move forward
                             ax0 = ax1;
                             ax1 = links[ax1.next];
                         }
-                        ax1_bit = ax1.vert.point.bit_pack();
+                    } else {
+                        cx = ax0;
+                        ax0 = ax1;
+                        ax1 = links[ax1.next];
                     }
-                } else {
-                    let mut cx = c;
-                    let mut bx0 = b0;
-                    let mut bx1 = b1;
-                    let mut bx1_bit = i64::MIN;
-                    while bx1_bit < a_bit0 {
-                        let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, bx1.vert.point, bx0.vert.point);
-                        if is_cw_or_line {
-                            triangle_stack.add(bx0.vert, cx.vert, bx1.vert);
+                    ax1_bit = ax1.vert.point.bit_pack();
+                }
+            } else {
+                let mut cx = c;
+                let mut bx0 = b0;
+                let mut bx1 = b1;
+                let mut bx1_bit = i64::MIN;
+                while bx1_bit < a_bit0 {
+                    let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, bx1.vert.point, bx0.vert.point);
+                    if is_cw_or_line {
+                        triangle_stack.add(bx0.vert, cx.vert, bx1.vert);
 
-                            bx1.next = cx.index;
-                            cx.prev = bx1.index;
-                            links[cx.index] = cx;
-                            links[bx1.index] = bx1;
+                        bx1.next = cx.index;
+                        cx.prev = bx1.index;
+                        links[cx.index] = cx;
+                        links[bx1.index] = bx1;
 
-                            if cx.index != c.index {
-                                // move back
-                                bx0 = cx;
-                                cx = links[cx.next];
-                            } else {
-                                // move forward
-                                bx0 = bx1;
-                                bx1 = links[bx0.prev];
-                            }
+                        if cx.index != c.index {
+                            // move back
+                            bx0 = cx;
+                            cx = links[cx.next];
                         } else {
-                            cx = bx0;
+                            // move forward
                             bx0 = bx1;
-                            bx1 = links[bx1.prev];
+                            bx1 = links[bx0.prev];
                         }
-                        bx1_bit = bx1.vert.point.bit_pack();
+                    } else {
+                        cx = bx0;
+                        bx0 = bx1;
+                        bx1 = links[bx1.prev];
                     }
+                    bx1_bit = bx1.vert.point.bit_pack();
                 }
+            }
 
-                c = links[c.index];
-                a0 = links[c.next];
-                b0 = links[c.prev];
+            c = links[c.index];
+            a0 = links[c.next];
+            b0 = links[c.prev];
 
-                a_bit0 = a0.vert.point.bit_pack();
-                b_bit0 = b0.vert.point.bit_pack();
+            a_bit0 = a0.vert.point.bit_pack();
+            b_bit0 = b0.vert.point.bit_pack();
 
-                triangle_stack.add(c.vert, a0.vert, b0.vert);
+            triangle_stack.add(c.vert, a0.vert, b0.vert);
 
-                a0.prev = b0.index;
-                b0.next = a0.index;
-                links[a0.index] = a0;
-                links[b0.index] = b0;
+            a0.prev = b0.index;
+            b0.next = a0.index;
+            links[a0.index] = a0;
+            links[b0.index] = b0;
 
-                if b_bit0 < a_bit0 {
-                    c = b0;
-                    b0 = links[b0.prev];
-                } else {
-                    c = a0;
-                    a0 = links[a0.next];
-                }
-            } //while
-        }
+            if b_bit0 < a_bit0 {
+                c = b0;
+                b0 = links[b0.prev];
+            } else {
+                c = a0;
+                a0 = links[a0.next];
+            }
+        } //while
     }
 }

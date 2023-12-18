@@ -1,47 +1,47 @@
 use i_float::fix_vec::FixVec;
+use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
-use crate::flip_shape::FlipShape;
 use crate::index::{Index, NIL_INDEX};
 use crate::monotone::mnav_node::{MNavNode, MNavNodeArray};
 use crate::monotone::mpoly::MPoly;
 use crate::monotone::mslice_buffer::MSlice;
-use crate::monotone::nlayout::{MNodeType, MSpecialNode};
+use crate::monotone::node_layout::{MNodeType, MSpecialNode, ShapeNodeLayout};
 
 #[derive(Clone, Debug, Copy, PartialEq)]
-pub(crate) enum MLayoutStatus {
+pub(crate) enum MonotoneLayoutStatus {
     Empty,
     Success,
     Fail
 }
 
-pub(crate) struct MLayout {
+pub(crate) struct MonotoneLayout {
     pub(crate) start_list: Vec<usize>,
     pub(crate) nav_nodes: Vec<MNavNode>,
     pub(crate) slice_list: Vec<MSlice>,
-    status: MLayoutStatus
+    status: MonotoneLayoutStatus
 }
 
-impl MLayout {
+impl MonotoneLayout {
 
-    pub(crate) fn status(&self) -> MLayoutStatus {
+    pub(crate) fn status(&self) -> MonotoneLayoutStatus {
         self.status
     }
 
     fn fail() -> Self {
-        MLayout {
+        MonotoneLayout {
             start_list: Vec::new(),
             nav_nodes: Vec::new(),
             slice_list: Vec::new(),
-            status: MLayoutStatus::Fail
+            status: MonotoneLayoutStatus::Fail
         }
     }
 
     fn empty() -> Self {
-        MLayout{
+        MonotoneLayout {
             start_list: Vec::new(),
             nav_nodes: Vec::new(),
             slice_list: Vec::new(),
-            status: MLayoutStatus::Empty
+            status: MonotoneLayoutStatus::Empty
         }
     }
 
@@ -65,27 +65,30 @@ struct MSolution {
     node_index: usize
 }
 
-impl FlipShape {
+pub trait ShapeLayout {
+    fn monotone_layout(&self) -> MonotoneLayout;
+}
 
-    pub (crate) fn mlayout(&self) -> MLayout {
-        let nlayout = self.nlayout();
+impl ShapeLayout for FixShape {
 
-        let mut specs = nlayout.spec_nodes;
+    fn monotone_layout(&self) -> MonotoneLayout {
+        let node_layout = self.node_layout();
+
+        let mut specs = node_layout.spec_nodes;
 
         if specs.is_empty() {
-            return MLayout::empty();
+            return MonotoneLayout::empty();
         }
 
         let first = specs[0];
         if first.node_type() != MNodeType::Start {
-            return MLayout::empty();
+            return MonotoneLayout::empty();
         }
-
 
         let mut start_list = Vec::new();
         start_list.push(first.index);
 
-        let mut navs = nlayout.nav_nodes;
+        let mut navs = node_layout.nav_nodes;
 
         let mut slice_list = Vec::new();
         let mut mpolies = Vec::new();
@@ -97,14 +100,14 @@ impl FlipShape {
         while j < specs.len() && !mpolies.is_empty() {
             let spec = specs[j];
 
-            let px = Self::fill(&mut mpolies, &navs, spec.sort, spec.index);
+            let px = fill(&mut mpolies, &navs, spec.sort, spec.index);
 
             let nav = navs[spec.index];
 
             match spec.node_type {
                 MNodeType::End => {
                     if !(px.next == px.prev && px.next.is_not_nil()) {
-                        return MLayout::fail();
+                        return MonotoneLayout::fail();
                     }
                     let p_index = px.next;
                     mpolies.remove(p_index);
@@ -116,14 +119,14 @@ impl FlipShape {
                 MNodeType::Split => {
                     let mut p_index = NIL_INDEX;
                     for i in 0..mpolies.len() {
-                        if Self::is_contain(mpolies[i], nav.vert.point, &navs) {
+                        if is_contain(mpolies[i], nav.vert.point, &navs) {
                             p_index = i;
                             break;
                         }
                     }
 
                     if p_index.is_nil() {
-                        return MLayout::fail();
+                        return MonotoneLayout::fail();
                     }
 
                     let mpoly = mpolies[p_index];
@@ -179,7 +182,7 @@ impl FlipShape {
                 }
                 MNodeType::Merge => {
                     if px.next.is_nil() || px.prev.is_nil() {
-                        return MLayout::fail();
+                        return MonotoneLayout::fail();
                     }
 
                     let next_poly = mpolies[px.next];
@@ -188,7 +191,7 @@ impl FlipShape {
                     let prev = navs[prev_poly.prev];
                     let next = navs[next_poly.next];
 
-                    let ms = Self::find_node_to_merge(prev, next, nav, j + 1, &specs, &navs);
+                    let ms = find_node_to_merge(prev, next, nav, j + 1, &specs, &navs);
 
                     match ms.mtype {
                         MType::Direct => {
@@ -228,130 +231,129 @@ impl FlipShape {
         }
 
         if j != specs.len() {
-            MLayout::fail()
+            MonotoneLayout::fail()
         } else {
-            MLayout {
+            MonotoneLayout {
                 start_list,
                 nav_nodes: navs,
                 slice_list,
-                status: MLayoutStatus::Success,
+                status: MonotoneLayoutStatus::Success,
             }
         }
     }
+}
 
-    fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64, stop_index: usize) -> NavIndex {
+fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64, stop_index: usize) -> NavIndex {
 
-        let mut next_poly_ix = NIL_INDEX;
-        let mut prev_poly_ix = NIL_INDEX;
-        for i in 0..mpolies.len() {
-            let mut mpoly = mpolies[i];
+    let mut next_poly_ix = NIL_INDEX;
+    let mut prev_poly_ix = NIL_INDEX;
+    for i in 0..mpolies.len() {
+        let mut mpoly = mpolies[i];
 
-            let mut n0 = verts[mpoly.next];
-            let mut n1 = verts[n0.next];
+        let mut n0 = verts[mpoly.next];
+        let mut n1 = verts[n0.next];
 
-            while n1.vert.point.bit_pack() < stop  {
-                n0 = n1;
-                n1 = verts[n1.next];
-            }
-
-            if n1.vert.index == stop_index {
-                mpoly.next = n1.index;
-                prev_poly_ix = i;
-            } else {
-                mpoly.next = n0.index;
-            }
-
-            let mut p0 = verts[mpoly.prev];
-            let mut p1 = verts[p0.prev];
-
-            while p1.vert.point.bit_pack() < stop {
-                p0 = p1;
-                p1 = verts[p1.prev];
-            }
-
-            if p1.vert.index == stop_index {
-                mpoly.prev = p1.index;
-                next_poly_ix = i;
-            } else {
-                mpoly.prev = p0.index;
-            }
-
-            mpolies[i] = mpoly;
+        while n1.vert.point.bit_pack() < stop  {
+            n0 = n1;
+            n1 = verts[n1.next];
         }
 
-        return NavIndex { next: next_poly_ix, prev: prev_poly_ix }
+        if n1.vert.index == stop_index {
+            mpoly.next = n1.index;
+            prev_poly_ix = i;
+        } else {
+            mpoly.next = n0.index;
+        }
+
+        let mut p0 = verts[mpoly.prev];
+        let mut p1 = verts[p0.prev];
+
+        while p1.vert.point.bit_pack() < stop {
+            p0 = p1;
+            p1 = verts[p1.prev];
+        }
+
+        if p1.vert.index == stop_index {
+            mpoly.prev = p1.index;
+            next_poly_ix = i;
+        } else {
+            mpoly.prev = p0.index;
+        }
+
+        mpolies[i] = mpoly;
     }
 
-    fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_node: usize, specs: &Vec<MSpecialNode>, navs: &Vec<MNavNode>) -> MSolution {
-        let a0 = next.vert.point;
-        let va1 = navs[next.next].vert;
-        let vb1 = navs[prev.prev].vert;
-        let b0 = prev.vert.point;
+    return NavIndex { next: next_poly_ix, prev: prev_poly_ix }
+}
 
-        let m = merge.vert.point;
+fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_node: usize, specs: &Vec<MSpecialNode>, navs: &Vec<MNavNode>) -> MSolution {
+    let a0 = next.vert.point;
+    let va1 = navs[next.next].vert;
+    let vb1 = navs[prev.prev].vert;
+    let b0 = prev.vert.point;
 
-        // check inner nodes
-        if start_node < specs.len() {
+    let m = merge.vert.point;
 
-            // 3 triangles:
-            // top: m, a0, a1
-            // middle: m, a1, b1
-            // bottom: m, b1, b0
+    // check inner nodes
+    if start_node < specs.len() {
 
-            let min_x = va1.point.x.min(vb1.point.x);
+        // 3 triangles:
+        // top: m, a0, a1
+        // middle: m, a1, b1
+        // bottom: m, b1, b0
 
-            let mut i = start_node;
+        let min_x = va1.point.x.min(vb1.point.x);
 
-            while i < specs.len() {
-                let spec = specs[i];
-                let nav = navs[spec.index];
-                let v = nav.vert;
-                if v.point.x > min_x {
-                    break;
-                }
-                if spec.node_type == MNodeType::Split || spec.node_type == MNodeType::End {
-                    // if it end it can be unreachable (same point for different vertices!)
-                    let is_unreachable = v.point == va1.point && v.index != va1.index || v.point == vb1.point && v.index != vb1.index;
-                    if !is_unreachable {
-                        let is_contain = Triangle::is_contain(v.point, m, a0, va1.point)
-                            || Triangle::is_contain(v.point, m, va1.point, vb1.point)
-                            || Triangle::is_contain(v.point, m, vb1.point, b0);
+        let mut i = start_node;
 
-                        if is_contain {
-                            return MSolution { mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
-                        }
+        while i < specs.len() {
+            let spec = specs[i];
+            let nav = navs[spec.index];
+            let v = nav.vert;
+            if v.point.x > min_x {
+                break;
+            }
+            if spec.node_type == MNodeType::Split || spec.node_type == MNodeType::End {
+                // if it end it can be unreachable (same point for different vertices!)
+                let is_unreachable = v.point == va1.point && v.index != va1.index || v.point == vb1.point && v.index != vb1.index;
+                if !is_unreachable {
+                    let is_contain = Triangle::is_contain(v.point, m, a0, va1.point)
+                        || Triangle::is_contain(v.point, m, va1.point, vb1.point)
+                        || Triangle::is_contain(v.point, m, vb1.point, b0);
+
+                    if is_contain {
+                        return MSolution { mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
                     }
                 }
-                i += 1;
             }
-        }
-
-        let compare = if va1.point.x == vb1.point.x {
-            m.sqr_distance(va1.point) < m.sqr_distance(vb1.point)
-        } else { va1.point.x < vb1.point.x };
-
-        if compare {
-            MSolution{ mtype: MType::Next, a: merge.index, b: next.next, node_index: NIL_INDEX }
-        } else {
-            MSolution{ mtype: MType::Prev, a: merge.index, b: prev.prev, node_index: NIL_INDEX }
+            i += 1;
         }
     }
 
-    fn is_contain(mpoly: MPoly, point: FixVec, navs: &Vec<MNavNode>) -> bool {
-        let a0 = navs[mpoly.next];
-        let a1 = navs[a0.next];
+    let compare = if va1.point.x == vb1.point.x {
+        m.sqr_distance(va1.point) < m.sqr_distance(vb1.point)
+    } else { va1.point.x < vb1.point.x };
 
-        let b0 = navs[mpoly.prev];
-        let b1 = navs[b0.prev];
-
-        Self::is_contain_point(point, a0.vert.point, a1.vert.point, b0.vert.point, b1.vert.point)
+    if compare {
+        MSolution{ mtype: MType::Next, a: merge.index, b: next.next, node_index: NIL_INDEX }
+    } else {
+        MSolution{ mtype: MType::Prev, a: merge.index, b: prev.prev, node_index: NIL_INDEX }
     }
+}
 
-    fn is_contain_point(point: FixVec, a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> bool {
-        let sa = (a1 - a0).unsafe_cross_product(point - a0);
-        let sb = (b1 - b0).unsafe_cross_product(point - b0);
+fn is_contain(mpoly: MPoly, point: FixVec, navs: &Vec<MNavNode>) -> bool {
+    let a0 = navs[mpoly.next];
+    let a1 = navs[a0.next];
 
-        sa <= 0 && sb >= 0
-    }
+    let b0 = navs[mpoly.prev];
+    let b1 = navs[b0.prev];
 
+    is_contain_point(point, a0.vert.point, a1.vert.point, b0.vert.point, b1.vert.point)
+}
+
+fn is_contain_point(point: FixVec, a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> bool {
+    let sa = (a1 - a0).unsafe_cross_product(point - a0);
+    let sb = (b1 - b0).unsafe_cross_product(point - b0);
+
+    sa <= 0 && sb >= 0
 }

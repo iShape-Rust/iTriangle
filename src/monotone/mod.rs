@@ -1,5 +1,5 @@
 mod mpoly;
 pub (crate) mod mslice_buffer;
 pub (crate) mod mnav_node;
-pub mod nlayout;
-pub (crate) mod mlayout;
+pub mod node_layout;
+pub (crate) mod monotone_layout;

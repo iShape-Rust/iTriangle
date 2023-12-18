@@ -1,6 +1,6 @@
+use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
 use crate::delaunay::vertex::DVertex;
-use crate::flip_shape::FlipShape;
 use crate::monotone::mnav_node::MNavNode;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -41,11 +41,15 @@ pub struct NodeLayout {
     pub spec_nodes: Vec<MSpecialNode>
 }
 
-impl FlipShape {
+pub trait ShapeNodeLayout {
+    fn node_layout(&self) -> NodeLayout;
+}
 
-    pub fn nlayout(&self) -> NodeLayout {
+impl ShapeNodeLayout for FixShape {
+
+    fn node_layout(&self) -> NodeLayout {
         let mut n = 0;
-        for path in self.paths().iter() {
+        for path in self.paths.iter() {
             n += path.len();
         }
 
@@ -53,7 +57,7 @@ impl FlipShape {
         let mut nodes = Vec::new();
 
         let mut s = 0;
-        for path in self.paths().iter() {
+        for path in self.paths.iter() {
             let mut i0 = path.len() - 2;
 
             let mut p0 = path[i0];
