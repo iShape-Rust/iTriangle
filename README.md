@@ -1,5 +1,5 @@
 # iTriangle
-iTriangle: A fast and efficient Swift library for Delaunay triangulation and converting complex polygons into convex shapes, including advanced self-intersection resolution.
+iTriangle: A fast and efficient library for Delaunay triangulation and converting complex polygons into convex shapes, including advanced self-intersection resolution.
  
 ## Delaunay triangulation
 <p align="center">
