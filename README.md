@@ -3,12 +3,12 @@ iTriangle: A fast and efficient library for Delaunay triangulation and convertin
  
 ## Delaunay triangulation
 <p align="center">
-<img src="https://github.com/iShape-Swift/iShapeTriangulation/blob/master/Readme/star_triangle.svg" width="500"/>
+ <img src="readme/star_triangle.svg" width="500"/>
 </p>
 
 ## Breaking into convex polygons
 <p align="center">
-<img src="https://github.com/iShape-Swift/iShapeTriangulation/blob/master/Readme/star_polygon.svg" width="500" />
+ <img src="readme/star_polygon.svg" width="500"/>
 </p>
 
 ## Features
