@@ -283,8 +283,8 @@ impl Delaunay {
         let v12 = p1 - p2;
         let v32 = p3 - p2;
 
-        let cos_a = v10.unsafe_dot_product(v30);
-        let cos_b = v12.unsafe_dot_product(v32);
+        let cos_a = v10.dot_product(v30);
+        let cos_b = v12.dot_product(v32);
 
         if cos_a < 0 && cos_b < 0 {
             // A > 90 and B > 90
@@ -298,8 +298,8 @@ impl Delaunay {
             return true;
         }
 
-        let sn_a = v10.unsafe_cross_product(v30).abs() as u128; // A <= 180
-        let sn_b = v12.unsafe_cross_product(v32).abs() as u128; // B <= 180
+        let sn_a = v10.cross_product(v30).abs() as u128; // A <= 180
+        let sn_b = v12.cross_product(v32).abs() as u128; // B <= 180
 
         if cos_a < 0 {
             // cosA < 0

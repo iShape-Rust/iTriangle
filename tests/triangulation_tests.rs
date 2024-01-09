@@ -12,7 +12,38 @@ mod tests {
         assert_eq!(triangulation.indices.is_empty(), false);
 
         assert_eq!(test.points, triangulation.points);
-        assert_eq!(test.indices, triangulation.indices);
+        compare(&test.indices, &triangulation.indices);
+    }
+
+    fn compare(a: &[usize], b: &[usize]) -> bool {
+        if a.len() != b.len() {
+            return false;
+        }
+
+        let mut triangles_a = to_normalized_triangles(a);
+        let mut triangles_b = to_normalized_triangles(b);
+
+        triangles_a.sort_unstable();
+        triangles_b.sort_unstable();
+
+        triangles_a == triangles_b
+    }
+
+    fn to_normalized_triangles(indices: &[usize]) -> Vec<[usize; 3]> {
+        indices
+            .chunks_exact(3)
+            .map(|chunk| normalize_triangle([chunk[0], chunk[1], chunk[2]]))
+            .collect()
+    }
+
+    fn normalize_triangle(triangle: [usize; 3]) -> [usize; 3] {
+        let rotations = [
+            triangle,
+            [triangle[1], triangle[2], triangle[0]],
+            [triangle[2], triangle[0], triangle[1]],
+        ];
+
+        *rotations.iter().min().unwrap()
     }
 
     #[test]

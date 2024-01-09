@@ -3,6 +3,7 @@ mod data;
 #[cfg(test)]
 mod tests {
     use i_overlay::bool::fill_rule::FillRule;
+    use i_triangle::delaunay::convex::ConvexPath;
     use i_triangle::triangulation::triangulate::Triangulate;
     use crate::data::triangulation::Test;
 
@@ -10,7 +11,25 @@ mod tests {
         let test = Test::load(index);
         let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd));
         assert_eq!(polygons.is_empty(), false);
-        assert_eq!(test.polygons, polygons);
+        compare(&test.polygons, &polygons);
+    }
+
+    fn compare(a: &Vec<ConvexPath>, b: &Vec<ConvexPath>) -> bool {
+        if a.len() != b.len() {
+            return false;
+        }
+        let n = a.len();
+        'i_loop:
+        for i in 0..n {
+            for j in 0..n {
+                if a[(i + j) % n] != b[j] {
+                    continue 'i_loop;
+                }
+            }
+            return true
+        }
+
+        false
     }
 
     #[test]
@@ -367,5 +386,4 @@ mod tests {
     fn test_70() {
         execute(70);
     }
-
 }

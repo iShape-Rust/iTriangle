@@ -117,7 +117,7 @@ impl ConvexPolygonBuilder {
         let aa = va1 - va0;
         let ap = v.point - va1;
 
-        let apa = aa.unsafe_cross_product(ap);
+        let apa = aa.cross_product(ap);
         if apa > 0 {
             return false;
         }
@@ -131,7 +131,7 @@ impl ConvexPolygonBuilder {
         let bb = vb0 - vb1;
         let bp = vb1 - v.point;
 
-        let bpb = bp.unsafe_cross_product(bb);
+        let bpb = bp.cross_product(bb);
         if bpb > 0 {
             return false;
         }

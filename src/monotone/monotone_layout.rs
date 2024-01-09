@@ -352,8 +352,8 @@ fn is_contain(mpoly: MPoly, point: FixVec, navs: &Vec<MNavNode>) -> bool {
 }
 
 fn is_contain_point(point: FixVec, a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> bool {
-    let sa = (a1 - a0).unsafe_cross_product(point - a0);
-    let sb = (b1 - b0).unsafe_cross_product(point - b0);
+    let sa = (a1 - a0).cross_product(point - a0);
+    let sb = (b1 - b0).cross_product(point - b0);
 
     sa <= 0 && sb >= 0
 }

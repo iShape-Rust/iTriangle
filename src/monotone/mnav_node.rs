@@ -79,7 +79,7 @@ impl MNavNodeArray for Vec<MNavNode> {
         let stop = p0.x;
         let v = p1 - p0;
         while n.vert.point.x <= stop {
-            let s = v.unsafe_cross_product(n.vert.point - p0);
+            let s = v.cross_product(n.vert.point - p0);
             if s >= 0 {
                 return true;
             }
@@ -94,7 +94,7 @@ impl MNavNodeArray for Vec<MNavNode> {
         let stop = p0.x;
         let v = p1 - p0;
         while n.vert.point.x > stop {
-            let s = v.unsafe_cross_product(n.vert.point - p0);
+            let s = v.cross_product(n.vert.point - p0);
             if s >= 0 {
                 return true;
             }
