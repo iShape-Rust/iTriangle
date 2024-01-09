@@ -1,9 +1,8 @@
 use i_float::fix_vec::FixVec;
 use i_overlay::bool::fill_rule::FillRule;
 use i_overlay::ext::simplify::Simplify;
-use i_shape::fix_path::FixPathExtension;
+use i_shape::fix_path::FixPath;
 use i_shape::fix_shape::FixShape;
-use crate::delaunay::convex::{ConvexPath, ConvexSide};
 use crate::delaunay::triangulate::ShapeTriangulate;
 
 #[derive(Debug)]
@@ -16,13 +15,13 @@ pub trait Triangulate {
 
     fn to_triangulation(&self, validate_rule: Option<FillRule>) -> Triangulation;
 
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<ConvexPath>;
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<FixPath>;
 
 }
 
 trait UnsafeTriangulate {
     fn triangulation(&self) -> Triangulation;
-    fn convex_polygons(&self) -> Vec<ConvexPath>;
+    fn convex_polygons(&self) -> Vec<FixPath>;
 }
 
 impl UnsafeTriangulate for Vec<FixShape> {
@@ -46,19 +45,9 @@ impl UnsafeTriangulate for Vec<FixShape> {
         Triangulation { points, indices }
     }
 
-    fn convex_polygons(&self) -> Vec<ConvexPath> {
+    fn convex_polygons(&self) -> Vec<FixPath> {
         if self.len() == 1 && self[0].is_convex_polygon() {
-            let mut path = self[0].paths[0].clone();
-            path.remove_degenerates();
-            if path.area() < 0 {
-                path.reverse()
-            }
-
-            let side = vec![ConvexSide::Outer; path.len()];
-
-            let polygon = ConvexPath { path, side };
-
-            [polygon].to_vec()
+            [self[0].paths[0].clone()].to_vec()
         } else {
             let mut polygons = Vec::new();
 
@@ -84,7 +73,7 @@ impl Triangulate for FixShape {
         }
     }
 
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<ConvexPath> {
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<FixPath> {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule).convex_polygons()
         } else if let Some(delaunay) = self.delaunay() {
@@ -105,7 +94,7 @@ impl Triangulate for Vec<FixShape> {
         }
     }
 
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<ConvexPath> {
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>) -> Vec<FixPath> {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule).convex_polygons()
         } else {

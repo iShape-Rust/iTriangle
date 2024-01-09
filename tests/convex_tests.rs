@@ -3,7 +3,7 @@ mod data;
 #[cfg(test)]
 mod tests {
     use i_overlay::bool::fill_rule::FillRule;
-    use i_triangle::delaunay::convex::ConvexPath;
+    use i_shape::fix_path::FixPath;
     use i_triangle::triangulation::triangulate::Triangulate;
     use crate::data::triangulation::Test;
 
@@ -14,7 +14,7 @@ mod tests {
         compare(&test.polygons, &polygons);
     }
 
-    fn compare(a: &Vec<ConvexPath>, b: &Vec<ConvexPath>) -> bool {
+    fn compare(a: &Vec<FixPath>, b: &Vec<FixPath>) -> bool {
         if a.len() != b.len() {
             return false;
         }
