@@ -1,3 +1,4 @@
+use i_float::bit_pack::{BitPack, BitPackVec};
 use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
 use crate::delaunay::vertex::DVertex;
@@ -26,7 +27,7 @@ impl MNodeType {
 pub struct MSpecialNode {
     pub index: usize,
     pub node_type: MNodeType,
-    pub sort: i64
+    pub sort: BitPack
 }
 
 impl MSpecialNode {

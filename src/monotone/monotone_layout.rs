@@ -1,3 +1,4 @@
+use i_float::bit_pack::{BitPack, BitPackVec};
 use i_float::fix_vec::FixVec;
 use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
@@ -243,7 +244,7 @@ impl ShapeLayout for FixShape {
     }
 }
 
-fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: i64, stop_index: usize) -> NavIndex {
+fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: BitPack, stop_index: usize) -> NavIndex {
 
     let mut next_poly_ix = NIL_INDEX;
     let mut prev_poly_ix = NIL_INDEX;

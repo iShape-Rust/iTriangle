@@ -1,4 +1,5 @@
 use std::vec;
+use i_float::bit_pack::BitPackVec;
 use i_shape::fix_shape::FixShape;
 use i_shape::triangle::Triangle;
 use crate::delaunay::delaunay::Delaunay;
@@ -184,7 +185,7 @@ fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut Tri
                 let mut cx = c;
                 let mut ax0 = a0;
                 let mut ax1 = a1;
-                let mut ax1_bit = i64::MIN;
+                let mut ax1_bit = 0;
                 while ax1_bit < b_bit0 {
                     let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, ax0.vert.point, ax1.vert.point);
 
@@ -216,7 +217,7 @@ fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut Tri
                 let mut cx = c;
                 let mut bx0 = b0;
                 let mut bx1 = b1;
-                let mut bx1_bit = i64::MIN;
+                let mut bx1_bit = 0;
                 while bx1_bit < a_bit0 {
                     let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, bx1.vert.point, bx0.vert.point);
                     if is_cw_or_line {
