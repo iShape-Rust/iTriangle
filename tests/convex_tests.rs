@@ -11,10 +11,29 @@ mod tests {
         let test = Test::load(index);
         let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd));
         assert_eq!(polygons.is_empty(), false);
-        compare(&test.polygons, &polygons);
+        assert_eq!(compare_paths(&test.polygons, &polygons), true)
     }
 
-    fn compare(a: &Vec<FixPath>, b: &Vec<FixPath>) -> bool {
+    fn compare_paths(a: &Vec<FixPath>, b: &Vec<FixPath>) -> bool {
+        if a.len() != b.len() {
+            return false;
+        }
+        let n = a.len();
+        'i_loop:
+        for i in 0..n {
+            for j in 0..n {
+                let is_eq = compare_path(&a[(i + j) % n], &b[j]);
+                if !is_eq {
+                    continue 'i_loop;
+                }
+            }
+            return true
+        }
+
+        false
+    }
+
+    fn compare_path(a: &FixPath, b: &FixPath) -> bool {
         if a.len() != b.len() {
             return false;
         }
