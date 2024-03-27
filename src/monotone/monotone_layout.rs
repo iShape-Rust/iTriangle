@@ -1,7 +1,7 @@
 use i_float::bit_pack::{BitPack, BitPackVec};
 use i_float::fix_vec::FixVec;
+use i_float::triangle::Triangle;
 use i_shape::fix_shape::FixShape;
-use i_shape::triangle::Triangle;
 use crate::index::{Index, NIL_INDEX};
 use crate::monotone::mnav_node::{MNavNode, MNavNodeArray};
 use crate::monotone::mpoly::MPoly;

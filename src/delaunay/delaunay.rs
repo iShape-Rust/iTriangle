@@ -1,5 +1,5 @@
 use i_float::fix_vec::FixVec;
-use i_shape::triangle::Triangle;
+use i_float::triangle::Triangle;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};

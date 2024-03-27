@@ -1,7 +1,7 @@
 use std::vec;
 use i_float::bit_pack::BitPackVec;
+use i_float::triangle::Triangle;
 use i_shape::fix_shape::FixShape;
-use i_shape::triangle::Triangle;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;

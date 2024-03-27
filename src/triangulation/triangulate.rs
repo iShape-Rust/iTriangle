@@ -1,6 +1,6 @@
 use i_float::fix_vec::FixVec;
 use i_overlay::bool::fill_rule::FillRule;
-use i_overlay::ext::simplify::Simplify;
+use i_overlay::bool::simplify::Simplify;
 use i_shape::fix_path::FixPath;
 use i_shape::fix_shape::FixShape;
 use crate::delaunay::triangulate::ShapeTriangulate;
