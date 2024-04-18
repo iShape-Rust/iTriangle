@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use i_float::fix_vec::FixVec;
+    use i_overlay::core::fill_rule::FillRule;
     use i_shape::fix_shape::FixShape;
-    use i_overlay::bool::fill_rule::FillRule;
     use i_triangle::triangulation::triangulate::Triangulate;
 
     #[test]

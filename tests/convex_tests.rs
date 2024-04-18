@@ -2,7 +2,7 @@ mod data;
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::bool::fill_rule::FillRule;
+    use i_overlay::core::fill_rule::FillRule;
     use i_shape::fix_path::FixPath;
     use i_triangle::triangulation::triangulate::Triangulate;
     use crate::data::triangulation::Test;

@@ -4,7 +4,7 @@ mod data;
 mod tests {
     use std::collections::HashSet;
     use i_float::fix_vec::FixVec;
-    use i_overlay::bool::fill_rule::FillRule;
+    use i_overlay::core::fill_rule::FillRule;
     use i_triangle::triangulation::triangulate::Triangulate;
     use crate::data::triangulation::Test;
 
