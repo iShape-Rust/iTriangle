@@ -1,9 +1,9 @@
-use i_float::fix_vec::FixVec;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};
-use crate::triangulation::triangulate::Triangulation;
+use crate::triangulation::int::Triangulation;
 
 pub struct Delaunay {
     pub triangles: Vec<DTriangle>
@@ -32,7 +32,7 @@ impl Delaunay {
             j += 3;
         }
 
-        let mut points = vec![FixVec::ZERO; max_index + 1];
+        let mut points = vec![IntPoint::ZERO; max_index + 1];
         let p_pnt = points.as_mut_ptr();
 
         for triangle in self.triangles.iter() {
@@ -182,7 +182,7 @@ impl Delaunay {
             return if is_pass {
                 false
             } else {
-                let is_abp_cw = Triangle::is_clockwise(a.point, b.point, p.point);
+                let is_abp_cw = Triangle::is_clockwise_point(a.point, b.point, p.point);
 
                 let bp = pbc.neighbor(c.index);
                 let cp = pbc.neighbor(b.index);
@@ -269,7 +269,7 @@ impl Delaunay {
     // if p0 is inside circumscribe circle of p1, p2, p3 return false
     // if p0 is inside circumscribe A + B > 180
     // return true if triangle satisfied condition and do not need flip triangles
-    fn condition(p0: FixVec, p1: FixVec, p2: FixVec, p3: FixVec) -> bool {
+    fn condition(p0: IntPoint, p1: IntPoint, p2: IntPoint, p3: IntPoint) -> bool {
         // x, y of all coordinates must be in range of i32
         // p1, p2, p3 points of current triangle
         // p0 is a test point
@@ -277,11 +277,11 @@ impl Delaunay {
         // alpha (A) is an angle of p1, p0, p3
         // beta (B) is an angle of p1, p2, p3
 
-        let v10 = p1 - p0;
-        let v30 = p3 - p0;
+        let v10 = p1.subtract(p0);
+        let v30 = p3.subtract(p0);
 
-        let v12 = p1 - p2;
-        let v32 = p3 - p2;
+        let v12 = p1.subtract(p2);
+        let v32 = p3.subtract(p2);
 
         let cos_a = v10.dot_product(v30);
         let cos_b = v12.dot_product(v32);

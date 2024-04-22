@@ -1,15 +1,15 @@
 pub mod triangulation {
     use std::path::PathBuf;
-    use i_shape::fix_path::FixPath;
-    use i_shape::fix_shape::FixShape;
+    use i_shape::int::path::IntPath;
+    use i_shape::int::shape::IntShape;
     use serde::Deserialize;
 
     #[derive(Debug, Deserialize)]
     pub struct Test {
-        pub shape: FixShape,
-        pub points: FixPath,
+        pub shape: IntShape,
+        pub points: IntPath,
         pub indices: Vec<usize>,
-        pub polygons: Vec<FixPath>,
+        pub polygons: Vec<IntPath>,
     }
 
     impl Test {

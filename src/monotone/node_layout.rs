@@ -1,6 +1,6 @@
 use i_float::bit_pack::{BitPack, BitPackVec};
 use i_float::triangle::Triangle;
-use i_shape::fix_shape::FixShape;
+use i_shape::int::shape::IntShape;
 use crate::delaunay::vertex::DVertex;
 use crate::monotone::mnav_node::MNavNode;
 
@@ -46,11 +46,11 @@ pub trait ShapeNodeLayout {
     fn node_layout(&self) -> NodeLayout;
 }
 
-impl ShapeNodeLayout for FixShape {
+impl ShapeNodeLayout for IntShape {
 
     fn node_layout(&self) -> NodeLayout {
         let mut n = 0;
-        for path in self.paths.iter() {
+        for path in self.iter() {
             n += path.len();
         }
 
@@ -58,7 +58,7 @@ impl ShapeNodeLayout for FixShape {
         let mut nodes = Vec::new();
 
         let mut s = 0;
-        for path in self.paths.iter() {
+        for path in self.iter() {
             let mut i0 = path.len() - 2;
 
             let mut p0 = path[i0];
@@ -81,7 +81,7 @@ impl ShapeNodeLayout for FixShape {
                 let c1 = b0 < b1 && b1 > b2;
 
                 if c0 || c1 {
-                    let is_cw = Triangle::is_clockwise(p0, p1, p2);
+                    let is_cw = Triangle::is_clockwise_point(p0, p1, p2);
                     let node_type = if c0 {
                         if is_cw { MNodeType::Start } else { MNodeType::Split }
                     } else {

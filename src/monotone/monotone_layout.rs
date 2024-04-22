@@ -1,7 +1,7 @@
 use i_float::bit_pack::{BitPack, BitPackVec};
-use i_float::fix_vec::FixVec;
+use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
-use i_shape::fix_shape::FixShape;
+use i_shape::int::shape::IntShape;
 use crate::index::{Index, NIL_INDEX};
 use crate::monotone::mnav_node::{MNavNode, MNavNodeArray};
 use crate::monotone::mpoly::MPoly;
@@ -70,7 +70,7 @@ pub trait ShapeLayout {
     fn monotone_layout(&self) -> MonotoneLayout;
 }
 
-impl ShapeLayout for FixShape {
+impl ShapeLayout for IntShape {
 
     fn monotone_layout(&self) -> MonotoneLayout {
         let node_layout = self.node_layout();
@@ -318,9 +318,9 @@ fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_nod
                 // if it end it can be unreachable (same point for different vertices!)
                 let is_unreachable = v.point == va1.point && v.index != va1.index || v.point == vb1.point && v.index != vb1.index;
                 if !is_unreachable {
-                    let is_contain = Triangle::is_contain(v.point, m, a0, va1.point)
-                        || Triangle::is_contain(v.point, m, va1.point, vb1.point)
-                        || Triangle::is_contain(v.point, m, vb1.point, b0);
+                    let is_contain = Triangle::is_contain_point(v.point, m, a0, va1.point)
+                        || Triangle::is_contain_point(v.point, m, va1.point, vb1.point)
+                        || Triangle::is_contain_point(v.point, m, vb1.point, b0);
 
                     if is_contain {
                         return MSolution { mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
@@ -342,7 +342,7 @@ fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_nod
     }
 }
 
-fn is_contain(mpoly: MPoly, point: FixVec, navs: &Vec<MNavNode>) -> bool {
+fn is_contain(mpoly: MPoly, point: IntPoint, navs: &Vec<MNavNode>) -> bool {
     let a0 = navs[mpoly.next];
     let a1 = navs[a0.next];
 
@@ -352,9 +352,9 @@ fn is_contain(mpoly: MPoly, point: FixVec, navs: &Vec<MNavNode>) -> bool {
     is_contain_point(point, a0.vert.point, a1.vert.point, b0.vert.point, b1.vert.point)
 }
 
-fn is_contain_point(point: FixVec, a0: FixVec, a1: FixVec, b0: FixVec, b1: FixVec) -> bool {
-    let sa = (a1 - a0).cross_product(point - a0);
-    let sb = (b1 - b0).cross_product(point - b0);
+fn is_contain_point(point: IntPoint, a0: IntPoint, a1: IntPoint, b0: IntPoint, b1: IntPoint) -> bool {
+    let sa = a1.subtract(a0).cross_product(point.subtract(a0));
+    let sb = b1.subtract(b0).cross_product(point.subtract(b0));
 
     sa <= 0 && sb >= 0
 }

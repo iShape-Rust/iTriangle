@@ -1,5 +1,5 @@
-use i_float::fix_vec::FixVec;
-use i_shape::fix_path::FixPath;
+use i_float::point::IntPoint;
+use i_shape::int::path::IntPath;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::index::Index;
@@ -9,7 +9,7 @@ struct Node {
     next: usize,
     index: usize,
     prev: usize,
-    point: FixVec,
+    point: IntPoint,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -30,7 +30,7 @@ impl ConvexPolygonBuilder {
         Self { nodes: Vec::with_capacity(16), edges: Vec::with_capacity(16) }
     }
 
-    fn to_path(&self) -> FixPath {
+    fn to_path(&self) -> IntPath {
         let count = self.nodes.len();
         let mut path = Vec::with_capacity(count);
 
@@ -82,8 +82,8 @@ impl ConvexPolygonBuilder {
         let va0 = self.nodes[node_a1.prev].point;
         let va1 = node_a1.point;
 
-        let aa = va1 - va0;
-        let ap = v.point - va1;
+        let aa = va1.subtract(va0);
+        let ap = v.point.subtract(va1);
 
         let apa = aa.cross_product(ap);
         if apa > 0 {
@@ -96,8 +96,8 @@ impl ConvexPolygonBuilder {
         let vb0 = self.nodes[node_b1.next].point;
         let vb1 = node_b1.point;
 
-        let bb = vb0 - vb1;
-        let bp = vb1 - v.point;
+        let bb = vb0.subtract(vb1);
+        let bp = vb1.subtract(v.point);
 
         let bpb = bp.cross_product(bb);
         if bpb > 0 {
@@ -133,7 +133,7 @@ impl ConvexPolygonBuilder {
 }
 
 impl Delaunay {
-    pub fn to_convex_polygons(&self) -> Vec<FixPath> {
+    pub fn to_convex_polygons(&self) -> Vec<IntPath> {
         let mut result = Vec::new();
         let n = self.triangles.len();
 

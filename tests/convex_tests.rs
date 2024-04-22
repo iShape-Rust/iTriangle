@@ -3,18 +3,18 @@ mod data;
 #[cfg(test)]
 mod tests {
     use i_overlay::core::fill_rule::FillRule;
-    use i_shape::fix_path::FixPath;
-    use i_triangle::triangulation::triangulate::Triangulate;
+    use i_shape::int::path::IntPath;
+    use i_triangle::triangulation::int::IntTriangulate;
     use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
-        let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd));
+        let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd), 0);
         assert_eq!(polygons.is_empty(), false);
         assert_eq!(compare_paths(&test.polygons, &polygons), true)
     }
 
-    fn compare_paths(a: &Vec<FixPath>, b: &Vec<FixPath>) -> bool {
+    fn compare_paths(a: &Vec<IntPath>, b: &Vec<IntPath>) -> bool {
         if a.len() != b.len() {
             return false;
         }
@@ -27,13 +27,13 @@ mod tests {
                     continue 'i_loop;
                 }
             }
-            return true
+            return true;
         }
 
         false
     }
 
-    fn compare_path(a: &FixPath, b: &FixPath) -> bool {
+    fn compare_path(a: &IntPath, b: &IntPath) -> bool {
         if a.len() != b.len() {
             return false;
         }
@@ -45,7 +45,7 @@ mod tests {
                     continue 'i_loop;
                 }
             }
-            return true
+            return true;
         }
 
         false

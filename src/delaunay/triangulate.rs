@@ -1,14 +1,14 @@
 use std::vec;
 use i_float::bit_pack::BitPackVec;
 use i_float::triangle::Triangle;
-use i_shape::fix_shape::FixShape;
+use i_shape::int::shape::IntShape;
 use crate::delaunay::delaunay::Delaunay;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::monotone::monotone_layout::{MonotoneLayoutStatus, ShapeLayout};
 use crate::monotone::mnav_node::MNavNode;
 use crate::monotone::mslice_buffer::MSliceBuffer;
-use crate::triangulation::triangulate::Triangulation;
+use crate::triangulation::int::Triangulation;
 
 #[derive(Debug, Clone, Copy)]
 struct Edge {
@@ -101,7 +101,7 @@ pub trait ShapeTriangulate {
     fn triangulation(&self) -> Triangulation;
 }
 
-impl ShapeTriangulate for FixShape {
+impl ShapeTriangulate for IntShape {
 
     fn delaunay(&self) -> Option<Delaunay> {
         let layout = self.monotone_layout();
@@ -110,8 +110,8 @@ impl ShapeTriangulate for FixShape {
             return None;
         }
 
-        let holes_count = self.paths.len() - 1;
-        let verts_count: usize = self.paths.iter().map(|path| path.len()).sum();
+        let holes_count = self.len() - 1;
+        let verts_count: usize = self.iter().map(|path| path.len()).sum();
         let total_count = verts_count + holes_count * 2;
 
         let mut triangle_stack = TriangleStack::with_count(total_count);
@@ -187,7 +187,7 @@ fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut Tri
                 let mut ax1 = a1;
                 let mut ax1_bit = 0;
                 while ax1_bit < b_bit0 {
-                    let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, ax0.vert.point, ax1.vert.point);
+                    let is_cw_or_line = Triangle::is_cw_or_line_point(cx.vert.point, ax0.vert.point, ax1.vert.point);
 
                     if is_cw_or_line {
                         triangle_stack.add(ax0.vert, ax1.vert, cx.vert);
@@ -219,7 +219,7 @@ fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut Tri
                 let mut bx1 = b1;
                 let mut bx1_bit = 0;
                 while bx1_bit < a_bit0 {
-                    let is_cw_or_line = Triangle::is_cw_or_line(cx.vert.point, bx1.vert.point, bx0.vert.point);
+                    let is_cw_or_line = Triangle::is_cw_or_line_point(cx.vert.point, bx1.vert.point, bx0.vert.point);
                     if is_cw_or_line {
                         triangle_stack.add(bx0.vert, cx.vert, bx1.vert);
 

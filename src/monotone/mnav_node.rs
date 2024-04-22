@@ -1,4 +1,4 @@
-use i_float::fix_vec::FixVec;
+use i_float::point::IntPoint;
 use crate::delaunay::vertex::DVertex;
 use crate::index::NIL_INDEX;
 use crate::monotone::mslice_buffer::MSlice; // To perform vector subtraction
@@ -42,9 +42,9 @@ impl ABVert {
 
 pub(super) trait MNavNodeArray {
     fn new_next(&mut self, a: usize, b: usize) -> ABVert;
-    fn is_intersect_next_reverse(&self, p0: FixVec, p1: FixVec, start: usize) -> bool;
-    fn is_intersect_prev_reverse(&self, p0: FixVec, p1: FixVec, start: usize) -> bool;
-    fn is_intersect(&self, p0: FixVec, p1: FixVec, next: usize, prev: usize) -> bool;
+    fn is_intersect_next_reverse(&self, p0: IntPoint, p1: IntPoint, start: usize) -> bool;
+    fn is_intersect_prev_reverse(&self, p0: IntPoint, p1: IntPoint, start: usize) -> bool;
+    fn is_intersect(&self, p0: IntPoint, p1: IntPoint, next: usize, prev: usize) -> bool;
 }
 
 impl MNavNodeArray for Vec<MNavNode> {
@@ -74,12 +74,12 @@ impl MNavNodeArray for Vec<MNavNode> {
         ABVert::new(new_a, new_b)
     }
 
-    fn is_intersect_next_reverse(&self, p0: FixVec, p1: FixVec, start: usize) -> bool {
+    fn is_intersect_next_reverse(&self, p0: IntPoint, p1: IntPoint, start: usize) -> bool {
         let mut n = self[start];
         let stop = p0.x;
-        let v = p1 - p0;
+        let v = p1.subtract(p0);
         while n.vert.point.x <= stop {
-            let s = v.cross_product(n.vert.point - p0);
+            let s = v.cross_product(n.vert.point.subtract(p0));
             if s >= 0 {
                 return true;
             }
@@ -89,12 +89,12 @@ impl MNavNodeArray for Vec<MNavNode> {
         false
     }
 
-    fn is_intersect_prev_reverse(&self, p0: FixVec, p1: FixVec, start: usize) -> bool {
+    fn is_intersect_prev_reverse(&self, p0: IntPoint, p1: IntPoint, start: usize) -> bool {
         let mut n = self[start];
         let stop = p0.x;
-        let v = p1 - p0;
+        let v = p1.subtract(p0);
         while n.vert.point.x > stop {
-            let s = v.cross_product(n.vert.point - p0);
+            let s = v.cross_product(n.vert.point.subtract(p0));
             if s >= 0 {
                 return true;
             }
@@ -104,7 +104,7 @@ impl MNavNodeArray for Vec<MNavNode> {
         false
     }
 
-    fn is_intersect(&self, p0: FixVec, p1: FixVec, next: usize, prev: usize) -> bool {
+    fn is_intersect(&self, p0: IntPoint, p1: IntPoint, next: usize, prev: usize) -> bool {
         let is_next = self.is_intersect_next_reverse(p0, p1, next);
         let is_prev = self.is_intersect_prev_reverse(p0, p1, prev);
 

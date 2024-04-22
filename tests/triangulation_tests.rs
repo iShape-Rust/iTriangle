@@ -3,18 +3,18 @@ mod data;
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-    use i_float::fix_vec::FixVec;
+    use i_float::point::IntPoint;
     use i_overlay::core::fill_rule::FillRule;
-    use i_triangle::triangulation::triangulate::Triangulate;
+    use i_triangle::triangulation::int::IntTriangulate;
     use crate::data::triangulation::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
-        let triangulation = test.shape.to_triangulation(Some(FillRule::EvenOdd));
+        let triangulation = test.shape.to_triangulation(Some(FillRule::EvenOdd), 0);
         assert_eq!(triangulation.indices.is_empty(), false);
 
-        let test_points: HashSet<FixVec> = test.points.into_iter().collect();
-        let triangle_points: HashSet<FixVec> = triangulation.points.into_iter().collect();
+        let test_points: HashSet<IntPoint> = test.points.into_iter().collect();
+        let triangle_points: HashSet<IntPoint> = triangulation.points.into_iter().collect();
 
         assert_eq!(test_points, triangle_points);
         assert_eq!(compare(&test.indices, &triangulation.indices), true);
