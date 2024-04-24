@@ -1,3 +1,6 @@
+use std::cmp::Ordering::{Equal, Greater, Less};
+use i_shape::int::path::IntPath;
+
 mod data;
 
 #[cfg(test)]
@@ -6,31 +9,32 @@ mod tests {
     use i_shape::int::path::IntPath;
     use i_triangle::triangulation::int::IntTriangulate;
     use crate::data::triangulation::Test;
+    use crate::SortByOrder;
 
     fn execute(index: usize) {
         let test = Test::load(index);
         let polygons = test.shape.to_convex_polygons(Some(FillRule::EvenOdd), 0);
         assert_eq!(polygons.is_empty(), false);
-        assert_eq!(compare_paths(&test.polygons, &polygons), true)
+        assert_eq!(compare_paths(test.polygons, polygons), true)
     }
 
-    fn compare_paths(a: &Vec<IntPath>, b: &Vec<IntPath>) -> bool {
+    fn compare_paths(a: Vec<IntPath>, b: Vec<IntPath>) -> bool {
         if a.len() != b.len() {
             return false;
         }
-        let n = a.len();
-        'i_loop:
-        for i in 0..n {
-            for j in 0..n {
-                let is_eq = compare_path(&a[(i + j) % n], &b[j]);
-                if !is_eq {
-                    continue 'i_loop;
-                }
+        let mut a = a;
+        a.sort_by_order();
+        let mut b = b;
+        b.sort_by_order();
+
+
+        for i in 0..a.len() {
+            if !compare_path(&a[i], &b[i]) {
+                return false;
             }
-            return true;
         }
 
-        false
+        true
     }
 
     fn compare_path(a: &IntPath, b: &IntPath) -> bool {
@@ -404,5 +408,28 @@ mod tests {
     #[test]
     fn test_70() {
         execute(70);
+    }
+}
+
+trait SortByOrder {
+    fn sort_by_order(&mut self);
+}
+
+impl SortByOrder for Vec<IntPath> {
+    fn sort_by_order(&mut self) {
+        self.sort_by(|path1, path2| if path1.len() != path2.len() {
+            Less
+        } else {
+            for i in 0..path1.len() {
+                let p1 = path1[i];
+                let p2 = path2[i];
+                if p1.x != p2.x {
+                    return if p1.x < p2.x { Less } else { Greater };
+                } else if p1.y != p2.y {
+                    return if p1.y < p2.y { Less } else { Greater };
+                };
+            }
+            Equal
+        });
     }
 }
