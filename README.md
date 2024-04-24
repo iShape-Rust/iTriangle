@@ -20,7 +20,14 @@ A fast and efficient library for Delaunay triangulation and converting complex p
 ## Documentation
 - [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
 
-## Code
+## Getting Started
+
+Add the following to your Cargo.toml:
+```
+[dependencies]
+i_float = "^1.0.0"
+i_overlay = "^1.0.0"
+```
 
 After that, represent your polygon as an array of vertices. Here's an example of a cheese polygon:
 
