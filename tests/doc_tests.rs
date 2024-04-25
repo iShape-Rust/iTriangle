@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn test_0() {
         let shape = [
-            [
+            [ // body
                 F64Point::new(0.0, 20.0),    // 0
                 F64Point::new(8.0, 10.0),    // 1
                 F64Point::new(7.0, 6.0),     // 2
@@ -27,7 +27,7 @@ mod tests {
                 F64Point::new(-7.0, 6.0),    // 16
                 F64Point::new(-10.0, 8.0)    // 17
             ].to_vec(),
-            [
+            [ // hole
                 F64Point::new(2.0, 0.0),     // 18
                 F64Point::new(-2.0, -2.0),   // 19
                 F64Point::new(-4.0, -5.0),   // 20
