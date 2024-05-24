@@ -1,16 +1,16 @@
 use i_float::point::IntPoint;
 use i_float::triangle::Triangle;
+use i_float::u128::UInt128;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};
 use crate::triangulation::int::Triangulation;
 
 pub struct Delaunay {
-    pub triangles: Vec<DTriangle>
+    pub triangles: Vec<DTriangle>,
 }
 
 impl Delaunay {
-
     pub fn to_triangulation(&self, shifted: usize) -> Triangulation {
         let mut indices = vec![NIL_INDEX; 3 * self.triangles.len()];
         let i_pnt = indices.as_mut_ptr();
@@ -57,7 +57,7 @@ impl Delaunay {
     pub(crate) fn build(&mut self) {
         let count = self.triangles.len();
         let mut visit_marks = vec![false; count];
-        let visit_marks_ptr = visit_marks.as_mut_ptr();
+        // let visit_marks_ptr = visit_marks.as_mut_ptr();
 
         let mut visit_index = 0;
 
@@ -71,48 +71,49 @@ impl Delaunay {
             while j < origin.len() {
                 let i = origin[j];
                 j += 1;
+
+                let mut triangle = unsafe { self.triangles.get_unchecked(i) }.clone();
                 unsafe {
-                    let mut triangle = *self.triangles.get_unchecked(i);
-                    *visit_marks_ptr.add(i) = true;
-                    for k in 0..3 {
-                        let neighbor_index = triangle.neighbors[k];
-                        if neighbor_index.is_nil() {
-                            continue;
+                    *visit_marks.get_unchecked_mut(i) = true;
+                }
+                for k in 0..3 {
+                    let neighbor_index = triangle.neighbor_by_order(k).clone();
+                    if neighbor_index.is_nil() {
+                        continue;
+                    }
+                    let neighbor = unsafe { self.triangles.get_unchecked(neighbor_index) }.clone();
+                    if self.swap(triangle, neighbor) {
+                        triangle = unsafe { self.triangles.get_unchecked(triangle.index) }.clone();
+                        let neighbor = unsafe { self.triangles.get_unchecked(neighbor_index) };
+
+                        let tna = triangle.na();
+                        if tna.is_not_nil() && tna != neighbor.index {
+                            buffer.push(tna);
                         }
-                        let mut neighbor = *self.triangles.get_unchecked(neighbor_index);
-                        if self.swap(triangle, neighbor) {
-                            triangle = *self.triangles.get_unchecked(triangle.index);
-                            neighbor = *self.triangles.get_unchecked(neighbor.index);
 
-                            let tna = triangle.na();
-                            if tna.is_not_nil() && tna != neighbor.index {
-                                buffer.push(tna);
-                            }
+                        let tnb = triangle.nb();
+                        if tnb.is_not_nil() && tnb != neighbor.index {
+                            buffer.push(tnb);
+                        }
 
-                            let tnb = triangle.nb();
-                            if tnb.is_not_nil() && tnb != neighbor.index {
-                                buffer.push(tnb);
-                            }
+                        let tnc = triangle.nc();
+                        if tnc.is_not_nil() && tnc != neighbor.index {
+                            buffer.push(tnc);
+                        }
 
-                            let tnc = triangle.nc();
-                            if tnc.is_not_nil() && tnc != neighbor.index {
-                                buffer.push(tnc);
-                            }
+                        let nna = neighbor.na();
+                        if nna.is_not_nil() && nna != triangle.index {
+                            buffer.push(nna);
+                        }
 
-                            let nna = neighbor.na();
-                            if nna.is_not_nil() && nna != triangle.index {
-                                buffer.push(nna);
-                            }
+                        let nnb = neighbor.nb();
+                        if nnb.is_not_nil() && nnb != triangle.index {
+                            buffer.push(nnb);
+                        }
 
-                            let nnb = neighbor.nb();
-                            if nnb.is_not_nil() && nnb != triangle.index {
-                                buffer.push(nnb);
-                            }
-
-                            let nnc = neighbor.nc();
-                            if nnc.is_not_nil() && nnc != triangle.index {
-                                buffer.push(nnc);
-                            }
+                        let nnc = neighbor.nc();
+                        if nnc.is_not_nil() && nnc != triangle.index {
+                            buffer.push(nnc);
                         }
                     }
                 }
@@ -121,11 +122,10 @@ impl Delaunay {
             if buffer.len() == 0 && visit_index < count {
                 visit_index += 1;
                 while visit_index < count {
-                    unsafe {
-                        if *visit_marks.get_unchecked(visit_index) == false {
-                            buffer.push(visit_index);
-                            break;
-                        }
+                    let is_visited = unsafe { *visit_marks.get_unchecked(visit_index) };
+                    if !is_visited {
+                        buffer.push(visit_index);
+                        break;
                     }
                     visit_index += 1;
                 }
@@ -133,136 +133,133 @@ impl Delaunay {
 
             origin.clear();
 
-            let temp = origin;
-            origin = buffer;
-            buffer = temp;
+            std::mem::swap(&mut origin, &mut buffer);
         }
     }
 
     fn swap(&mut self, abc: DTriangle, pbc: DTriangle) -> bool {
         let pi = pbc.opposite(abc.index);
-        unsafe {
-            let p = *pbc.vertices.get_unchecked(pi);
 
+        let p = pbc.vertex_by_order(pi);
 
-            let ai: usize;
-            let bi: usize;
-            let ci: usize;
-            let a: DVertex;  // opposite a-p
-            let b: DVertex;  // edge bc
-            let c: DVertex;
+        let ai: usize;
+        let bi: usize;
+        let ci: usize;
+        let a: DVertex;  // opposite a-p
+        let b: DVertex;  // edge bc
+        let c: DVertex;
 
-            ai = abc.opposite(pbc.index);
-            match ai {
-                0 => {
-                    bi = 1;
-                    ci = 2;
-                    a = abc.va();
-                    b = abc.vb();
-                    c = abc.vc();
-                }
-                1 => {
-                    bi = 2;
-                    ci = 0;
-                    a = abc.vb();
-                    b = abc.vc();
-                    c = abc.va();
-                }
-                _ => {
-                    bi = 0;
-                    ci = 1;
-                    a = abc.vc();
-                    b = abc.va();
-                    c = abc.vb();
-                }
+        ai = abc.opposite(pbc.index);
+        match ai {
+            0 => {
+                bi = 1;
+                ci = 2;
+                a = abc.va();
+                b = abc.vb();
+                c = abc.vc();
+            }
+            1 => {
+                bi = 2;
+                ci = 0;
+                a = abc.vb();
+                b = abc.vc();
+                c = abc.va();
+            }
+            _ => {
+                bi = 0;
+                ci = 1;
+                a = abc.vc();
+                b = abc.va();
+                c = abc.vb();
+            }
+        }
+
+        let is_pass = Self::condition(p.point, c.point, a.point, b.point);
+
+        return if is_pass {
+            false
+        } else {
+            let is_abp_cw = Triangle::is_clockwise_point(a.point, b.point, p.point);
+
+            let bp = pbc.neighbor(c.index);
+            let cp = pbc.neighbor(b.index);
+            let ab = abc.neighbor_by_order(ci);
+            let ac = abc.neighbor_by_order(bi);
+
+            // abc -> abp
+            let abp: DTriangle;
+
+            // pbc -> acp
+            let acp: DTriangle;
+
+            if is_abp_cw {
+                abp = DTriangle::abc_bc_ac_ab(
+                    abc.index,
+                    a,
+                    b,
+                    p,
+                    bp,                 // a - bp
+                    pbc.index,          // p - ap
+                    ab,                     // b - ab
+                );
+
+                acp = DTriangle::abc_bc_ac_ab(
+                    pbc.index,
+                    a,
+                    p,
+                    c,
+                    cp,                 // a - cp
+                    ac,                     // p - ac
+                    abc.index,          // b - ap
+                );
+            } else {
+                abp = DTriangle::abc_bc_ac_ab(
+                    abc.index,
+                    a,
+                    p,
+                    b,
+                    bp,                 // a - bp
+                    ab,                 // p - ab
+                    pbc.index,          // b - ap
+                );
+
+                acp = DTriangle::abc_bc_ac_ab(
+                    pbc.index,
+                    a,
+                    c,
+                    p,
+                    cp,                 // a - cp
+                    abc.index,          // p - ap
+                    ac,                 // b - ac
+                )
             }
 
-            let is_pass = Self::condition(p.point, c.point, a.point, b.point);
+            // fix neighbor's link
+            // ab, cp didn't change neighbor
+            // bc -> ap, so no changes
 
-            return if is_pass {
-                false
-            } else {
-                let is_abp_cw = Triangle::is_clockwise_point(a.point, b.point, p.point);
+            // ac (abc) is now edge of acp
+            let ac_index = abc.neighbor_by_order(bi); // b - angle
+            self.update_neighbor_index(ac_index, abc.index, acp.index);
 
-                let bp = pbc.neighbor(c.index);
-                let cp = pbc.neighbor(b.index);
-                let ab = *abc.neighbors.get_unchecked(ci);
-                let ac = *abc.neighbors.get_unchecked(bi);
+            // bp (pbc) is now edge of abp
+            let bp_index = pbc.neighbor(c.index); // c - angle
+            self.update_neighbor_index(bp_index, pbc.index, abp.index);
 
-                // abc -> abp
-                let abp: DTriangle;
-
-                // pbc -> acp
-                let acp: DTriangle;
-
-                if is_abp_cw {
-                    abp = DTriangle::abc_bc_ac_ab(
-                        abc.index,
-                        a,
-                        b,
-                        p,
-                        bp,                 // a - bp
-                        pbc.index,          // p - ap
-                        ab,                     // b - ab
-                    );
-
-                    acp = DTriangle::abc_bc_ac_ab(
-                        pbc.index,
-                        a,
-                        p,
-                        c,
-                        cp,                 // a - cp
-                        ac,                     // p - ac
-                        abc.index,          // b - ap
-                    );
-                } else {
-                    abp = DTriangle::abc_bc_ac_ab(
-                        abc.index,
-                        a,
-                        p,
-                        b,
-                        bp,                 // a - bp
-                        ab,                 // p - ab
-                        pbc.index,          // b - ap
-                    );
-
-                    acp = DTriangle::abc_bc_ac_ab(
-                        pbc.index,
-                        a,
-                        c,
-                        p,
-                        cp,                 // a - cp
-                        abc.index,          // p - ap
-                        ac,                 // b - ac
-                    )
-                }
-
-                // fix neighbor's link
-                // ab, cp didn't change neighbor
-                // bc -> ap, so no changes
-
-                // ac (abc) is now edge of acp
-                let ac_index = *abc.neighbors.get_unchecked(bi); // b - angle
-                self.update_neighbor_index(ac_index, abc.index, acp.index);
-
-                // bp (pbc) is now edge of abp
-                let bp_index = pbc.neighbor(c.index); // c - angle
-                self.update_neighbor_index(bp_index, pbc.index, abp.index);
-
+            unsafe {
                 *self.triangles.get_unchecked_mut(abc.index) = abp;
                 *self.triangles.get_unchecked_mut(pbc.index) = acp;
-
-                true
-            };
-        }
+            }
+            true
+        };
     }
 
     fn update_neighbor_index(&mut self, index: usize, old_neighbor: usize, new_neighbor: usize) {
         if index.is_not_nil() {
-            unsafe {
-                let neighbor = self.triangles.get_unchecked_mut(index);
-                neighbor.update_opposite(old_neighbor, new_neighbor);
-            }
+            let neighbor = unsafe {
+                self.triangles.get_unchecked_mut(index)
+            };
+            neighbor.update_opposite(old_neighbor, new_neighbor);
         }
     }
 
@@ -298,27 +295,21 @@ impl Delaunay {
             return true;
         }
 
-        let sn_a = v10.cross_product(v30).abs() as u128; // A <= 180
-        let sn_b = v12.cross_product(v32).abs() as u128; // B <= 180
+        let sn_a = v10.cross_product(v30).abs() as u64; // A <= 180
+        let sn_b = v12.cross_product(v32).abs() as u64; // B <= 180
 
         if cos_a < 0 {
             // cosA < 0
             // cosB >= 0
-            let cs_a = (-cos_a) as u128;
-            let cs_b = cos_b as u128;
-
-            let sin_a_cos_b = sn_a * cs_b;    // positive
-            let cos_a_sin_b = cs_a * sn_b;    // negative
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b as u64);           // positive
+            let cos_a_sin_b = UInt128::multiply(cos_a.abs() as u64, sn_b);     // negative
 
             sin_a_cos_b >= cos_a_sin_b
         } else {
             // cosA >= 0
             // cosB < 0
-            let cs_a = cos_a as u128;
-            let cs_b = (-cos_b) as u128;
-
-            let sin_a_cos_b = sn_a * cs_b;    // negative
-            let cos_a_sin_b = cs_a * sn_b;    // positive
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b.abs() as u64);    // negative
+            let cos_a_sin_b = UInt128::multiply(cos_a as u64, sn_b);          // positive
 
             cos_a_sin_b >= sin_a_cos_b
         }

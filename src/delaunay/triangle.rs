@@ -8,6 +8,19 @@ pub struct DTriangle {
 }
 
 impl DTriangle {
+
+    pub fn neighbor_by_order(&self, order: usize) -> usize {
+        unsafe {
+            *self.neighbors.get_unchecked(order)
+        }
+    }
+
+    pub fn vertex_by_order(&self, order: usize) -> DVertex {
+        unsafe {
+            *self.vertices.get_unchecked(order)
+        }
+    }
+
     pub fn va(&self) -> DVertex {
         self.vertices[0]
     }
