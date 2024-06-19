@@ -1,6 +1,6 @@
 [package]
 name = "i_triangle"
-version = "0.24.0"
+version = "0.24.1"
 edition = "2021"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 description = "Polygon Triangulation Library: Efficient Delaunay Triangulation for Complex Shapes."
@@ -15,9 +15,9 @@ serde = { version = "^1.0", features = ["derive"] }
 #i_shape = { path = "../iShape" }
 #i_overlay = { path = "../iOverlay" }
 
-i_float = "1.1.0"
-i_shape = "1.0.3"
-i_overlay = "1.2.0"
+i_float = "1.2.0"
+i_shape = "1.0.4"
+i_overlay = "1.2.1"
 
 [dev-dependencies]
 serde_json = "^1.0"
