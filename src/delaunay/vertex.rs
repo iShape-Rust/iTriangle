@@ -1,4 +1,4 @@
-use i_float::point::IntPoint;
+use i_overlay::i_float::point::IntPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub struct DVertex {

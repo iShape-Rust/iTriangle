@@ -1,6 +1,6 @@
-use i_float::bit_pack::{BitPack, BitPackVec};
-use i_float::triangle::Triangle;
-use i_shape::int::shape::IntShape;
+use i_overlay::i_float::bit_pack::{BitPack, BitPackVec};
+use i_overlay::i_float::triangle::Triangle;
+use i_overlay::i_shape::int::shape::IntShape;
 use crate::delaunay::vertex::DVertex;
 use crate::monotone::mnav_node::MNavNode;
 

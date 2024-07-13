@@ -1,7 +1,7 @@
 pub mod triangulation {
     use std::path::PathBuf;
-    use i_shape::int::path::IntPath;
-    use i_shape::int::shape::IntShape;
+    use i_overlay::i_shape::int::path::IntPath;
+    use i_overlay::i_shape::int::shape::IntShape;
     use serde::Deserialize;
 
     #[derive(Debug, Deserialize)]

@@ -1,6 +1,6 @@
-use i_float::point::IntPoint;
-use i_float::triangle::Triangle;
-use i_float::u128::UInt128;
+use i_overlay::i_float::point::IntPoint;
+use i_overlay::i_float::triangle::Triangle;
+use i_overlay::i_float::u128::UInt128;
 use crate::delaunay::triangle::DTriangle;
 use crate::delaunay::vertex::DVertex;
 use crate::index::{NIL_INDEX, Index};

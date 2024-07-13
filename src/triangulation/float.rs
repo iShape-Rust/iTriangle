@@ -1,10 +1,10 @@
-use i_float::adapter::PointAdapter;
-use i_float::f64_point::F64Point;
-use i_float::f64_rect::F64Rect;
 use i_overlay::core::fill_rule::FillRule;
-use i_shape::f64::adapter::{ShapeToFloat, ShapeToInt};
-use i_shape::f64::rect::RectInit;
-use i_shape::f64::shape::{F64Path, F64Shape};
+use i_overlay::i_float::adapter::PointAdapter;
+use i_overlay::i_float::f64_point::F64Point;
+use i_overlay::i_float::f64_rect::F64Rect;
+use i_overlay::i_shape::f64::adapter::{ShapeToFloat, ShapeToInt};
+use i_overlay::i_shape::f64::rect::RectInit;
+use i_overlay::i_shape::f64::shape::{F64Path, F64Shape};
 use crate::triangulation::int::IntTriangulate;
 
 #[derive(Debug)]
@@ -21,7 +21,13 @@ pub trait FloatTriangulate {
 
 impl FloatTriangulate for F64Shape {
     fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: f64) -> Triangulation {
-        let adapter = PointAdapter::new(F64Rect::with_shape(self));
+        let rect = if let Some(rect) = F64Rect::with_shape(self){
+            rect
+        } else {
+            return Triangulation { points: vec![], indices: vec![] };
+        };
+
+        let adapter = PointAdapter::new(rect);
         let shape = self.to_int(&adapter);
         let sqr_scale = adapter.dir_scale * adapter.dir_scale;
         let int_min_area = (sqr_scale * min_area) as i64;
@@ -34,7 +40,13 @@ impl FloatTriangulate for F64Shape {
     }
 
     fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: f64) -> Vec<F64Path> {
-        let adapter = PointAdapter::new(F64Rect::with_shape(self));
+        let rect = if let Some(rect) = F64Rect::with_shape(self){
+            rect
+        } else {
+            return vec![];
+        };
+
+        let adapter = PointAdapter::new(rect);
         let shape = self.to_int(&adapter);
         let sqr_scale = adapter.dir_scale * adapter.dir_scale;
         let int_min_area = (sqr_scale * min_area) as i64;

@@ -1,8 +1,8 @@
-use i_float::point::IntPoint;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::simplify::Simplify;
-use i_shape::int::path::{IntPath, PointPathExtension};
-use i_shape::int::shape::IntShape;
+use i_overlay::i_float::point::IntPoint;
+use i_overlay::i_shape::int::path::{IntPath, PointPathExtension};
+use i_overlay::i_shape::int::shape::IntShape;
 use crate::delaunay::triangulate::ShapeTriangulate;
 
 #[derive(Debug)]

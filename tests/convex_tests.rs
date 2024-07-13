@@ -1,12 +1,12 @@
 use std::cmp::Ordering::{Equal, Greater, Less};
-use i_shape::int::path::IntPath;
+use i_overlay::i_shape::int::path::IntPath;
 
 mod data;
 
 #[cfg(test)]
 mod tests {
     use i_overlay::core::fill_rule::FillRule;
-    use i_shape::int::path::IntPath;
+    use i_overlay::i_shape::int::path::IntPath;
     use i_triangle::triangulation::int::IntTriangulate;
     use crate::data::triangulation::Test;
     use crate::SortByOrder;
