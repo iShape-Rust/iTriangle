@@ -1,4 +1,6 @@
+#[cfg(test)]
 mod data;
+
 
 #[cfg(test)]
 mod tests {
@@ -6,7 +8,7 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::i_float::point::IntPoint;
     use i_triangle::triangulation::int::IntTriangulate;
-    use crate::data::triangulation::Test;
+    use crate::data::data::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);

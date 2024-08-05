@@ -1,15 +1,13 @@
-use std::cmp::Ordering::{Equal, Greater, Less};
-use i_overlay::i_shape::int::path::IntPath;
-
+#[cfg(test)]
 mod data;
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::core::fill_rule::FillRule;
+    use std::cmp::Ordering::{Equal, Greater, Less};
     use i_overlay::i_shape::int::path::IntPath;
+    use i_overlay::core::fill_rule::FillRule;
     use i_triangle::triangulation::int::IntTriangulate;
-    use crate::data::triangulation::Test;
-    use crate::SortByOrder;
+    use crate::data::data::Test;
 
     fn execute(index: usize) {
         let test = Test::load(index);
@@ -409,27 +407,27 @@ mod tests {
     fn test_70() {
         execute(70);
     }
-}
 
-trait SortByOrder {
-    fn sort_by_order(&mut self);
-}
+    trait SortByOrder {
+        fn sort_by_order(&mut self);
+    }
 
-impl SortByOrder for Vec<IntPath> {
-    fn sort_by_order(&mut self) {
-        self.sort_by(|path1, path2| if path1.len() != path2.len() {
-            Less
-        } else {
-            for i in 0..path1.len() {
-                let p1 = path1[i];
-                let p2 = path2[i];
-                if p1.x != p2.x {
-                    return if p1.x < p2.x { Less } else { Greater };
-                } else if p1.y != p2.y {
-                    return if p1.y < p2.y { Less } else { Greater };
-                };
-            }
-            Equal
-        });
+    impl SortByOrder for Vec<IntPath> {
+        fn sort_by_order(&mut self) {
+            self.sort_by(|path1, path2| if path1.len() != path2.len() {
+                Less
+            } else {
+                for i in 0..path1.len() {
+                    let p1 = path1[i];
+                    let p2 = path2[i];
+                    if p1.x != p2.x {
+                        return if p1.x < p2.x { Less } else { Greater };
+                    } else if p1.y != p2.y {
+                        return if p1.y < p2.y { Less } else { Greater };
+                    };
+                }
+                Equal
+            });
+        }
     }
 }

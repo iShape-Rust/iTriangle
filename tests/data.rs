@@ -1,4 +1,5 @@
-pub mod triangulation {
+#[cfg(test)]
+pub mod data {
     use std::path::PathBuf;
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntShape;
@@ -6,9 +7,13 @@ pub mod triangulation {
 
     #[derive(Debug, Deserialize)]
     pub struct Test {
+        #[allow(dead_code)]
         pub shape: IntShape,
-        pub points: IntPath,
-        pub indices: Vec<usize>,
+        #[allow(dead_code)]
+        pub(crate) points: IntPath,
+        #[allow(dead_code)]
+        pub(crate) indices: Vec<usize>,
+        #[allow(dead_code)]
         pub polygons: Vec<IntPath>,
     }
 
@@ -21,7 +26,7 @@ pub mod triangulation {
             let data = match std::fs::read_to_string(path_buf.as_path()) {
                 Ok(data) => {
                     data
-                },
+                }
                 Err(e) => {
                     panic!("{:?}", e);
                 }
@@ -38,5 +43,3 @@ pub mod triangulation {
         }
     }
 }
-
-
