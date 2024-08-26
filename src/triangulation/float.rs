@@ -1,5 +1,5 @@
 use i_overlay::core::fill_rule::FillRule;
-use i_overlay::i_float::adapter::PointAdapter;
+use i_overlay::i_float::f64_adapter::F64PointAdapter;
 use i_overlay::i_float::f64_point::F64Point;
 use i_overlay::i_float::f64_rect::F64Rect;
 use i_overlay::i_shape::f64::adapter::{ShapeToFloat, ShapeToInt};
@@ -27,7 +27,7 @@ impl FloatTriangulate for F64Shape {
             return Triangulation { points: vec![], indices: vec![] };
         };
 
-        let adapter = PointAdapter::new(rect);
+        let adapter = F64PointAdapter::new(rect);
         let shape = self.to_int(&adapter);
         let sqr_scale = adapter.dir_scale * adapter.dir_scale;
         let int_min_area = (sqr_scale * min_area) as i64;
@@ -46,7 +46,7 @@ impl FloatTriangulate for F64Shape {
             return vec![];
         };
 
-        let adapter = PointAdapter::new(rect);
+        let adapter = F64PointAdapter::new(rect);
         let shape = self.to_int(&adapter);
         let sqr_scale = adapter.dir_scale * adapter.dir_scale;
         let int_min_area = (sqr_scale * min_area) as i64;
