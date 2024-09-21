@@ -143,7 +143,7 @@ impl ShapeTriangulate for IntShape {
     }
 }
 
-fn triangulate(index: usize, links: &mut Vec<MNavNode>, triangle_stack: &mut TriangleStack) {
+fn triangulate(index: usize, links: &mut [MNavNode], triangle_stack: &mut TriangleStack) {
     let mut c = links[index];
 
     let mut a0 = links[c.next];

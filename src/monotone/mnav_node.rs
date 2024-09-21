@@ -51,13 +51,13 @@ impl MNavNodeArray for Vec<MNavNode> {
 
         let count = self.len();
 
-        let new_a = MNavNode::new(count + 1, count, a_vert.prev, a_vert.vert.clone());
-        self.push(new_a.clone());
+        let new_a = MNavNode::new(count + 1, count, a_vert.prev, a_vert.vert);
+        self.push(new_a);
 
         self[a_vert.prev].next = count;
 
-        let new_b = MNavNode::new(b_vert.next, count + 1, count, b_vert.vert.clone());
-        self.push(new_b.clone());
+        let new_b = MNavNode::new(b_vert.next, count + 1, count, b_vert.vert);
+        self.push(new_b);
 
         self[b_vert.next].prev = count + 1;
 

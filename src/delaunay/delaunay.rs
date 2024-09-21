@@ -72,18 +72,18 @@ impl Delaunay {
                 let i = origin[j];
                 j += 1;
 
-                let mut triangle = unsafe { self.triangles.get_unchecked(i) }.clone();
+                let mut triangle = *unsafe { self.triangles.get_unchecked(i) };
                 unsafe {
                     *visit_marks.get_unchecked_mut(i) = true;
                 }
                 for k in 0..3 {
-                    let neighbor_index = triangle.neighbor_by_order(k).clone();
+                    let neighbor_index = triangle.neighbor_by_order(k);
                     if neighbor_index.is_nil() {
                         continue;
                     }
-                    let neighbor = unsafe { self.triangles.get_unchecked(neighbor_index) }.clone();
+                    let neighbor = *unsafe { self.triangles.get_unchecked(neighbor_index) };
                     if self.swap(triangle, neighbor) {
-                        triangle = unsafe { self.triangles.get_unchecked(triangle.index) }.clone();
+                        triangle = *unsafe { self.triangles.get_unchecked(triangle.index) };
                         let neighbor = unsafe { self.triangles.get_unchecked(neighbor_index) };
 
                         let tna = triangle.na();
@@ -119,7 +119,7 @@ impl Delaunay {
                 }
             }
 
-            if buffer.len() == 0 && visit_index < count {
+            if buffer.is_empty() && visit_index < count {
                 visit_index += 1;
                 while visit_index < count {
                     let is_visited = unsafe { *visit_marks.get_unchecked(visit_index) };
@@ -142,14 +142,13 @@ impl Delaunay {
 
         let p = pbc.vertex_by_order(pi);
 
-        let ai: usize;
         let bi: usize;
         let ci: usize;
         let a: DVertex;  // opposite a-p
         let b: DVertex;  // edge bc
         let c: DVertex;
 
-        ai = abc.opposite(pbc.index);
+        let ai = abc.opposite(pbc.index);
         match ai {
             0 => {
                 bi = 1;
@@ -295,21 +294,21 @@ impl Delaunay {
             return true;
         }
 
-        let sn_a = v10.cross_product(v30).abs() as u64; // A <= 180
-        let sn_b = v12.cross_product(v32).abs() as u64; // B <= 180
+        let sn_a = v10.cross_product(v30).unsigned_abs(); // A <= 180
+        let sn_b = v12.cross_product(v32).unsigned_abs(); // B <= 180
 
         if cos_a < 0 {
             // cosA < 0
             // cosB >= 0
-            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b as u64);           // positive
-            let cos_a_sin_b = UInt128::multiply(cos_a.abs() as u64, sn_b);     // negative
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b as u64);            // positive
+            let cos_a_sin_b = UInt128::multiply(cos_a.unsigned_abs(), sn_b);    // negative
 
             sin_a_cos_b >= cos_a_sin_b
         } else {
             // cosA >= 0
             // cosB < 0
-            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b.abs() as u64);    // negative
-            let cos_a_sin_b = UInt128::multiply(cos_a as u64, sn_b);          // positive
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b.unsigned_abs());    // negative
+            let cos_a_sin_b = UInt128::multiply(cos_a as u64, sn_b);            // positive
 
             cos_a_sin_b >= sin_a_cos_b
         }

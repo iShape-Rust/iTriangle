@@ -2,7 +2,7 @@ use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::point::IntPoint;
 use i_overlay::i_shape::int::path::{IntPath, PointPathExtension};
-use i_overlay::i_shape::int::shape::IntShape;
+use i_overlay::i_shape::int::shape::{IntShape, PointsCount};
 use crate::delaunay::triangulate::ShapeTriangulate;
 
 #[derive(Debug)]
@@ -27,8 +27,13 @@ trait UnsafeTriangulate {
 impl UnsafeTriangulate for Vec<IntShape> {
 
     fn triangulation(&self) -> Triangulation {
-        let mut points = Vec::new();
-        let mut indices = Vec::new();
+        let count = self.points_count();
+        if count < 3 {
+            return Triangulation { points: vec![], indices: vec![] }
+        }
+
+        let mut points = Vec::with_capacity(count);
+        let mut indices = Vec::with_capacity(3 * (count - 2));
 
         for shape in self.iter() {
             if let Some(delaunay) = shape.delaunay() {

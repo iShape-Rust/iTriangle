@@ -128,7 +128,7 @@ impl ConvexPolygonBuilder {
             self.edges.push(edge)
         }
 
-        return true;
+        true
     }
 }
 
@@ -150,8 +150,7 @@ impl Delaunay {
             builder.start(first);
             visited[i] = true;
 
-            while !builder.edges.is_empty() {
-                let edge = builder.edges.pop().unwrap(); // edges is not empty
+            while let Some(edge) = builder.edges.pop() {
                 if visited[edge.neighbor] {
                     continue;
                 }

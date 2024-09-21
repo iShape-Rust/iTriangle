@@ -8,7 +8,6 @@ pub struct DTriangle {
 }
 
 impl DTriangle {
-
     pub fn neighbor_by_order(&self, order: usize) -> usize {
         unsafe {
             *self.neighbors.get_unchecked(order)
@@ -121,5 +120,11 @@ impl DTriangle {
         unsafe {
             *self.neighbors.get_unchecked_mut(index) = new_neighbor;
         }
+    }
+}
+
+impl Default for DTriangle {
+    fn default() -> Self {
+        Self::new()
     }
 }

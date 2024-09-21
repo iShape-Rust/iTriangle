@@ -9,12 +9,11 @@ pub enum MNodeType {
     End,
     Start,
     Merge,
-    Split
+    Split,
 }
 
 impl MNodeType {
-
-    fn to_usize(&self) -> usize {
+    fn to_usize(self) -> usize {
         match self {
             MNodeType::End => 0,
             MNodeType::Start => 1,
@@ -23,23 +22,23 @@ impl MNodeType {
         }
     }
 }
+
 #[derive(Clone, Debug, Copy)]
 pub struct MSpecialNode {
     pub index: usize,
     pub node_type: MNodeType,
-    pub sort: BitPack
+    pub sort: BitPack,
 }
 
 impl MSpecialNode {
-
-    pub (crate) fn node_type(&self) -> MNodeType {
+    pub(crate) fn node_type(&self) -> MNodeType {
         self.node_type
     }
 }
 
 pub struct NodeLayout {
     pub nav_nodes: Vec<MNavNode>,
-    pub spec_nodes: Vec<MSpecialNode>
+    pub spec_nodes: Vec<MSpecialNode>,
 }
 
 pub trait ShapeNodeLayout {
@@ -47,7 +46,6 @@ pub trait ShapeNodeLayout {
 }
 
 impl ShapeNodeLayout for IntShape {
-
     fn node_layout(&self) -> NodeLayout {
         let mut n = 0;
         for path in self.iter() {
@@ -67,11 +65,8 @@ impl ShapeNodeLayout for IntShape {
 
             let mut p1 = path[i1];
 
-            for i2 in 0..path.len() {
-
+            for (i2, &p2) in path.iter().enumerate() {
                 let i = i1 + s;
-
-                let p2 = path[i2];
 
                 let b0 = p0.bit_pack();
                 let b1 = p1.bit_pack();
@@ -84,8 +79,8 @@ impl ShapeNodeLayout for IntShape {
                     let is_cw = Triangle::is_clockwise_point(p0, p1, p2);
                     let node_type = if c0 {
                         if is_cw { MNodeType::Start } else { MNodeType::Split }
-                    } else {
-                        if is_cw { MNodeType::End } else { MNodeType::Merge }
+                    } else if is_cw { MNodeType::End } else {
+                        MNodeType::Merge
                     };
                     nodes.push(MSpecialNode { index: i, node_type, sort: b1 })
                 }
@@ -95,7 +90,7 @@ impl ShapeNodeLayout for IntShape {
                         next: i2 + s,
                         index: i,
                         prev: i0 + s,
-                        vert: DVertex::new(i, p1)
+                        vert: DVertex::new(i, p1),
                     };
                 }
 
@@ -117,7 +112,6 @@ impl ShapeNodeLayout for IntShape {
             }
         });
 
-        NodeLayout{ nav_nodes: verts, spec_nodes: nodes }
+        NodeLayout { nav_nodes: verts, spec_nodes: nodes }
     }
-
 }

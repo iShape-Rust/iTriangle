@@ -119,8 +119,8 @@ impl ShapeLayout for IntShape {
                 }
                 MNodeType::Split => {
                     let mut p_index = NIL_INDEX;
-                    for i in 0..mpolies.len() {
-                        if is_contain(mpolies[i], nav.vert.point, &navs) {
+                    for (i, &mpoly) in mpolies.iter().enumerate() {
+                        if is_contain(mpoly, nav.vert.point, &navs) {
                             p_index = i;
                             break;
                         }
@@ -244,13 +244,11 @@ impl ShapeLayout for IntShape {
     }
 }
 
-fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: BitPack, stop_index: usize) -> NavIndex {
+fn fill(mpolies: &mut [MPoly], verts: &[MNavNode], stop: BitPack, stop_index: usize) -> NavIndex {
 
     let mut next_poly_ix = NIL_INDEX;
     let mut prev_poly_ix = NIL_INDEX;
-    for i in 0..mpolies.len() {
-        let mut mpoly = mpolies[i];
-
+    for (i, mpoly) in mpolies.iter_mut().enumerate() {
         let mut n0 = verts[mpoly.next];
         let mut n1 = verts[n0.next];
 
@@ -280,14 +278,12 @@ fn fill(mpolies: &mut Vec<MPoly>, verts: &Vec<MNavNode>, stop: BitPack, stop_ind
         } else {
             mpoly.prev = p0.index;
         }
-
-        mpolies[i] = mpoly;
     }
 
-    return NavIndex { next: next_poly_ix, prev: prev_poly_ix }
+    NavIndex { next: next_poly_ix, prev: prev_poly_ix }
 }
 
-fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_node: usize, specs: &Vec<MSpecialNode>, navs: &Vec<MNavNode>) -> MSolution {
+fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_node: usize, specs: &[MSpecialNode], navs: &[MNavNode]) -> MSolution {
     let a0 = next.vert.point;
     let va1 = navs[next.next].vert;
     let vb1 = navs[prev.prev].vert;
@@ -342,7 +338,7 @@ fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_nod
     }
 }
 
-fn is_contain(mpoly: MPoly, point: IntPoint, navs: &Vec<MNavNode>) -> bool {
+fn is_contain(mpoly: MPoly, point: IntPoint, navs: &[MNavNode]) -> bool {
     let a0 = navs[mpoly.next];
     let a1 = navs[a0.next];
 

@@ -414,20 +414,23 @@ mod tests {
 
     impl SortByOrder for Vec<IntPath> {
         fn sort_by_order(&mut self) {
-            self.sort_by(|path1, path2| if path1.len() != path2.len() {
-                Less
-            } else {
-                for i in 0..path1.len() {
-                    let p1 = path1[i];
-                    let p2 = path2[i];
-                    if p1.x != p2.x {
-                        return if p1.x < p2.x { Less } else { Greater };
-                    } else if p1.y != p2.y {
-                        return if p1.y < p2.y { Less } else { Greater };
-                    };
+            self.sort_by(|path1, path2| {
+                let cmp = path1.len().cmp(&path2.len());
+                if cmp != Equal {
+                    cmp
+                } else {
+                    for i in 0..path1.len() {
+                        let p1 = path1[i];
+                        let p2 = path2[i];
+                        if p1.x != p2.x {
+                            return if p1.x < p2.x { Less } else { Greater };
+                        } else if p1.y != p2.y {
+                            return if p1.y < p2.y { Less } else { Greater };
+                        };
+                    }
+                    Equal
                 }
-                Equal
-            });
+            })
         }
     }
 }

@@ -35,7 +35,7 @@ pub(crate) struct MSliceBuffer {
 }
 
 impl MSliceBuffer {
-    pub(crate) fn new(vertex_count: usize, slices: &Vec<MSlice>) -> Self {
+    pub(crate) fn new(vertex_count: usize, slices: &[MSlice]) -> Self {
         let mut vertex_marks = vec![false; vertex_count];
         let mut edges = vec![Edge::EMPTY; slices.len()];
 
@@ -58,7 +58,7 @@ impl MSliceBuffer {
         }
     }
 
-    pub fn add_connections(&mut self, triangles: &mut Vec<DTriangle>) {
+    pub fn add_connections(&mut self, triangles: &mut [DTriangle]) {
         let n = triangles.len();
 
         for i in 0..n {
@@ -72,7 +72,7 @@ impl MSliceBuffer {
             // 2. The find() function and edge.triangle always produce valid indices.
             // 3. We are not resizing the triangles array.
             unsafe {
-                let vertices = triangles.get_unchecked(i).vertices.clone();
+                let vertices = triangles.get_unchecked(i).vertices;
                 for j2 in 0..3 {
                     let a = vertices[j1].index;
                     let b = vertices[j2].index;
