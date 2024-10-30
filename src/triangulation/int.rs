@@ -1,22 +1,21 @@
+use i_float::int::point::IntPoint;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::simplify::Simplify;
-use i_overlay::i_float::point::IntPoint;
 use i_overlay::i_shape::int::path::{IntPath, PointPathExtension};
-use i_overlay::i_shape::int::shape::{IntShape, PointsCount};
+use i_overlay::i_shape::int::shape::{IntShape};
+use i_shape::int::count::PointsCount;
 use crate::delaunay::triangulate::ShapeTriangulate;
 
 #[derive(Debug)]
 pub struct Triangulation {
     pub points: Vec<IntPoint>,
-    pub indices: Vec<usize>
+    pub indices: Vec<usize>,
 }
 
 pub trait IntTriangulate {
+    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: usize) -> Triangulation;
 
-    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: i64) -> Triangulation;
-
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: i64) -> Vec<IntPath>;
-
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: usize) -> Vec<IntPath>;
 }
 
 trait UnsafeTriangulate {
@@ -25,11 +24,10 @@ trait UnsafeTriangulate {
 }
 
 impl UnsafeTriangulate for Vec<IntShape> {
-
     fn triangulation(&self) -> Triangulation {
         let count = self.points_count();
         if count < 3 {
-            return Triangulation { points: vec![], indices: vec![] }
+            return Triangulation { points: vec![], indices: vec![] };
         }
 
         let mut points = Vec::with_capacity(count);
@@ -66,12 +64,10 @@ impl UnsafeTriangulate for Vec<IntShape> {
             polygons
         }
     }
-
 }
 
 impl IntTriangulate for IntShape {
-
-    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: i64) -> Triangulation {
+    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: usize) -> Triangulation {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule, min_area).triangulation()
         } else {
@@ -79,7 +75,7 @@ impl IntTriangulate for IntShape {
         }
     }
 
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: i64) -> Vec<IntPath> {
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: usize) -> Vec<IntPath> {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule, min_area).convex_polygons()
         } else if let Some(delaunay) = self.delaunay() {
@@ -91,8 +87,7 @@ impl IntTriangulate for IntShape {
 }
 
 impl IntTriangulate for Vec<IntShape> {
-
-    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: i64) -> Triangulation {
+    fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: usize) -> Triangulation {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule, min_area).triangulation()
         } else {
@@ -100,7 +95,7 @@ impl IntTriangulate for Vec<IntShape> {
         }
     }
 
-    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: i64) -> Vec<IntPath> {
+    fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: usize) -> Vec<IntPath> {
         if let Some(fill_rule) = validate_rule {
             self.simplify(fill_rule, min_area).convex_polygons()
         } else {
