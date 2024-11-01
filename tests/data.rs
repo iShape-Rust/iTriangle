@@ -10,9 +10,9 @@ pub mod data {
         #[allow(dead_code)]
         pub shape: IntShape,
         #[allow(dead_code)]
-        pub(crate) points: IntPath,
+        pub points: IntPath,
         #[allow(dead_code)]
-        pub(crate) indices: Vec<usize>,
+        pub indices: Vec<usize>,
         #[allow(dead_code)]
         pub polygons: Vec<IntPath>,
     }
