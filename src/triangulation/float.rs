@@ -33,7 +33,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> FloatTriangulate<P, T> for [Con
 
         let triangulation = shape.to_triangulation(validate_rule, int_min_area);
 
-        let points = triangulation.points.iter().map(|&p| adapter.int_to_float(p)).collect();
+        let points = triangulation.points.iter().map(|p| adapter.int_to_float(p)).collect();
 
         Triangulation { points, indices: triangulation.indices }
     }
