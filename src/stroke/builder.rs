@@ -1,4 +1,3 @@
-use std::f64::consts::PI;
 use std::marker::PhantomData;
 use i_float::float::compatible::FloatPointCompatible;
 use i_float::float::number::FloatNumber;
@@ -47,7 +46,7 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
 
     pub fn build_closed_path_mesh<P: FloatPointCompatible<T>>(&self, path: &[P]) -> Triangulation<P> {
         let n = path.len();
-        if n < 3 {
+        if n < 2{
             return Triangulation { points: vec![], indices: vec![] };
         }
 
@@ -56,7 +55,7 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
 
         let r = T::from_float(0.5) * self.stroke_style.width;
 
-        let a = path[n - 2];
+        let a = path[(n + n - 2) % n];
         let b = path[n - 1];
 
         let mut seg0 = Segment::new(a, b);
@@ -129,18 +128,8 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
     }
 
     #[inline]
-    fn ccw_rotate_90<P: FloatPointCompatible<T>>(vector: &P) -> P {
-        P::from_xy(vector.y(), -vector.x())
-    }
-
-    #[inline]
     fn cross_product<P: FloatPointCompatible<T>>(a: &P, b: &P) -> T {
         a.x() * b.y() - a.y() * b.x()
-    }
-
-    #[inline]
-    fn dot_product<P: FloatPointCompatible<T>>(a: &P, b: &P) -> T {
-        a.x() * b.x() + a.y() * b.y()
     }
 
     #[inline]
