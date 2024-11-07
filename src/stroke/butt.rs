@@ -46,7 +46,7 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
 
     pub fn build_closed_path_mesh<P: FloatPointCompatible<T>>(&self, path: &[P]) -> Triangulation<P> {
         let n = path.len();
-        if n < 2{
+        if n < 2 {
             return Triangulation { points: vec![], indices: vec![] };
         }
 
@@ -68,6 +68,33 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
             let is_close = i + 1 == n;
             self.join_butt_joint(&mut points, &mut indices, &seg0, &seg1, is_close);
 
+            seg0 = seg1;
+        }
+
+        Triangulation { points, indices }
+    }
+
+    pub fn build_open_path_mesh<P: FloatPointCompatible<T>>(&self, path: &[P]) -> Triangulation<P> {
+        let n = path.len();
+        if n < 2 {
+            return Triangulation { points: vec![], indices: vec![] };
+        }
+
+        let mut points = Vec::with_capacity(4 * n);
+        let mut indices = Vec::with_capacity(12 * n);
+
+        let r = T::from_float(0.5) * self.stroke_style.width;
+
+        let a = path[0];
+        let b = path[1];
+
+        let mut seg0 = Segment::new(a, b);
+        self.join_butt_segment(&mut points, &mut indices, &seg0, r);
+
+        for &c in path.iter().skip(2) {
+            let seg1 = Segment::new(seg0.b, c);
+            self.join_butt_joint(&mut points, &mut indices, &seg0, &seg1, false);
+            self.join_butt_segment(&mut points, &mut indices, &seg1, r);
             seg0 = seg1;
         }
 
@@ -151,7 +178,7 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
 #[cfg(test)]
 mod tests {
     use i_float::float::point::FloatPoint;
-    use crate::stroke::builder::ButtStrokeBuilder;
+    use crate::stroke::butt::ButtStrokeBuilder;
     use crate::stroke::style::StrokeStyle;
 
     #[test]
