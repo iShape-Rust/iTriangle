@@ -1,11 +1,11 @@
-use i_float::adapter::FloatPointAdapter;
-use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
-use i_float::float::rect::FloatRect;
 use i_overlay::core::fill_rule::FillRule;
-use i_shape::base::data::Contour;
-use i_shape::float::adapter::{ShapeToFloat, ShapeToInt};
-use i_shape::float::rect::RectInit;
+use i_overlay::i_float::adapter::FloatPointAdapter;
+use i_overlay::i_float::float::compatible::FloatPointCompatible;
+use i_overlay::i_float::float::number::FloatNumber;
+use i_overlay::i_float::float::rect::FloatRect;
+use i_overlay::i_shape::base::data::Contour;
+use i_overlay::i_shape::float::adapter::{ShapeToFloat, ShapeToInt};
+use i_overlay::i_shape::float::rect::RectInit;
 use crate::triangulation::int::IntTriangulate;
 
 #[derive(Debug)]

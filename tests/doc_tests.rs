@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use i_float::float::point::FloatPoint;
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::i_float::float::point::FloatPoint;
     use i_triangle::triangulation::float::FloatTriangulate;
 
     #[test]

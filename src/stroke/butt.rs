@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
-use i_float::float::compatible::FloatPointCompatible;
-use i_float::float::number::FloatNumber;
+use i_overlay::i_float::float::compatible::FloatPointCompatible;
+use i_overlay::i_float::float::number::FloatNumber;
 use crate::stroke::style::StrokeStyle;
 use crate::triangulation::float::Triangulation;
 
@@ -177,7 +177,7 @@ impl<T: FloatNumber> ButtStrokeBuilder<T> {
 
 #[cfg(test)]
 mod tests {
-    use i_float::float::point::FloatPoint;
+    use i_overlay::i_float::float::point::FloatPoint;
     use crate::stroke::butt::ButtStrokeBuilder;
     use crate::stroke::style::StrokeStyle;
 

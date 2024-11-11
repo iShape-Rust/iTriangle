@@ -1,4 +1,4 @@
-use i_float::int::point::IntPoint;
+use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_float::u128::UInt128;
 use crate::delaunay::triangle::DTriangle;

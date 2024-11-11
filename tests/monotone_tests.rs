@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use i_float::int::point::IntPoint;
+    use i_overlay::i_float::int::point::IntPoint;
     use i_triangle::monotone::node_layout::{MNodeType, ShapeNodeLayout};
 
     #[test]

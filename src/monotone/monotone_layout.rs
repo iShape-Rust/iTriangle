@@ -1,5 +1,5 @@
-use i_float::int::point::IntPoint;
 use i_overlay::i_float::bit_pack::{BitPack, BitPackVec};
+use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::IntShape;
 use crate::index::{Index, NIL_INDEX};

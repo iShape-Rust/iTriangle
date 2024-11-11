@@ -1,4 +1,4 @@
-use i_float::float::number::FloatNumber;
+use i_overlay::i_float::float::number::FloatNumber;
 
 pub struct StrokeStyle<T: FloatNumber> {
     pub width: T,
