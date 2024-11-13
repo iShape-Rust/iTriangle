@@ -348,9 +348,9 @@ fn is_contain(mpoly: MPoly, point: IntPoint, navs: &[MNavNode]) -> bool {
     is_contain_point(point, a0.vert.point, a1.vert.point, b0.vert.point, b1.vert.point)
 }
 
-fn is_contain_point(point: IntPoint, a0: IntPoint, a1: IntPoint, b0: IntPoint, b1: IntPoint) -> bool {
-    let sa = a1.subtract(a0).cross_product(point.subtract(a0));
-    let sb = b1.subtract(b0).cross_product(point.subtract(b0));
+fn is_contain_point(p: IntPoint, a0: IntPoint, a1: IntPoint, b0: IntPoint, b1: IntPoint) -> bool {
+    let is_first = Triangle::is_contain_point(p, a0, a1, b0);
+    let is_second = Triangle::is_contain_point(p, b0, b1, a1);
 
-    sa <= 0 && sb >= 0
+    is_first || is_second
 }
