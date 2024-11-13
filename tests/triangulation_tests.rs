@@ -408,4 +408,8 @@ mod tests {
         execute(70);
     }
 
+    #[test]
+    fn test_71() {
+        execute(71);
+    }
 }

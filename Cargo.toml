@@ -1,6 +1,6 @@
 [package]
 name = "i_triangle"
-version = "0.27.0"
+version = "0.27.1"
 edition = "2021"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 description = "Polygon Triangulation Library: Efficient Delaunay Triangulation for Complex Shapes."
