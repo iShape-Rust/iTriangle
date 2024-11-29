@@ -408,6 +408,26 @@ mod tests {
         execute(70);
     }
 
+    #[test]
+    fn test_71() {
+        execute(71);
+    }
+
+    #[test]
+    fn test_72() {
+        execute(72);
+    }
+
+    #[test]
+    fn test_73() {
+        execute(73);
+    }
+
+    #[test]
+    fn test_74() {
+        execute(74);
+    }
+
     trait SortByOrder {
         fn sort_by_order(&mut self);
     }

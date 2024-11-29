@@ -422,4 +422,7 @@ mod tests {
     fn test_73() {
         execute(73);
     }
+
+    #[test]
+    fn test_74() { execute(74); }
 }

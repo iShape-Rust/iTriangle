@@ -314,9 +314,10 @@ fn find_node_to_merge(prev: MNavNode, next: MNavNode, merge: MNavNode, start_nod
                 // if it end it can be unreachable (same point for different vertices!)
                 let is_unreachable = v.point == va1.point && v.index != va1.index || v.point == vb1.point && v.index != vb1.index;
                 if !is_unreachable {
-                    let is_contain = Triangle::is_contain_point(v.point, m, a0, va1.point)
-                        || Triangle::is_contain_point(v.point, m, va1.point, vb1.point)
-                        || Triangle::is_contain_point(v.point, m, vb1.point, b0);
+                    let m_a0_a1 = Triangle::is_contain_point_exclude_borders(v.point, m, a0, va1.point);
+                    let m_a1_b1 = Triangle::is_contain_point(v.point, m, va1.point, vb1.point);
+                    let m_b1_b0 = Triangle::is_contain_point_exclude_borders(v.point, m, vb1.point, b0);
+                    let is_contain = m_a0_a1 || m_a1_b1 || m_b1_b0;
 
                     if is_contain {
                         return MSolution { mtype: MType::Direct, a: merge.index, b: nav.index, node_index: i }
