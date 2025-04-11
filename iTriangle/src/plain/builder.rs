@@ -30,32 +30,10 @@ impl TriangleNetBuilder {
     }
 
     #[inline]
-    pub(super) fn next_phantom_edge_index(&self) -> usize {
-        self.edges_counter
-    }
-
-    #[inline]
-    pub(super) fn pop_or_insert(
-        &mut self,
-        side: usize,
-        vertex: usize,
-        triangle: usize,
-    ) -> Option<usize> {
-        if let Some(handler) = self.edges_phantom_store.get(&side) {
-            let other_triangle = handler.triangle;
-            self.triangles[other_triangle].neighbors[handler.vertex] = triangle;
-            self.edges_phantom_store.remove(&side);
-            Some(other_triangle)
-        } else {
-            self.edges_phantom_store
-                .insert(side, PhantomHandler { vertex, triangle });
-            None
-        }
-    }
-
-    #[inline]
-    pub(super) fn add(&mut self, triangle: PlainTriangle) {
-        self.triangles.push(triangle);
+    pub(super) fn get_unique_phantom_edge_index(&mut self) -> usize {
+        let index = self.edges_counter;
+        self.edges_counter += 1;
+        index
     }
 
     #[inline]
