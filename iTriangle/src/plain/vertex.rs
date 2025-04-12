@@ -9,7 +9,7 @@ pub(super) enum VertexType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct PathVertex {
+pub(super) struct ChainVertex {
     pub(super) index: usize,
     pub(super) this: IntPoint,
     pub(super) next: IntPoint,
@@ -45,7 +45,7 @@ impl Default for IndexPoint {
     }
 }
 
-impl PathVertex {
+impl ChainVertex {
 
     #[inline]
     pub(super) fn index_point(&self) -> IndexPoint {
@@ -73,11 +73,11 @@ impl PathVertex {
 }
 
 pub(super) trait ShapeToVertices {
-    fn to_vertices(&self, inner_points: &[IntPoint]) -> Vec<PathVertex>;
+    fn to_chain_vertices(&self, inner_points: &[IntPoint]) -> Vec<ChainVertex>;
 }
 
 impl ShapeToVertices for IntShape {
-    fn to_vertices(&self, inner_points: &[IntPoint]) -> Vec<PathVertex> {
+    fn to_chain_vertices(&self, inner_points: &[IntPoint]) -> Vec<ChainVertex> {
         let capacity = self.iter()
             .fold(0, |s, path| s + path.len()) + inner_points.len();
 
@@ -89,7 +89,7 @@ impl ShapeToVertices for IntShape {
             let mut this = path[n - 1];
 
             for &next in path.iter() {
-                vertices.push(PathVertex {
+                vertices.push(ChainVertex {
                     index: 0,
                     this,
                     next,
@@ -101,7 +101,7 @@ impl ShapeToVertices for IntShape {
         }
 
         for &this in inner_points {
-            vertices.push(PathVertex {
+            vertices.push(ChainVertex {
                 index: 0,
                 this,
                 next: IntPoint::new(i32::MIN, i32::MIN),
@@ -150,7 +150,7 @@ mod tests {
                 IntPoint::new(5, -5),
             ],
         ];
-        let vertices = shape.to_vertices(&vec![]);
+        let vertices = shape.to_chain_vertices(&vec![]);
 
         assert_eq!(vertices.len(), 10);
     }
