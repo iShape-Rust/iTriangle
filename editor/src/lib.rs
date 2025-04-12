@@ -7,3 +7,4 @@ mod geom;
 mod path_editor;
 mod mesh;
 mod compat;
+mod mesh_viewer;

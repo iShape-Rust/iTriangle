@@ -1,10 +1,10 @@
+use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
 use crate::compat::convert::Convert;
 use crate::geom::camera::Camera;
 use crate::mesh::path_builder::PathBuilder;
 use crate::path_editor::color::PathEditorColorSchema;
 use crate::path_editor::state::{ActivePoint, MeshCache, PathEditorState, SelectState};
-use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
 use iced::advanced::graphics::Mesh;
 use iced::advanced::widget::tree::State;
 use iced::advanced::widget::{Tree, tree};
@@ -163,7 +163,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PathEditorWidget<'_, Message>
 
         let mut contour_builder = PathBuilder::new(self.camera, offset_vec.convert());
         contour_builder.add_paths(&self.path, true, 2.0);
-        if let Some(mesh) = contour_builder.into_mesh(Color::new(1.0, 1.0, 1.0, 1.0)) {
+        if let Some(mesh) = contour_builder.into_mesh(Color::new(1.0, 1.0, 1.0, 0.1)) {
             renderer.with_translation(Vector::new(0.0, 0.0), |renderer| renderer.draw_mesh(mesh));
         }
 

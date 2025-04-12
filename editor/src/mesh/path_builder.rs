@@ -1,8 +1,8 @@
-use i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::stroke::butt::ButtStrokeBuilder;
-use i_triangle::stroke::style::StrokeStyle;
-use i_triangle::triangulation::float::TriangulationBuilder;
+use i_mesh::i_triangle::i_overlay::i_float::float::point::FloatPoint;
+use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_mesh::i_triangle::triangulation::float::TriangulationBuilder;
+use i_mesh::path::butt::ButtStrokeBuilder;
+use i_mesh::path::style::StrokeStyle;
 use iced::{Color, Rectangle, Transformation};
 use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
@@ -24,9 +24,12 @@ impl PathBuilder {
     }
 
     #[inline]
-    pub(crate) fn add_segment(&mut self, a: FloatPoint<f32>, b: FloatPoint<f32>, width: f32) {
+    pub(crate) fn add_int_segment(&mut self, a: IntPoint, b: IntPoint, width: f32) {
+        let p0 = self.camera.world_to_screen(self.offset.convert(), a.convert()).convert();
+        let p1 = self.camera.world_to_screen(self.offset.convert(), b.convert()).convert();
+
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
-        let sub_triangulation = stroke_builder.build_open_path_mesh(&[a, b]);
+        let sub_triangulation = stroke_builder.build_open_path_mesh(&[p0, p1]);
         self.builder.append(sub_triangulation);
     }
 

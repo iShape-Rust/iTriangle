@@ -1,8 +1,7 @@
 use crate::plain::builder::TriangleNetBuilder;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::i_float::int::point::IntPoint;
-
-use i_shape::int::shape::IntShape;
+use i_overlay::i_shape::int::shape::IntShape;
 use crate::plain::vertex::ShapeToVertices;
 use crate::triangulation::int::Triangulation;
 

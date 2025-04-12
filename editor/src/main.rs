@@ -6,6 +6,7 @@ mod geom;
 mod path_editor;
 mod compat;
 mod mesh;
+mod mesh_viewer;
 
 use iced::application;
 use crate::app::main::EditorApp;

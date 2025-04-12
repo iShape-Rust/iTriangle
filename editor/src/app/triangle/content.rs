@@ -1,18 +1,20 @@
-use std::collections::HashMap;
-use i_triangle::i_overlay::core::fill_rule::FillRule;
-use i_triangle::i_overlay::core::simplify::Simplify;
-use i_triangle::i_overlay::i_float::int::rect::IntRect;
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
-use iced::widget::scrollable;
-use iced::{Alignment, Length, Padding, Size, Vector};
-use iced::widget::{Button, Column, Container, Row, Space, Text};
+use i_mesh::i_triangle::i_overlay::i_shape::int::reverse::IntContourReverse;
 use crate::app::design;
+use crate::app::main::{AppMessage, EditorApp};
 use crate::app::triangle::control::ModeOption;
 use crate::app::triangle::workspace::WorkspaceState;
-use crate::app::main::{EditorApp, AppMessage};
-use crate::path_editor::widget::PathEditorUpdateEvent;
 use crate::data::triangle::TriangleResource;
 use crate::geom::camera::Camera;
+use crate::path_editor::widget::PathEditorUpdateEvent;
+use i_mesh::i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_mesh::i_triangle::i_overlay::core::simplify::Simplify;
+use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::plain::triangulator::Triangulator;
+use iced::widget::scrollable;
+use iced::widget::{Button, Column, Container, Row, Space, Text};
+use iced::{Alignment, Length, Padding, Size, Vector};
+use std::collections::HashMap;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,
@@ -43,13 +45,22 @@ impl EditorApp {
                 Container::new(
                     Button::new(
                         Text::new(format!("test_{}", index))
-                            .style(if is_selected { design::style_sidebar_text_selected } else { design::style_sidebar_text })
-                            .size(14)
+                            .style(if is_selected {
+                                design::style_sidebar_text_selected
+                            } else {
+                                design::style_sidebar_text
+                            })
+                            .size(14),
                     )
-                        .width(Length::Fill)
-                        .on_press(AppMessage::Triangle(IntersectMessage::TestSelected(index)))
-                        .style(if is_selected { design::style_sidebar_button_selected } else { design::style_sidebar_button })
-                ).padding(self.design.action_padding())
+                    .width(Length::Fill)
+                    .on_press(AppMessage::Triangle(IntersectMessage::TestSelected(index)))
+                    .style(if is_selected {
+                        design::style_sidebar_button_selected
+                    } else {
+                        design::style_sidebar_button
+                    }),
+                )
+                .padding(self.design.action_padding()),
             );
         }
 
@@ -65,14 +76,15 @@ impl EditorApp {
                         .height(Length::Shrink)
                         .align_x(Alignment::Start)
                         .padding(Padding::new(0.0).right(8))
-                        .style(design::style_sidebar_background)
-                ).direction(scrollable::Direction::Vertical(
+                        .style(design::style_sidebar_background),
+                )
+                .direction(scrollable::Direction::Vertical(
                     scrollable::Scrollbar::new()
                         .width(4)
                         .margin(0)
                         .scroller_width(4)
                         .anchor(scrollable::Anchor::Start),
-                ))
+                )),
             )
             .push(self.triangle_workspace())
     }
@@ -89,7 +101,9 @@ impl EditorApp {
     }
 
     fn triangle_set_test(&mut self, index: usize) {
-        self.state.triangle.load_test(index, &mut self.app_resource.triangle);
+        self.state
+            .triangle
+            .load_test(index, &mut self.app_resource.triangle);
         self.state.triangle.update_solution();
     }
 
@@ -146,10 +160,8 @@ impl TriangleState {
     fn load_test(&mut self, index: usize, resource: &mut TriangleResource) {
         if let Some(test) = resource.load(index) {
             self.workspace.paths.clear();
-            let shapes = test.paths.simplify(FillRule::NonZero, 0);
-            let paths: Vec<_> = shapes.into_iter().flat_map(|s|s).collect();
 
-            self.workspace.paths = paths;
+            self.workspace.paths = test.paths;
 
             self.cameras.insert(self.test, self.workspace.camera);
             let mut camera = *self.cameras.get(&index).unwrap_or(&Camera::empty());
@@ -164,8 +176,16 @@ impl TriangleState {
     }
 
     fn update_solution(&mut self) {
-        // let subj = &self.workspace.subj;
-        // let clip = &self.workspace.clip;
+        let mut shapes = self.workspace.paths.simplify(FillRule::NonZero, 0);
+        shapes.reverse_contours();
+
+        self.workspace.triangulations = shapes
+            .iter()
+            .map(|s| Triangulator::default().triangulate(s))
+            .collect();
+
+        self.workspace.paths = shapes.into_iter().flat_map(|s| s).collect();
+
         match self.mode {
             ModeOption::Edit => {}
             ModeOption::Debug => {
@@ -197,4 +217,3 @@ impl Camera {
         Self::new(rect, size)
     }
 }
-

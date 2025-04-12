@@ -1,5 +1,5 @@
-use i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
 use iced::advanced::graphics::color::pack;
 use iced::{Rectangle, Transformation, Vector};
 use crate::path_editor::color::PathEditorColorSchema;

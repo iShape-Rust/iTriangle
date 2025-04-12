@@ -1,4 +1,5 @@
-use i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::triangulation::int::Triangulation;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
 use crate::app::triangle::content::IntersectMessage;
@@ -7,11 +8,13 @@ use crate::app::main::{EditorApp, AppMessage};
 use iced::widget::Stack;
 use iced::widget::Container;
 use iced::{Length, Padding, Size, Vector};
+use crate::mesh_viewer::widget::MeshViewerWidget;
 use crate::path_editor::widget::{PathEditorUpdateEvent, PathEditorWidget};
 
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
-    pub(crate) paths: Vec<IntPath>
+    pub(crate) paths: Vec<IntPath>,
+    pub(crate) triangulations: Vec<Triangulation>,
 }
 
 impl EditorApp {
@@ -36,6 +39,16 @@ impl EditorApp {
                         curve,
                         self.state.triangle.workspace.camera,
                         on_update_anchor
+                    ))
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                );
+            }
+            for triangulation in self.state.triangle.workspace.triangulations.iter() {
+                stack = stack.push(
+                    Container::new(MeshViewerWidget::new(
+                        triangulation,
+                        self.state.triangle.workspace.camera
                     ))
                         .width(Length::Fill)
                         .height(Length::Fill)
@@ -83,6 +96,6 @@ fn on_update_drag(drag: Vector<f32>) -> AppMessage {
 
 impl Default for WorkspaceState {
     fn default() -> Self {
-        WorkspaceState { camera: Camera::empty(), paths: vec![] }
+        WorkspaceState { camera: Camera::empty(), paths: vec![], triangulations: vec![] }
     }
 }

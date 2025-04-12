@@ -15,8 +15,6 @@ glam = ["i_overlay/glam"]
 [dependencies]
 serde = { version = "^1.0", features = ["derive"] }
 i_overlay = { path = "../../iOverlay" }
-i_float = { path = "../../iFloat" }
-i_shape = { path = "../../iShape" }
 i_tree = { path = "../../iTree" }
 
 #i_overlay = "~1.9.3"

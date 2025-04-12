@@ -1,11 +1,13 @@
-use crate::plain::section::{Content, EdgeType, Section, TriangleEdge, VSegment};
+use crate::plain::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::plain::triangle::PlainTriangle;
-use std::collections::HashMap;
-use std::mem::swap;
+use crate::plain::v_segment::VSegment;
+use crate::plain::vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
-use crate::plain::vertex::{ChainVertex, VertexType};
+use std::collections::HashMap;
+use std::mem::swap;
+use i_overlay::i_float::int::point::IntPoint;
 
 struct PhantomHandler {
     vertex: usize,
@@ -27,6 +29,39 @@ impl TriangleNetBuilder {
             edges_counter: 0,
         }
     }
+
+    #[inline]
+    pub(super) fn build(&mut self, vertices: &[ChainVertex]) {
+        let mut sections: SetTree<VSegment, Section> = SetTree::new(8);
+
+        for v in vertices.iter() {
+            match v.vert_type() {
+                VertexType::Start => sections.insert(Section::with_vertex(v)),
+                VertexType::Merge => self.merge(v, &mut sections),
+                VertexType::Other => {
+                    let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+                    let s = sections.value_by_index_mut(index);
+                    match s.add(v, self) {
+                        Action::Create(new) => sections.insert(new),
+                        Action::Delete => sections.delete_by_index(index),
+                        Action::Update => {}
+                    }
+                }
+            }
+        }
+    }
+
+    pub(super) fn triangle_indices(&self) -> Vec<usize> {
+        let mut result = Vec::with_capacity(3 * self.triangles.len());
+        for t in &self.triangles {
+            let v = &t.vertices;
+            result.extend_from_slice(&[v[0].index, v[1].index, v[2].index]);
+        }
+        result
+    }
+}
+
+impl TriangleNetBuilder {
 
     #[inline]
     fn next_triangle_index(&self) -> usize {
@@ -82,55 +117,48 @@ impl TriangleNetBuilder {
         new_index
     }
 
-    #[inline]
-    pub(super) fn build(&mut self, vertices: &[ChainVertex]) {
-        let mut sections: SetTree<VSegment, Section> = SetTree::new(8);
+    fn merge(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+        let s = sections.value_by_index(index);
+        let (next_index, prev_index) = if s.prev == v.this {
+            let prev_index = sections.index_after(index);
+            (index, prev_index)
+        } else {
+            let next_index = sections.index_before(index);
+            (next_index, index)
+        };
 
-        for v in vertices.iter() {
-            match v.vert_type() {
-                VertexType::Start => sections.insert(Section::with_vertex(v)),
-                VertexType::Merge => {
-                    let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-                    let s = sections.value_by_index(index);
-                    let (next_index, prev_index) = if s.prev == v.this {
-                        let prev_index = sections.index_after(index);
-                        (index, prev_index)
-                    } else {
-                        let next_index = sections.index_before(index);
-                        (next_index, index)
-                    };
+        let next = sections.value_by_index_mut(next_index);
+        next.add_from_start(v, self);
 
-                    let next_s = sections.value_by_index(next_index) as *const Section;
-                    let prev_s = sections.value_by_index_mut(prev_index);
+        let mut next_edges = if let Content::Edges(edges) = &next.content {
+            edges.clone()
+        } else {
+            Vec::new()
+        };
 
-                    prev_s.merge(v, next_s);
-                    sections.delete_by_index(next_index);
-                }
-                VertexType::Other => {
-                    let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-                    let s = sections.value_by_index_mut(index);
-                    match s.add(v, self) {
-                        AddResult::Split(new) => sections.insert(new),
-                        AddResult::Delete => sections.delete_by_index(index),
-                        AddResult::Update => {}
-                    }
-                }
+        let p_next = next.next;
+        let sort = next.sort;
+
+        let prev = sections.value_by_index_mut(prev_index);
+        prev.add_from_end(v, self);
+
+        match &mut prev.content {
+            Content::Point(_) => {}
+            Content::Edges(edges) => {
+                edges.append(&mut next_edges)
             }
         }
-    }
 
-    pub(super) fn triangle_indices(&self) -> Vec<usize> {
-        let mut result = Vec::with_capacity(3 * self.triangles.len());
-        for t in &self.triangles {
-            let v = &t.vertices;
-            result.extend_from_slice(&[v[0].index, v[1].index, v[2].index]);
-        }
-        result
+        prev.next = p_next;
+        prev.sort = sort;
+
+        sections.delete_by_index(next_index);
     }
 }
 
-enum AddResult {
-    Split(Section),
+enum Action {
+    Create(Section),
     Delete,
     Update,
 }
@@ -150,26 +178,26 @@ impl Section {
     }
 
     #[inline]
-    fn add(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) -> AddResult {
+    fn add(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) -> Action {
         let eq_prev = v.this == self.prev;
         let eq_next = v.this == self.next;
 
         match (eq_prev, eq_next) {
             (true, true) => {
                 self.add_as_last(v, net_builder);
-                AddResult::Delete
+                Action::Delete
             }
             (true, false) => {
-                self.add_to_next(v, net_builder);
-                AddResult::Update
+                self.add_to_top(v, net_builder);
+                Action::Update
             }
             (false, true) => {
                 self.add_to_bottom(v, net_builder);
-                AddResult::Update
+                Action::Update
             }
             (false, false) => {
                 let bottom_section = self.add_to_middle(v, net_builder);
-                AddResult::Split(bottom_section)
+                Action::Create(bottom_section)
             }
         }
     }
@@ -201,129 +229,19 @@ impl Section {
     }
 
     #[inline]
-    fn add_to_next(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
-        let vp = v.index_point();
-        let edges = match &mut self.content {
-            Content::Point(point) => {
-                let edges = vec![TriangleEdge {
-                    a: vp,
-                    b: *point,
-                    kind: EdgeType::Regular(usize::MAX),
-                }];
-                self.prev = v.prev;
-                self.content = Content::Edges(edges);
-                return;
-            }
-            Content::Edges(edges) => edges,
-        };
-
-        let e0 = edges.first().unwrap();
-
-
-        if Triangle::is_cw_or_line_point(vp.point, e0.a.point, e0.b.point) {
-            edges.push(TriangleEdge {
-                a: e0.b,
-                b: vp,
-                kind: EdgeType::Regular(usize::MAX),
-            });
-            return;
-        }
-
-        let mut index = net_builder
-            .add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
-
-        let mut n = 1;
-        let mut eb = e0.b;
-        for ei in edges.iter().skip(1) {
-            if Triangle::is_cw_or_line_point(vp.point, ei.a.point, ei.b.point) {
-                break;
-            }
-            eb = ei.b;
-            n += 1;
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = index;
-            let prev_index = index;
-            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
-
-            net_builder.triangles[prev_index].neighbors[1] = index;
-        }
-
-        if edges.len() == n {
-            edges.clear();
-        } else {
-            *edges = edges.split_off(n);
-        }
-
-        edges.insert(
-            0,
-            TriangleEdge {
-                a: vp,
-                b: eb,
-                kind: EdgeType::Regular(index),
-            },
-        );
-
-
+    fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
         self.prev = v.prev;
+        self.add_from_start(v, net_builder);
     }
 
     #[inline]
     fn add_to_bottom(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
-        let vp = v.index_point();
-        let edges = match &mut self.content {
-            Content::Point(point) => {
-                let edges = vec![TriangleEdge {
-                    a: *point,
-                    b: vp,
-                    kind: EdgeType::Regular(usize::MAX),
-                }];
-                self.content = Content::Edges(edges);
-                self.sort = VSegment {
-                    a: v.this,
-                    b: v.prev,
-                };
-                self.next = v.next;
-                return;
-            }
-            Content::Edges(edges) => edges,
+        self.sort = VSegment {
+            a: v.this,
+            b: v.next,
         };
-
-        let el = edges.last().unwrap();
-
-        if Triangle::is_cw_or_line_point(v.this, el.a.point, el.b.point) {
-            edges.push(TriangleEdge {
-                a: el.b,
-                b: vp,
-                kind: EdgeType::Regular(usize::MAX),
-            });
-            return;
-        }
-
-        let mut index = net_builder
-            .add_triangle_and_join_by_edge(el, 0, PlainTriangle::abc(vp, el.a, el.b));
-        let mut ea = el.a;
-        let mut n = 1;
-        for ei in edges.iter().rev().skip(1) {
-            if Triangle::is_cw_or_line_point(v.this, ei.a.point, ei.b.point) {
-                break;
-            }
-            ea = ei.a;
-            n += 1;
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = index;
-            let prev_index = index;
-            index = net_builder.add_triangle_and_join_by_edge(el, 0, triangle);
-
-            net_builder.triangles[prev_index].neighbors[2] = index;
-        }
-        edges.truncate(edges.len() - n);
-
-        edges.push(TriangleEdge {
-            a: ea,
-            b: vp,
-            kind: EdgeType::Regular(index),
-        });
         self.next = v.next;
+        self.add_from_end(v, net_builder);
     }
 
     #[inline]
@@ -379,8 +297,8 @@ impl Section {
         let vp = v.index_point();
         let e0 = &edges[i];
 
-        let mut index = net_builder
-            .add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
+        let mut index =
+            net_builder.add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
 
         let top_edge = TriangleEdge {
             a: e0.a,
@@ -395,7 +313,10 @@ impl Section {
         let top_section = Section {
             prev: self.prev,
             next: v.next,
-            sort: VSegment { a: v.this, b: v.next },
+            sort: VSegment {
+                a: v.this,
+                b: v.next,
+            },
             content: Content::Edges(top_edges),
         };
 
@@ -416,95 +337,153 @@ impl Section {
         }
         net_builder.triangles[index].neighbors[1] = usize::MAX;
 
-        *edges = edges.split_off(i);
-        edges.insert(0, TriangleEdge {
+        let bottom_edge = TriangleEdge {
             a: vp,
-            b: edges.first().unwrap().a,
+            b: edges[i - 1].b,
             kind: EdgeType::Regular(index),
-        });
+        };
+
+        *edges = edges.split_off(i);
+        edges.insert(0, bottom_edge);
 
         self.prev = v.prev;
 
         top_section
     }
 
-    #[inline]
-    fn merge(&mut self, v: &ChainVertex, next_ref: *const Section) {
-        // self is prev
-        let next = unsafe { &*next_ref };
+    fn add_from_start(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
         let vp = v.index_point();
 
         let edges = match &mut self.content {
             Content::Point(point) => {
-                self.content = Content::Edges(vec![
-                    TriangleEdge {
-                        a: point.clone(),
-                        b: vp,
-                        kind: EdgeType::Regular(usize::MAX),
-                    }
-                ]);
-                if let Content::Edges(edges) = &mut self.content {
-                    edges
-                } else {
-                    unreachable!()
-                }
+                let edges = vec![TriangleEdge {
+                    a: vp,
+                    b: *point,
+                    kind: EdgeType::Regular(usize::MAX),
+                }];
+                self.content = Content::Edges(edges);
+                return;
             }
-            Content::Edges(edges) => {
-                edges.push(
-                    TriangleEdge {
-                        a: edges.last().unwrap().b,
-                        b: vp,
-                        kind: EdgeType::Regular(usize::MAX),
-                    }
-                );
-                edges
-            }
+            Content::Edges(edges) => edges,
         };
 
-        match &next.content {
+        let e0 = edges.first().unwrap();
+
+        if Triangle::is_cw_or_line_point(v.this, e0.a.point, e0.b.point) {
+            edges.insert(
+                0,
+                TriangleEdge {
+                    a: vp,
+                    b: e0.a,
+                    kind: EdgeType::Regular(usize::MAX),
+                },
+            );
+            return;
+        }
+
+        let mut index =
+            net_builder.add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
+
+        let mut n = 1;
+        let mut eb = e0.b;
+        for ei in edges.iter().skip(1) {
+            if Triangle::is_cw_or_line_point(vp.point, ei.a.point, ei.b.point) {
+                break;
+            }
+            eb = ei.b;
+            n += 1;
+            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            triangle.neighbors[1] = index;
+            let prev_index = index;
+            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+
+            net_builder.triangles[prev_index].neighbors[1] = index;
+        }
+
+        if edges.len() == n {
+            edges.clear();
+        } else {
+            *edges = edges.split_off(n);
+        }
+
+        edges.insert(
+            0,
+            TriangleEdge {
+                a: vp,
+                b: eb,
+                kind: EdgeType::Regular(index),
+            },
+        );
+    }
+
+    fn add_from_end(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+        let vp = v.index_point();
+        let edges = match &mut self.content {
             Content::Point(point) => {
-                edges.push(
-                    TriangleEdge {
-                        a: vp,
-                        b: point.clone(),
-                        kind: EdgeType::Regular(usize::MAX),
-                    }
-                );
+                let edges = vec![TriangleEdge {
+                    a: *point,
+                    b: vp,
+                    kind: EdgeType::Regular(usize::MAX),
+                }];
+                self.content = Content::Edges(edges);
+                return;
             }
-            Content::Edges(next_edges) => {
-                edges.push(
-                    TriangleEdge {
-                        a: vp,
-                        b: next_edges.last().unwrap().a,
-                        kind: EdgeType::Regular(usize::MAX),
-                    }
-                );
-                edges.extend(next_edges.iter());
-            }
+            Content::Edges(edges) => edges,
         };
 
-        self.next = next.next;
-        self.sort = next.sort;
+        let el = edges.last().unwrap();
+
+        if Triangle::is_cw_or_line_point(v.this, el.a.point, el.b.point) {
+            edges.push(TriangleEdge {
+                a: el.b,
+                b: vp,
+                kind: EdgeType::Regular(usize::MAX),
+            });
+            return;
+        }
+
+        let mut index =
+            net_builder.add_triangle_and_join_by_edge(el, 0, PlainTriangle::abc(vp, el.a, el.b));
+        let mut ea = el.a;
+        let mut n = 1;
+        for ei in edges.iter().rev().skip(1) {
+            if Triangle::is_cw_or_line_point(v.this, ei.a.point, ei.b.point) {
+                break;
+            }
+            ea = ei.a;
+            n += 1;
+            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            triangle.neighbors[1] = index;
+            let prev_index = index;
+            index = net_builder.add_triangle_and_join_by_edge(el, 0, triangle);
+
+            net_builder.triangles[prev_index].neighbors[2] = index;
+        }
+        edges.truncate(edges.len() - n);
+
+        edges.push(TriangleEdge {
+            a: ea,
+            b: vp,
+            kind: EdgeType::Regular(index),
+        });
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use i_overlay::i_float::int::point::IntPoint;
-    use i_shape::int::shape::IntShape;
     use crate::plain::builder::TriangleNetBuilder;
     use crate::plain::vertex::ShapeToVertices;
+    use i_overlay::i_float::int::point::IntPoint;
+    use i_overlay::i_shape::int::shape::IntShape;
 
     fn shape_to_builder(shape: IntShape) -> TriangleNetBuilder {
-        let triangles_count =
-            shape.iter().fold(0, |s, path| s + path.len() - 2);
+        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
         let chain_vertices = shape.to_chain_vertices(&[]);
         let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
         net.build(&chain_vertices);
         net
     }
-
 
     #[test]
     fn test_0() {
@@ -526,6 +505,23 @@ mod tests {
     #[test]
     fn test_1() {
         let shape = vec![vec![
+            IntPoint::new(0, -5),
+            IntPoint::new(5, 0),
+            IntPoint::new(0, 5),
+            IntPoint::new(-5, 0),
+        ]];
+
+        let net = shape_to_builder(shape);
+
+        assert_eq!(net.triangles.len(), 2);
+
+        // assert_eq!(net.triangles[0].neighbors[2], 1);
+        // assert_eq!(net.triangles[1].neighbors[0], 0);
+    }
+
+    #[test]
+    fn test_2() {
+        let shape = vec![vec![
             IntPoint::new(0, 0),
             IntPoint::new(10, 0),
             IntPoint::new(5, 10),
@@ -540,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    fn test_2() {
+    fn test_3() {
         let shape = vec![vec![
             IntPoint::new(0, 0),
             IntPoint::new(10, 5),
@@ -556,7 +552,7 @@ mod tests {
     }
 
     #[test]
-    fn test_3() {
+    fn test_4() {
         let shape = vec![vec![
             IntPoint::new(0, 0),
             IntPoint::new(10, -5),
@@ -572,7 +568,28 @@ mod tests {
     }
 
     #[test]
-    fn test_4() {
+    fn test_5() {
+        let shape = vec![vec![
+            IntPoint::new(-15, -15),
+            IntPoint::new(15, -15),
+            IntPoint::new(25, 0),
+            IntPoint::new(15, 15),
+            IntPoint::new(-15, 15),
+            IntPoint::new(-25, 0),
+        ]];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 4);
+        //
+        // assert_eq!(net.triangles[0].neighbors, [usize::MAX, 1, 4]);
+        // assert_eq!(net.triangles[1].neighbors, [0, 2, usize::MAX]);
+        // assert_eq!(net.triangles[2].neighbors, [usize::MAX, usize::MAX, 1]);
+        // assert_eq!(net.triangles[3].neighbors, [usize::MAX, 4, usize::MAX]);
+        // assert_eq!(net.triangles[4].neighbors, [0, usize::MAX, 3]);
+    }
+
+    #[test]
+    fn test_6() {
         let shape = vec![vec![
             IntPoint::new(0, -5),
             IntPoint::new(-10, -15),
@@ -591,5 +608,55 @@ mod tests {
         assert_eq!(net.triangles[2].neighbors, [usize::MAX, usize::MAX, 1]);
         assert_eq!(net.triangles[3].neighbors, [usize::MAX, 4, usize::MAX]);
         assert_eq!(net.triangles[4].neighbors, [0, usize::MAX, 3]);
+    }
+
+    #[test]
+    fn test_7() {
+        let shape = vec![vec![
+            IntPoint::new(15, -15),
+            IntPoint::new(0, 15),
+            IntPoint::new(0, 0),
+            IntPoint::new(-15, 0),
+            IntPoint::new(-15, -15),
+        ]];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 3);
+    }
+
+    #[test]
+    fn test_8() {
+        let shape = vec![vec![
+            IntPoint::new(-5, -10),
+            IntPoint::new(-10, -15),
+            IntPoint::new(5, -20),
+            IntPoint::new(0, 0),
+            IntPoint::new(5, 20),
+            IntPoint::new(-10, 15),
+            IntPoint::new(-5, 10),
+            IntPoint::new(-15, 0),
+        ]];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 3);
+    }
+
+    #[test]
+    fn test_9() {
+        let shape = vec![vec![
+            IntPoint::new(-5, -10),
+            IntPoint::new(-10, -15),
+            IntPoint::new(-2, -20),
+            IntPoint::new(5, -20),
+            IntPoint::new(0, 0),
+            IntPoint::new(5, 20),
+            IntPoint::new(-2, 20),
+            IntPoint::new(-10, 15),
+            IntPoint::new(-5, 10),
+            IntPoint::new(-15, 0),
+        ]];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 3);
     }
 }

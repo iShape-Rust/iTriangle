@@ -16,4 +16,4 @@ log = "0.4.22"
 console_log = "^1.0.0"
 console_error_panic_hook = "^0"
 
-i_triangle = { path = "../iTriangle" }
+i_mesh = { path = "../../iMesh/iMesh" }

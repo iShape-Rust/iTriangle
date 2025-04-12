@@ -1,21 +1,15 @@
+use std::collections::HashMap;
 use crate::plain::vertex::IndexPoint;
 use i_overlay::i_float::int::point::IntPoint;
-use i_overlay::i_float::triangle::Triangle;
-use std::cmp::Ordering;
 use i_tree::set::sort::KeyValue;
+use i_tree::set::tree::SetTree;
+use crate::plain::v_segment::VSegment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EdgeType {
     Regular(usize), // keep index to triangle
     Phantom(usize), // keep index to itself(edge) in phantom store
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct VSegment {
-    pub(super) a: IntPoint,
-    pub(super) b: IntPoint,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct TriangleEdge {
     pub(super) a: IndexPoint,
@@ -38,48 +32,6 @@ pub(super) struct Section {
     pub(super) content: Content,
 }
 
-impl VSegment {
-    #[inline]
-    fn is_under_segment_order(&self, other: &VSegment) -> Ordering {
-        match self.a.cmp(&other.a) {
-            Ordering::Less => Triangle::clock_order_point(self.a, other.a, self.b),
-            Ordering::Equal => Triangle::clock_order_point(self.a, other.b, self.b),
-            Ordering::Greater => Triangle::clock_order_point(other.a, other.b, self.a),
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_under_point_order(&self, p: IntPoint) -> Ordering {
-        debug_assert!(self.a.x <= p.x && p.x <= self.b.x);
-
-        Triangle::clock_order_point(self.a, p, self.b)
-    }
-}
-
-impl PartialOrd<Self> for VSegment {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for VSegment {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.is_under_segment_order(other)
-    }
-}
-
-impl Default for VSegment {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            a: IntPoint::ZERO,
-            b: IntPoint::ZERO,
-        }
-    }
-}
-
 impl Default for Section {
     #[inline]
     fn default() -> Self {
@@ -98,6 +50,15 @@ impl KeyValue<VSegment> for Section {
         &self.sort
     }
 }
+
+pub(super) struct SectionStore<'a> {
+    tree: SetTree<VSegment, &'a Section>,
+    map: HashMap<IntPoint, Section>
+}
+
+
+
+
 
 #[cfg(test)]
 mod tests {
