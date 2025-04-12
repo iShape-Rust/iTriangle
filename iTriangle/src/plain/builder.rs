@@ -7,7 +7,6 @@ use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::collections::HashMap;
 use std::mem::swap;
-use i_overlay::i_float::int::point::IntPoint;
 
 struct PhantomHandler {
     vertex: usize,
@@ -62,7 +61,6 @@ impl TriangleNetBuilder {
 }
 
 impl TriangleNetBuilder {
-
     #[inline]
     fn next_triangle_index(&self) -> usize {
         self.triangles.len()
@@ -145,9 +143,7 @@ impl TriangleNetBuilder {
 
         match &mut prev.content {
             Content::Point(_) => {}
-            Content::Edges(edges) => {
-                edges.append(&mut next_edges)
-            }
+            Content::Edges(edges) => edges.append(&mut next_edges),
         }
 
         prev.next = p_next;
@@ -393,7 +389,7 @@ impl Section {
             eb = ei.b;
             n += 1;
             let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = index;
+            triangle.neighbors[2] = index;
             let prev_index = index;
             index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
 
@@ -470,6 +466,32 @@ impl Section {
 }
 
 #[cfg(test)]
+impl TriangleNetBuilder {
+    pub fn validate(&self) {
+        for (i, t) in self.triangles.iter().enumerate() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+            assert!(!Triangle::is_cw_or_line_point(a, b, c));
+
+            let n0 = t.neighbors[0];
+            let n1 = t.neighbors[1];
+            let n2 = t.neighbors[2];
+
+            if n0 != usize::MAX {
+                assert!(self.triangles[n0].neighbors.contains(&i));
+            }
+            if n1 != usize::MAX {
+                assert!(self.triangles[n1].neighbors.contains(&i));
+            }
+            if n2 != usize::MAX {
+                assert!(self.triangles[n2].neighbors.contains(&i));
+            }
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::plain::builder::TriangleNetBuilder;
     use crate::plain::vertex::ShapeToVertices;
@@ -497,9 +519,7 @@ mod tests {
         let net = shape_to_builder(shape);
 
         assert_eq!(net.triangles.len(), 2);
-
-        assert_eq!(net.triangles[0].neighbors[2], 1);
-        assert_eq!(net.triangles[1].neighbors[0], 0);
+        net.validate();
     }
 
     #[test]
@@ -514,9 +534,7 @@ mod tests {
         let net = shape_to_builder(shape);
 
         assert_eq!(net.triangles.len(), 2);
-
-        // assert_eq!(net.triangles[0].neighbors[2], 1);
-        // assert_eq!(net.triangles[1].neighbors[0], 0);
+        net.validate();
     }
 
     #[test]
@@ -530,9 +548,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
-
-        assert_eq!(net.triangles[0].neighbors[1], 1);
-        assert_eq!(net.triangles[1].neighbors[0], 0);
+        net.validate();
     }
 
     #[test]
@@ -546,9 +562,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
-
-        assert_eq!(net.triangles[0].neighbors[1], 1);
-        assert_eq!(net.triangles[1].neighbors[2], 0);
+        net.validate();
     }
 
     #[test]
@@ -562,9 +576,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
-
-        assert_eq!(net.triangles[0].neighbors[0], 1);
-        assert_eq!(net.triangles[1].neighbors[0], 0);
+        net.validate();
     }
 
     #[test]
@@ -580,12 +592,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 4);
-        //
-        // assert_eq!(net.triangles[0].neighbors, [usize::MAX, 1, 4]);
-        // assert_eq!(net.triangles[1].neighbors, [0, 2, usize::MAX]);
-        // assert_eq!(net.triangles[2].neighbors, [usize::MAX, usize::MAX, 1]);
-        // assert_eq!(net.triangles[3].neighbors, [usize::MAX, 4, usize::MAX]);
-        // assert_eq!(net.triangles[4].neighbors, [0, usize::MAX, 3]);
+        net.validate();
     }
 
     #[test]
@@ -602,12 +609,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 5);
-
-        assert_eq!(net.triangles[0].neighbors, [usize::MAX, 1, 4]);
-        assert_eq!(net.triangles[1].neighbors, [0, 2, usize::MAX]);
-        assert_eq!(net.triangles[2].neighbors, [usize::MAX, usize::MAX, 1]);
-        assert_eq!(net.triangles[3].neighbors, [usize::MAX, 4, usize::MAX]);
-        assert_eq!(net.triangles[4].neighbors, [0, usize::MAX, 3]);
+        net.validate();
     }
 
     #[test]
@@ -622,6 +624,7 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 3);
+        net.validate();
     }
 
     #[test]
@@ -638,7 +641,8 @@ mod tests {
         ]];
 
         let net = shape_to_builder(shape);
-        assert_eq!(net.triangles.len(), 3);
+        assert_eq!(net.triangles.len(), 6);
+        net.validate();
     }
 
     #[test]
@@ -657,6 +661,7 @@ mod tests {
         ]];
 
         let net = shape_to_builder(shape);
-        assert_eq!(net.triangles.len(), 3);
+        assert_eq!(net.triangles.len(), 8);
+        net.validate();
     }
 }
