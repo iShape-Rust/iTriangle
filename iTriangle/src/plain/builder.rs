@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use crate::plain::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::plain::triangle::PlainTriangle;
 use crate::plain::v_segment::VSegment;
@@ -31,17 +32,17 @@ impl TriangleNetBuilder {
 
     #[inline]
     pub(super) fn build(&mut self, vertices: &[ChainVertex]) {
-        let mut sections: SetTree<VSegment, Section> = SetTree::new(8);
+        let mut tree: SetTree<VSegment, Section> = SetTree::new(8);
 
         for v in vertices.iter() {
             match v.get_type() {
-                VertexType::Start => self.start(v, &mut sections),
-                VertexType::End => self.end(v, &mut sections),
-                VertexType::Merge => self.merge(v, &mut sections),
-                VertexType::Split => self.split(v, &mut sections),
-                VertexType::Next => self.next(v, &mut sections),
-                VertexType::Prev => self.prev(v, &mut sections),
-                VertexType::Implant => self.implant(v, &mut sections),
+                VertexType::Start => self.start(v, &mut tree),
+                VertexType::End => self.end(v, &mut tree),
+                VertexType::Merge => self.merge(v, &mut tree),
+                VertexType::Split => self.split(v, &mut tree),
+                VertexType::Next => self.next(v, &mut tree),
+                VertexType::Prev => self.prev(v, &mut tree),
+                VertexType::Implant => self.implant(v, &mut tree),
             }
         }
     }
@@ -111,19 +112,19 @@ impl TriangleNetBuilder {
         new_index
     }
 
-    fn next(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let section = sections.value_by_index_mut(index);
+    fn next(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let index = tree.find_section(v);
+        let section = tree.value_by_index_mut(index);
         section.add_to_bottom(v, self);
     }
 
-    fn prev(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let section = sections.value_by_index_mut(index);
+    fn prev(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let index = tree.find_section(v);
+        let section = tree.value_by_index_mut(index);
         section.add_to_top(v, self);
     }
 
-    fn start(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+    fn start(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
         let section = Section {
             sort: VSegment {
                 a: v.this,
@@ -131,28 +132,28 @@ impl TriangleNetBuilder {
             },
             content: Content::Point(v.index_point()),
         };
-        sections.insert(section);
+        tree.insert(section);
     }
 
-    fn end(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let section = sections.value_by_index_mut(index);
+    fn end(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let index = tree.find_section(v);
+        let section = tree.value_by_index_mut(index);
         section.add_as_last(v, self);
-        sections.delete_by_index(index);
+        tree.delete_by_index(index);
     }
 
-    fn split(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let section = sections.value_by_index_mut(index);
+    fn split(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let index = tree.find_section(v);
+        let section = tree.value_by_index_mut(index);
         let bottom = section.add_to_middle(v, self);
-        sections.insert(bottom);
+        tree.insert(bottom);
     }
 
-    fn merge(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        let prev_index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let next_index = sections.index_before(prev_index);
+    fn merge(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let prev_index = tree.find_section(v);
+        let next_index = tree.index_before(prev_index);
 
-        let next = sections.value_by_index_mut(next_index);
+        let next = tree.value_by_index_mut(next_index);
         next.add_from_start(v, self);
 
         let mut next_edges = if let Content::Edges(edges) = &next.content {
@@ -163,7 +164,7 @@ impl TriangleNetBuilder {
 
         let sort = next.sort;
 
-        let prev = sections.value_by_index_mut(prev_index);
+        let prev = tree.value_by_index_mut(prev_index);
         prev.add_from_end(v, self);
 
         match &mut prev.content {
@@ -173,11 +174,11 @@ impl TriangleNetBuilder {
 
         prev.sort = sort;
 
-        sections.delete_by_index(next_index);
+        tree.delete_by_index(next_index);
     }
 
-    fn implant(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
-        self.split(v, sections)
+    fn implant(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        self.split(v, tree)
     }
 }
 
@@ -463,6 +464,24 @@ impl TriangleNetBuilder {
                 assert!(self.triangles[n2].neighbors.contains(&i));
             }
         }
+    }
+}
+
+
+trait FindSection {
+    fn find_section(&self, v: &ChainVertex) -> u32;
+}
+
+impl FindSection for SetTree<VSegment, Section> {
+    #[inline]
+    fn find_section(&self, v: &ChainVertex) -> u32 {
+        self.first_index_less_by(|s| {
+            let point_search = s.is_under_point_order(v.this);
+            match point_search {
+                Ordering::Equal => Triangle::clock_order_point(s.b, s.a, v.prev),
+                _ => point_search
+            }
+        })
     }
 }
 
