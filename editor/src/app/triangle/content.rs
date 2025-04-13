@@ -10,7 +10,6 @@ use i_mesh::i_triangle::i_overlay::core::fill_rule::FillRule;
 use i_mesh::i_triangle::i_overlay::core::simplify::Simplify;
 use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
-use i_mesh::i_triangle::plain::triangulator::Triangulator;
 use iced::widget::scrollable;
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
@@ -179,10 +178,10 @@ impl TriangleState {
         let mut shapes = self.workspace.paths.simplify(FillRule::NonZero, 0);
         shapes.reverse_contours();
 
-        self.workspace.triangulations = shapes
-            .iter()
-            .map(|s| Triangulator::default().triangulate(s))
-            .collect();
+        // self.workspace.triangulations = shapes
+        //     .iter()
+        //     .map(|s| Triangulator::default().triangulate(s))
+        //     .collect();
 
         self.workspace.paths = shapes.into_iter().flat_map(|s| s).collect();
 

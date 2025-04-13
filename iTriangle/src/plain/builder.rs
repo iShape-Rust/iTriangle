@@ -34,18 +34,14 @@ impl TriangleNetBuilder {
         let mut sections: SetTree<VSegment, Section> = SetTree::new(8);
 
         for v in vertices.iter() {
-            match v.vert_type() {
-                VertexType::Start => sections.insert(Section::with_vertex(v)),
+            match v.get_type() {
+                VertexType::Start => self.start(v, &mut sections),
+                VertexType::End => self.end(v, &mut sections),
                 VertexType::Merge => self.merge(v, &mut sections),
-                VertexType::Other => {
-                    let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-                    let s = sections.value_by_index_mut(index);
-                    match s.add(v, self) {
-                        Action::Create(new) => sections.insert(new),
-                        Action::Delete => sections.delete_by_index(index),
-                        Action::Update => {}
-                    }
-                }
+                VertexType::Split => self.split(v, &mut sections),
+                VertexType::Next => self.next(v, &mut sections),
+                VertexType::Prev => self.prev(v, &mut sections),
+                VertexType::Implant => self.implant(v, &mut sections),
             }
         }
     }
@@ -115,16 +111,46 @@ impl TriangleNetBuilder {
         new_index
     }
 
-    fn merge(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+    fn next(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
         let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
-        let s = sections.value_by_index(index);
-        let (next_index, prev_index) = if s.prev == v.this {
-            let prev_index = sections.index_after(index);
-            (index, prev_index)
-        } else {
-            let next_index = sections.index_before(index);
-            (next_index, index)
+        let section = sections.value_by_index_mut(index);
+        section.add_to_bottom(v, self);
+    }
+
+    fn prev(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+        let section = sections.value_by_index_mut(index);
+        section.add_to_top(v, self);
+    }
+
+    fn start(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let section = Section {
+            sort: VSegment {
+                a: v.this,
+                b: v.next,
+            },
+            content: Content::Point(v.index_point()),
         };
+        sections.insert(section);
+    }
+
+    fn end(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+        let section = sections.value_by_index_mut(index);
+        section.add_as_last(v, self);
+        sections.delete_by_index(index);
+    }
+
+    fn split(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+        let section = sections.value_by_index_mut(index);
+        let bottom = section.add_to_middle(v, self);
+        sections.insert(bottom);
+    }
+
+    fn merge(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        let prev_index = sections.first_index_less_by(|s| s.is_under_point_order(v.this));
+        let next_index = sections.index_before(prev_index);
 
         let next = sections.value_by_index_mut(next_index);
         next.add_from_start(v, self);
@@ -135,7 +161,6 @@ impl TriangleNetBuilder {
             Vec::new()
         };
 
-        let p_next = next.next;
         let sort = next.sort;
 
         let prev = sections.value_by_index_mut(prev_index);
@@ -146,58 +171,17 @@ impl TriangleNetBuilder {
             Content::Edges(edges) => edges.append(&mut next_edges),
         }
 
-        prev.next = p_next;
         prev.sort = sort;
 
         sections.delete_by_index(next_index);
     }
-}
 
-enum Action {
-    Create(Section),
-    Delete,
-    Update,
+    fn implant(&mut self, v: &ChainVertex, sections: &mut SetTree<VSegment, Section>) {
+        self.split(v, sections)
+    }
 }
 
 impl Section {
-    #[inline]
-    fn with_vertex(v: &ChainVertex) -> Self {
-        Self {
-            prev: v.prev,
-            next: v.next,
-            sort: VSegment {
-                a: v.this,
-                b: v.next,
-            },
-            content: Content::Point(v.index_point()),
-        }
-    }
-
-    #[inline]
-    fn add(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) -> Action {
-        let eq_prev = v.this == self.prev;
-        let eq_next = v.this == self.next;
-
-        match (eq_prev, eq_next) {
-            (true, true) => {
-                self.add_as_last(v, net_builder);
-                Action::Delete
-            }
-            (true, false) => {
-                self.add_to_top(v, net_builder);
-                Action::Update
-            }
-            (false, true) => {
-                self.add_to_bottom(v, net_builder);
-                Action::Update
-            }
-            (false, false) => {
-                let bottom_section = self.add_to_middle(v, net_builder);
-                Action::Create(bottom_section)
-            }
-        }
-    }
-
     #[inline]
     fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
         let edges = match &mut self.content {
@@ -226,7 +210,6 @@ impl Section {
 
     #[inline]
     fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
-        self.prev = v.prev;
         self.add_from_start(v, net_builder);
     }
 
@@ -236,7 +219,6 @@ impl Section {
             a: v.this,
             b: v.next,
         };
-        self.next = v.next;
         self.add_from_end(v, net_builder);
     }
 
@@ -262,13 +244,10 @@ impl Section {
 
                 // bottom
                 let bottom_section = Section {
-                    prev: v.prev,
-                    next: self.next,
                     sort: self.sort,
                     content: Content::Edges(vec![bottom_edge]),
                 };
 
-                self.next = v.next;
                 self.sort = VSegment {
                     a: v.this,
                     b: v.next,
@@ -307,8 +286,6 @@ impl Section {
         top_edges.push(top_edge);
 
         let top_section = Section {
-            prev: self.prev,
-            next: v.next,
             sort: VSegment {
                 a: v.this,
                 b: v.next,
@@ -341,8 +318,6 @@ impl Section {
 
         *edges = edges.split_off(i);
         edges.insert(0, bottom_edge);
-
-        self.prev = v.prev;
 
         top_section
     }

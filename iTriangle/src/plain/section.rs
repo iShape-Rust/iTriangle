@@ -1,8 +1,5 @@
-use std::collections::HashMap;
 use crate::plain::vertex::IndexPoint;
-use i_overlay::i_float::int::point::IntPoint;
 use i_tree::set::sort::KeyValue;
-use i_tree::set::tree::SetTree;
 use crate::plain::v_segment::VSegment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,24 +7,21 @@ pub(super) enum EdgeType {
     Regular(usize), // keep index to triangle
     Phantom(usize), // keep index to itself(edge) in phantom store
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub(super) struct TriangleEdge {
     pub(super) a: IndexPoint,
     pub(super) b: IndexPoint,
     pub(super) kind: EdgeType,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub(super) enum Content {
     Point(IndexPoint),
     Edges(Vec<TriangleEdge>)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub(super) struct Section {
-    // Todo probably we can remove prev and next
-    pub(super) prev: IntPoint,
-    pub(super) next: IntPoint,
     pub(super) sort: VSegment,
     pub(super) content: Content,
 }
@@ -36,8 +30,6 @@ impl Default for Section {
     #[inline]
     fn default() -> Self {
         Self {
-            prev: IntPoint::ZERO,
-            next: IntPoint::ZERO,
             sort: Default::default(),
             content: Content::Point(IndexPoint::empty()),
         }
@@ -50,14 +42,6 @@ impl KeyValue<VSegment> for Section {
         &self.sort
     }
 }
-
-pub(super) struct SectionStore<'a> {
-    tree: SetTree<VSegment, &'a Section>,
-    map: HashMap<IntPoint, Section>
-}
-
-
-
 
 
 #[cfg(test)]
@@ -74,8 +58,6 @@ mod tests {
         fn with_sort(sort: VSegment) -> Section {
             Section {
                 sort,
-                prev: IntPoint::ZERO,
-                next: IntPoint::ZERO,
                 content: Content::Point(IndexPoint::empty()),
             }
         }
@@ -137,11 +119,11 @@ mod tests {
         let r3 = sections.value_by_index(i3);
         let r4 = sections.value_by_index(i4);
 
-        assert!(r0.eq(&Section::with_sort(vs0)));
-        assert!(r1.eq(&Section::with_sort(vs1)));
-        assert!(r2.eq(&Section::with_sort(vs2)));
-        assert!(r3.eq(&Section::with_sort(vs2)));
-        assert!(r4.eq(&Section::with_sort(vs3)));
+        assert!(r0.sort.eq(&Section::with_sort(vs0).sort));
+        assert!(r1.sort.eq(&Section::with_sort(vs1).sort));
+        assert!(r2.sort.eq(&Section::with_sort(vs2).sort));
+        assert!(r3.sort.eq(&Section::with_sort(vs2).sort));
+        assert!(r4.sort.eq(&Section::with_sort(vs3).sort));
 
         assert_eq!(i5, EMPTY_REF);
     }
