@@ -491,6 +491,20 @@ impl TriangleNetBuilder {
             }
         }
     }
+
+    pub fn area(&self) -> i64 {
+        let mut s = 0;
+        for t in self.triangles.iter() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+
+            s += Triangle::area_two_point(a, b, c);
+        }
+
+        s
+    }
+
 }
 
 trait FindSection {
@@ -521,6 +535,7 @@ mod tests {
     use crate::plain::builder::TriangleNetBuilder;
     use crate::plain::vertex::ShapeToVertices;
     use i_overlay::i_float::int::point::IntPoint;
+    use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntShape;
 
@@ -545,11 +560,14 @@ mod tests {
             IntPoint::new(10, 10),
             IntPoint::new(0, 10),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
 
         assert_eq!(net.triangles.len(), 2);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -560,11 +578,14 @@ mod tests {
             IntPoint::new(0, 5),
             IntPoint::new(-5, 0),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
 
         assert_eq!(net.triangles.len(), 2);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -575,10 +596,13 @@ mod tests {
             IntPoint::new(5, 10),
             IntPoint::new(0, 10),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -589,10 +613,13 @@ mod tests {
             IntPoint::new(0, 10),
             IntPoint::new(5, 5),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -603,10 +630,13 @@ mod tests {
             IntPoint::new(5, 0),
             IntPoint::new(10, 5),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -619,10 +649,13 @@ mod tests {
             IntPoint::new(-15, 15),
             IntPoint::new(-25, 0),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 4);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -636,10 +669,13 @@ mod tests {
             IntPoint::new(-10, 15),
             IntPoint::new(0, 5),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 5);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -651,10 +687,13 @@ mod tests {
             IntPoint::new(-15, 0),
             IntPoint::new(-15, -15),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 3);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -669,10 +708,13 @@ mod tests {
             IntPoint::new(-5, 10),
             IntPoint::new(-15, 0),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 6);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -689,10 +731,13 @@ mod tests {
             IntPoint::new(-5, 10),
             IntPoint::new(-15, 0),
         ]];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 8);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -704,10 +749,13 @@ mod tests {
             path(&[[10, 5], [10, -5], [0, 0]]),
             path(&[[-5, 10], [5, 10], [0, 0]]),
         ];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 16);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -720,10 +768,13 @@ mod tests {
             path(&[[10, 10], [10, 15], [15, 15], [15, 10]]),
             path(&[[5, 5], [5, 10], [10, 10], [10, 5]]),
         ];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 24);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -732,10 +783,13 @@ mod tests {
             path(&[[-30, -30], [0, -15], [30, -30], [15, 0], [30, 30], [0, 15], [-30, 30], [-15, 0]]),
             path(&[[-20, 20], [0, 10], [20, 20], [10, 0], [20, -20], [0, -10], [-20, -20], [-10, 0]]),
         ];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 16);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 
     #[test]
@@ -743,9 +797,12 @@ mod tests {
         let shape = vec![
             path(&[[-15, 15], [10, 15], [18, -15], [15, -15], [30, -30], [15, 0], [30, 30], [-15, 30]]),
         ];
+        let shape_area = shape.area_two();
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 6);
         net.validate();
+
+        assert_eq!(net.area(), shape_area);
     }
 }
