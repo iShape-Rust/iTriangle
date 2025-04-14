@@ -184,7 +184,7 @@ impl TriangleState {
             .map(|s| Triangulator::default().triangulate(s))
             .collect();
 
-        self.workspace.paths = shapes.into_iter().flat_map(|s| s).collect();
+        // self.workspace.paths = shapes.into_iter().flat_map(|s| s).collect();
 
         match self.mode {
             ModeOption::Edit => {}
