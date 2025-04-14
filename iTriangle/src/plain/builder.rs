@@ -427,7 +427,7 @@ impl Section {
             let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = index;
             let prev_index = index;
-            index = net_builder.add_triangle_and_join_by_edge(el, 0, triangle);
+            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
 
             net_builder.triangles[prev_index].neighbors[2] = index;
         }
@@ -490,7 +490,12 @@ mod tests {
     use crate::plain::builder::TriangleNetBuilder;
     use crate::plain::vertex::ShapeToVertices;
     use i_overlay::i_float::int::point::IntPoint;
+    use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntShape;
+
+    fn path(slice: &[[i32; 2]]) -> IntPath {
+        slice.iter().map(|p|IntPoint::new(p[0], p[1])).collect()
+    }
 
     fn shape_to_builder(shape: IntShape) -> TriangleNetBuilder {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
@@ -656,6 +661,21 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 8);
+        net.validate();
+    }
+
+    #[test]
+    fn test_10() {
+        let shape = vec![
+            path(&[[-15, -15], [15, -15], [15, 15], [-15, 15]]),
+            path(&[[-10, -5], [-10, 5], [0, 0]]),
+            path(&[[5, -10], [-5, -10], [0, 0]]),
+            path(&[[10, 5], [10, -5], [0, 0]]),
+            path(&[[-5, 10], [5, 10], [0, 0]]),
+        ];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 16);
         net.validate();
     }
 }
