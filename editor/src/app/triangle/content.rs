@@ -14,6 +14,7 @@ use iced::widget::scrollable;
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
+use i_mesh::i_triangle::plain::triangulator::Triangulator;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,
@@ -178,10 +179,10 @@ impl TriangleState {
         let mut shapes = self.workspace.paths.simplify(FillRule::NonZero, 0);
         shapes.reverse_contours();
 
-        // self.workspace.triangulations = shapes
-        //     .iter()
-        //     .map(|s| Triangulator::default().triangulate(s))
-        //     .collect();
+        self.workspace.triangulations = shapes
+            .iter()
+            .map(|s| Triangulator::default().triangulate(s))
+            .collect();
 
         self.workspace.paths = shapes.into_iter().flat_map(|s| s).collect();
 

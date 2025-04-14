@@ -162,8 +162,8 @@ impl<Message> Widget<Message, Theme, Renderer> for PathEditorWidget<'_, Message>
         let radius_offset = offset - Point::new(self.mesh_radius, self.mesh_radius);
 
         let mut contour_builder = PathBuilder::new(self.camera, offset_vec.convert());
-        contour_builder.add_paths(&self.path, true, 2.0);
-        if let Some(mesh) = contour_builder.into_mesh(Color::new(1.0, 1.0, 1.0, 0.1)) {
+        contour_builder.add_paths(&self.path, true, 4.0);
+        if let Some(mesh) = contour_builder.into_mesh(Color::new(1.0, 1.0, 1.0, 0.2)) {
             renderer.with_translation(Vector::new(0.0, 0.0), |renderer| renderer.draw_mesh(mesh));
         }
 
