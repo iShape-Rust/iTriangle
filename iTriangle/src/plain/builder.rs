@@ -142,14 +142,13 @@ impl TriangleNetBuilder {
     fn split(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
-        let bottom = section.add_to_middle(v, self);
-        tree.insert(bottom);
+        let new_section = section.add_to_middle(v, self);
+        tree.insert(new_section);
     }
 
     fn merge(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
         let prev_index = tree.find_section(v);
         let next_index = tree.index_before(prev_index);
-
         let next = tree.value_by_index_mut(next_index);
         next.add_from_start(v, self);
 
@@ -268,6 +267,36 @@ impl Section {
         }
 
         let vp = v.index_point();
+        if i >= edges.len() {
+            let phantom_index = net_builder.get_unique_phantom_edge_index();
+            let eb = edges[i - 1].b;
+            let top_edge = TriangleEdge {
+                a: eb,
+                b: vp,
+                kind: EdgeType::Phantom(phantom_index),
+            };
+            edges.push(top_edge);
+
+            let bottom_edges = vec![
+                TriangleEdge {
+                    a: vp,
+                    b: eb,
+                    kind: EdgeType::Phantom(phantom_index),
+                }
+            ];
+
+            let bottom_section = Section {
+                sort: self.sort,
+                content: Content::Edges(bottom_edges),
+            };
+
+            self.sort = VSegment {
+                a: v.this,
+                b: v.next,
+            };
+
+            return bottom_section
+        }
         let e0 = &edges[i];
 
         let mut index =
@@ -694,6 +723,29 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 24);
+        net.validate();
+    }
+
+    #[test]
+    fn test_12() {
+        let shape = vec![
+            path(&[[-30, -30], [0, -15], [30, -30], [15, 0], [30, 30], [0, 15], [-30, 30], [-15, 0]]),
+            path(&[[-20, 20], [0, 10], [20, 20], [10, 0], [20, -20], [0, -10], [-20, -20], [-10, 0]]),
+        ];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 16);
+        net.validate();
+    }
+
+    #[test]
+    fn test_13() {
+        let shape = vec![
+            path(&[[-15, 15], [10, 15], [18, -15], [15, -15], [30, -30], [15, 0], [30, 30], [-15, 30]]),
+        ];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 6);
         net.validate();
     }
 }
