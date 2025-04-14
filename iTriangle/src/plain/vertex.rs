@@ -8,8 +8,7 @@ pub(super) enum VertexType {
     End,
     Merge,
     Split,
-    Prev,
-    Next,
+    Join,
     Implant,
 }
 
@@ -89,10 +88,8 @@ impl ChainVertex {
             } else {
                 VertexType::Start
             }
-        } else if self.prev < self.this {
-            VertexType::Next
         } else {
-            VertexType::Prev
+            VertexType::Join
         }
     }
 

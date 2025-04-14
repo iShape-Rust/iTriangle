@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use crate::plain::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::plain::triangle::PlainTriangle;
 use crate::plain::v_segment::VSegment;
@@ -6,6 +5,7 @@ use crate::plain::vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::mem::swap;
 
@@ -40,8 +40,7 @@ impl TriangleNetBuilder {
                 VertexType::End => self.end(v, &mut tree),
                 VertexType::Merge => self.merge(v, &mut tree),
                 VertexType::Split => self.split(v, &mut tree),
-                VertexType::Next => self.next(v, &mut tree),
-                VertexType::Prev => self.prev(v, &mut tree),
+                VertexType::Join => self.join(v, &mut tree),
                 VertexType::Implant => self.implant(v, &mut tree),
             }
         }
@@ -112,16 +111,14 @@ impl TriangleNetBuilder {
         new_index
     }
 
-    fn next(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn join(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
-        section.add_to_bottom(v, self);
-    }
-
-    fn prev(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
-        let index = tree.find_section(v);
-        let section = tree.value_by_index_mut(index);
-        section.add_to_top(v, self);
+        if section.sort.b == v.this {
+            section.add_to_bottom(v, self);
+        } else {
+            section.add_to_top(v, self);
+        }
     }
 
     fn start(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
@@ -467,7 +464,6 @@ impl TriangleNetBuilder {
     }
 }
 
-
 trait FindSection {
     fn find_section(&self, v: &ChainVertex) -> u32;
 }
@@ -478,8 +474,14 @@ impl FindSection for SetTree<VSegment, Section> {
         self.first_index_less_by(|s| {
             let point_search = s.is_under_point_order(v.this);
             match point_search {
-                Ordering::Equal => Triangle::clock_order_point(s.b, s.a, v.prev),
-                _ => point_search
+                Ordering::Equal => {
+                    if v.prev == s.a {
+                        Ordering::Equal
+                    } else {
+                        Triangle::clock_order_point(s.a, v.next, s.b)
+                    }
+                }
+                _ => point_search,
             }
         })
     }
@@ -494,7 +496,7 @@ mod tests {
     use i_overlay::i_shape::int::shape::IntShape;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
-        slice.iter().map(|p|IntPoint::new(p[0], p[1])).collect()
+        slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
     }
 
     fn shape_to_builder(shape: IntShape) -> TriangleNetBuilder {
@@ -676,6 +678,22 @@ mod tests {
 
         let net = shape_to_builder(shape);
         assert_eq!(net.triangles.len(), 16);
+        net.validate();
+    }
+
+    #[test]
+    fn test_11() {
+        let shape = vec![
+            path(&[[-5, -5], [20, -5], [20, 20], [-5, 20]]),
+            path(&[[0, 0], [0, 5], [5, 5], [5, 0]]),
+            path(&[[0, 10], [0, 15], [5, 15], [5, 10]]),
+            path(&[[10, 0], [10, 5], [15, 5], [15, 0]]),
+            path(&[[10, 10], [10, 15], [15, 15], [15, 10]]),
+            path(&[[5, 5], [5, 10], [10, 10], [10, 5]]),
+        ];
+
+        let net = shape_to_builder(shape);
+        assert_eq!(net.triangles.len(), 24);
         net.validate();
     }
 }
