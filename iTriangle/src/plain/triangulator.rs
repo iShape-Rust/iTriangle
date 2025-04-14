@@ -33,7 +33,15 @@ impl Triangulator {
         net_builder.build(&chain_vertices);
 
         let indices = net_builder.triangle_indices();
-        let points = chain_vertices.into_iter().map(|v|v.this).collect();
+
+        let mut points = Vec::with_capacity(chain_vertices.len());
+        let mut index = usize::MAX;
+        for v in chain_vertices.iter() {
+            if v.index != index {
+                index = v.index;
+                points.push(v.this);
+            }
+        }
 
         Triangulation { points, indices }
     }
