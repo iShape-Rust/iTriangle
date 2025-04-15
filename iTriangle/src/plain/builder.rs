@@ -299,8 +299,9 @@ impl Section {
         }
         let e0 = &edges[i];
 
-        let mut index =
-            net_builder.add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
+        let mut t0 = PlainTriangle::abc(vp, e0.a, e0.b);
+        t0.neighbors[1] = net_builder.triangles.len() + 1;
+        let mut index = net_builder.add_triangle_and_join_by_edge(e0, 0, t0);
 
         let top_edge = TriangleEdge {
             a: e0.a,
