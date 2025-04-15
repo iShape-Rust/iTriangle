@@ -6,18 +6,78 @@ use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::mem::swap;
 
+#[derive(Copy, Clone)]
 struct PhantomHandler {
     vertex: usize,
     triangle: usize,
 }
 
+struct PhantomStore {
+    buffer: Vec<PhantomHandler>,
+    unused: Vec<usize>
+}
+
+impl PhantomStore {
+
+    const EMPTY: PhantomHandler = PhantomHandler { vertex: usize::MAX , triangle: usize::MAX };
+
+    fn new(capacity: usize) -> Self {
+        let capacity = capacity.max(8);
+        let mut store = Self {
+            buffer: Vec::with_capacity(capacity),
+            unused: Vec::with_capacity(capacity),
+        };
+        store.reserve(capacity);
+        store
+    }
+
+    #[inline]
+    fn reserve(&mut self, length: usize) {
+        debug_assert!(length > 0);
+        let n = self.buffer.len();
+        let l = length;
+        self.buffer.reserve(length);
+        self.buffer.resize(self.buffer.len() + length, Self::EMPTY);
+        self.unused.reserve(length);
+        self.unused.extend((n..n + l).rev());
+    }
+
+    #[inline]
+    fn get(&self, index: usize) -> Option<PhantomHandler> {
+        let item = self.buffer[index];
+        if item.triangle == usize::MAX {
+            None
+        } else {
+            Some(item)
+        }
+    }
+
+    #[inline]
+    fn set(&mut self, index: usize, handler: PhantomHandler) {
+        debug_assert!(self.buffer[index].triangle == usize::MAX);
+        self.buffer[index] = handler;
+    }
+
+    #[inline]
+    fn get_free_index(&mut self) -> usize {
+        if self.unused.is_empty() {
+            self.reserve(self.unused.capacity());
+        }
+        self.unused.pop().unwrap()
+    }
+
+    #[inline]
+    fn put_back(&mut self, index: usize) {
+        self.buffer[index] = Self::EMPTY;
+        self.unused.push(index)
+    }
+}
+
 pub(super) struct TriangleNetBuilder {
     pub(super) triangles: Vec<PlainTriangle>,
-    edges_phantom_store: HashMap<usize, PhantomHandler>,
-    edges_counter: usize,
+    phantom_store: PhantomStore,
 }
 
 impl TriangleNetBuilder {
@@ -25,8 +85,7 @@ impl TriangleNetBuilder {
     pub(super) fn with_triangles_count(triangles_count: usize) -> Self {
         Self {
             triangles: Vec::with_capacity(triangles_count),
-            edges_phantom_store: HashMap::with_capacity(16),
-            edges_counter: 0,
+            phantom_store: PhantomStore::new(16),
         }
     }
 
@@ -64,9 +123,7 @@ impl TriangleNetBuilder {
 
     #[inline]
     fn get_unique_phantom_edge_index(&mut self) -> usize {
-        let index = self.edges_counter;
-        self.edges_counter += 1;
-        index
+        self.phantom_store.get_free_index()
     }
 
     #[inline]
@@ -89,14 +146,14 @@ impl TriangleNetBuilder {
                 other.neighbors[vi] = new_index;
             }
             EdgeType::Phantom(edge_index) => {
-                if let Some(handler) = self.edges_phantom_store.get(&edge_index) {
+                if let Some(handler) = self.phantom_store.get(edge_index) {
                     // if exist update neighbor
                     self.triangles[handler.triangle].neighbors[handler.vertex] = new_index;
                     new_triangle.neighbors[vertex] = handler.triangle;
-                    self.edges_phantom_store.remove(&edge_index);
+                    self.phantom_store.put_back(edge_index);
                 } else {
                     // create a phantom edge
-                    self.edges_phantom_store.insert(
+                    self.phantom_store.set(
                         edge_index,
                         PhantomHandler {
                             vertex,
