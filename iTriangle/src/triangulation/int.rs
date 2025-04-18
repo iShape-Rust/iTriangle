@@ -1,4 +1,5 @@
 use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::overlay::ContourDirection;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::count::PointsCount;
@@ -69,7 +70,7 @@ impl UnsafeTriangulate for Vec<IntShape> {
 impl IntTriangulate for IntShape {
     fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: usize) -> Triangulation {
         if let Some(fill_rule) = validate_rule {
-            self.simplify(fill_rule, min_area).triangulation()
+            self.simplify(fill_rule, ContourDirection::CounterClockwise, min_area).triangulation()
         } else {
             self.triangulation()
         }
@@ -77,7 +78,7 @@ impl IntTriangulate for IntShape {
 
     fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: usize) -> Vec<IntPath> {
         if let Some(fill_rule) = validate_rule {
-            self.simplify(fill_rule, min_area).convex_polygons()
+            self.simplify(fill_rule, ContourDirection::CounterClockwise, min_area).convex_polygons()
         } else if let Some(delaunay) = self.delaunay() {
             delaunay.to_convex_polygons()
         } else {
@@ -89,7 +90,7 @@ impl IntTriangulate for IntShape {
 impl IntTriangulate for Vec<IntShape> {
     fn to_triangulation(&self, validate_rule: Option<FillRule>, min_area: usize) -> Triangulation {
         if let Some(fill_rule) = validate_rule {
-            self.simplify(fill_rule, min_area).triangulation()
+            self.simplify(fill_rule, ContourDirection::CounterClockwise, min_area).triangulation()
         } else {
             self.triangulation()
         }
@@ -97,7 +98,7 @@ impl IntTriangulate for Vec<IntShape> {
 
     fn to_convex_polygons(&self, validate_rule: Option<FillRule>, min_area: usize) -> Vec<IntPath> {
         if let Some(fill_rule) = validate_rule {
-            self.simplify(fill_rule, min_area).convex_polygons()
+            self.simplify(fill_rule, ContourDirection::CounterClockwise, min_area).convex_polygons()
         } else {
             self.convex_polygons()
         }

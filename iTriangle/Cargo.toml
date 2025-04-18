@@ -14,10 +14,11 @@ glam = ["i_overlay/glam"]
 
 [dependencies]
 serde = { version = "^1.0", features = ["derive"] }
-i_overlay = { path = "../../iOverlay" }
+i_overlay = { path = "../../iOverlay/iOverlay" }
 i_tree = { path = "../../iTree" }
 
-#i_overlay = "~1.9.3"
+#i_overlay = "~3.0"
 
 [dev-dependencies]
 serde_json = "^1.0"
+rand = "0.9.1"

@@ -325,34 +325,61 @@ impl Section {
 
         let vp = v.index_point();
         if i >= edges.len() {
+            let e_last = edges[i - 1];
             let phantom_index = net_builder.get_unique_phantom_edge_index();
-            let eb = edges[i - 1].b;
-            let top_edge = TriangleEdge {
-                a: eb,
-                b: vp,
-                kind: EdgeType::Phantom(phantom_index),
-            };
-            edges.push(top_edge);
-
-            let bottom_edges = vec![
-                TriangleEdge {
-                    a: vp,
-                    b: eb,
+            return if Triangle::is_cw_or_line_point(v.this, e_last.a.point, e_last.b.point) {
+                let ea = edges[0].a;
+                let top_edges = vec![TriangleEdge {
+                    a: ea,
+                    b: vp,
                     kind: EdgeType::Phantom(phantom_index),
+                }];
+
+                let bottom_edge = TriangleEdge {
+                    a: vp,
+                    b: ea,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                edges.insert(0, bottom_edge);
+
+                // top section
+                Section {
+                    sort: VSegment {
+                        a: v.this,
+                        b: v.next,
+                    },
+                    content: Content::Edges(top_edges),
                 }
-            ];
+            } else {
+                let eb = edges[i - 1].b;
+                let top_edge = TriangleEdge {
+                    a: eb,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+                edges.push(top_edge);
 
-            let bottom_section = Section {
-                sort: self.sort,
-                content: Content::Edges(bottom_edges),
-            };
+                let bottom_edges = vec![
+                    TriangleEdge {
+                        a: vp,
+                        b: eb,
+                        kind: EdgeType::Phantom(phantom_index),
+                    }
+                ];
 
-            self.sort = VSegment {
-                a: v.this,
-                b: v.next,
-            };
+                let bottom_section = Section {
+                    sort: self.sort,
+                    content: Content::Edges(bottom_edges),
+                };
 
-            return bottom_section
+                self.sort = VSegment {
+                    a: v.this,
+                    b: v.next,
+                };
+
+                bottom_section
+            }
         }
         let e0 = &edges[i];
 
@@ -590,18 +617,22 @@ impl FindSection for SetTree<VSegment, Section> {
 
 #[cfg(test)]
 mod tests {
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::ContourDirection;
+    use i_overlay::core::simplify::Simplify;
     use crate::plain::builder::TriangleNetBuilder;
     use crate::plain::vertex::ShapeToVertices;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntShape;
+    use rand::Rng;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
     }
 
-    fn shape_to_builder(shape: IntShape) -> TriangleNetBuilder {
+    fn shape_to_builder(shape: &IntShape) -> TriangleNetBuilder {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
         let chain_vertices = shape.to_chain_vertices(&[]);
@@ -620,7 +651,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
 
         assert_eq!(net.triangles.len(), 2);
         net.validate();
@@ -638,7 +669,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
 
         assert_eq!(net.triangles.len(), 2);
         net.validate();
@@ -656,7 +687,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
 
@@ -673,7 +704,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
 
@@ -690,7 +721,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 2);
         net.validate();
 
@@ -709,7 +740,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 4);
         net.validate();
 
@@ -729,7 +760,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 5);
         net.validate();
 
@@ -747,7 +778,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 3);
         net.validate();
 
@@ -768,7 +799,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 6);
         net.validate();
 
@@ -791,7 +822,7 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 8);
         net.validate();
 
@@ -809,7 +840,7 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 16);
         net.validate();
 
@@ -828,7 +859,7 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 24);
         net.validate();
 
@@ -843,7 +874,7 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 16);
         net.validate();
 
@@ -857,10 +888,70 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(shape);
+        let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 6);
         net.validate();
 
         assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_14() {
+        let shape = vec![
+            path(&[[-2, -3], [-4, -4], [5, -1], [1, -1], [2, 3]]),
+        ];
+        let s = &shape
+            .simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0)[0];
+
+        let shape_area = s.area_two();
+
+        let net = shape_to_builder(&s);
+        assert_eq!(net.triangles.len(), 3);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_15() {
+        let shape = vec![
+            path(&[[0, 2], [2, 0], [5, 0], [4, 6]]),
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder(&shape);
+        assert_eq!(net.triangles.len(), 2);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_random_0() {
+        for _ in 0..100_000 {
+            let path = random(8, 5);
+            let shape = vec![path];
+            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, 0).first() {
+                let shape_area = first.area_two();
+                let net = shape_to_builder(first);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+
+    fn random(radius: i32, n: usize) -> IntPath {
+        let a = radius / 2;
+        let range = -a..=a;
+        let mut points = Vec::with_capacity(n);
+        let mut rng = rand::rng();
+        for _ in 0..n {
+            let x = rng.random_range(-a..=a);
+            let y = rng.random_range(-a..=a);
+            points.push(IntPoint { x, y })
+        }
+
+        points
     }
 }
