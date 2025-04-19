@@ -1,10 +1,10 @@
+use crate::delaunay::triangle::DTriangle;
+use crate::delaunay::vertex::DVertex;
+use crate::index::{Index, NIL_INDEX};
+use crate::triangulation::int::Triangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_float::u128::UInt128;
-use crate::delaunay::triangle::DTriangle;
-use crate::delaunay::vertex::DVertex;
-use crate::index::{NIL_INDEX, Index};
-use crate::triangulation::int::Triangulation;
 
 pub struct Delaunay {
     pub triangles: Vec<DTriangle>,
@@ -57,7 +57,6 @@ impl Delaunay {
     pub(crate) fn build(&mut self) {
         let count = self.triangles.len();
         let mut visit_marks = vec![false; count];
-        // let visit_marks_ptr = visit_marks.as_mut_ptr();
 
         let mut visit_index = 0;
 
@@ -144,8 +143,8 @@ impl Delaunay {
 
         let bi: usize;
         let ci: usize;
-        let a: DVertex;  // opposite a-p
-        let b: DVertex;  // edge bc
+        let a: DVertex; // opposite a-p
+        let b: DVertex; // edge bc
         let c: DVertex;
 
         let ai = abc.opposite(pbc.index);
@@ -175,7 +174,7 @@ impl Delaunay {
 
         let is_pass = Self::condition(p.point, c.point, a.point, b.point);
 
-        return if is_pass {
+        if is_pass {
             false
         } else {
             let is_abp_cw = Triangle::is_clockwise_point(a.point, b.point, p.point);
@@ -193,43 +192,27 @@ impl Delaunay {
 
             if is_abp_cw {
                 abp = DTriangle::abc_bc_ac_ab(
-                    abc.index,
-                    a,
-                    b,
-                    p,
-                    bp,                 // a - bp
-                    pbc.index,          // p - ap
-                    ab,                     // b - ab
+                    abc.index, a, b, p, bp,        // a - bp
+                    pbc.index, // p - ap
+                    ab,        // b - ab
                 );
 
                 acp = DTriangle::abc_bc_ac_ab(
-                    pbc.index,
-                    a,
-                    p,
-                    c,
-                    cp,                 // a - cp
-                    ac,                     // p - ac
-                    abc.index,          // b - ap
+                    pbc.index, a, p, c, cp,        // a - cp
+                    ac,        // p - ac
+                    abc.index, // b - ap
                 );
             } else {
                 abp = DTriangle::abc_bc_ac_ab(
-                    abc.index,
-                    a,
-                    p,
-                    b,
-                    bp,                 // a - bp
-                    ab,                 // p - ab
-                    pbc.index,          // b - ap
+                    abc.index, a, p, b, bp,        // a - bp
+                    ab,        // p - ab
+                    pbc.index, // b - ap
                 );
 
                 acp = DTriangle::abc_bc_ac_ab(
-                    pbc.index,
-                    a,
-                    c,
-                    p,
-                    cp,                 // a - cp
-                    abc.index,          // p - ap
-                    ac,                 // b - ac
+                    pbc.index, a, c, p, cp,        // a - cp
+                    abc.index, // p - ap
+                    ac,        // b - ac
                 )
             }
 
@@ -250,14 +233,12 @@ impl Delaunay {
                 *self.triangles.get_unchecked_mut(pbc.index) = acp;
             }
             true
-        };
+        }
     }
 
     fn update_neighbor_index(&mut self, index: usize, old_neighbor: usize, new_neighbor: usize) {
         if index.is_not_nil() {
-            let neighbor = unsafe {
-                self.triangles.get_unchecked_mut(index)
-            };
+            let neighbor = unsafe { self.triangles.get_unchecked_mut(index) };
             neighbor.update_opposite(old_neighbor, new_neighbor);
         }
     }
@@ -300,15 +281,15 @@ impl Delaunay {
         if cos_a < 0 {
             // cosA < 0
             // cosB >= 0
-            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b as u64);            // positive
-            let cos_a_sin_b = UInt128::multiply(cos_a.unsigned_abs(), sn_b);    // negative
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b as u64); // positive
+            let cos_a_sin_b = UInt128::multiply(cos_a.unsigned_abs(), sn_b); // negative
 
             sin_a_cos_b >= cos_a_sin_b
         } else {
             // cosA >= 0
             // cosB < 0
-            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b.unsigned_abs());    // negative
-            let cos_a_sin_b = UInt128::multiply(cos_a as u64, sn_b);            // positive
+            let sin_a_cos_b = UInt128::multiply(sn_a, cos_b.unsigned_abs()); // negative
+            let cos_a_sin_b = UInt128::multiply(cos_a as u64, sn_b); // positive
 
             cos_a_sin_b >= sin_a_cos_b
         }

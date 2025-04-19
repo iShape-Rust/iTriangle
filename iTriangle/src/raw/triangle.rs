@@ -1,4 +1,4 @@
-use crate::plain::vertex::IndexPoint;
+use crate::raw::vertex::IndexPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PlainTriangle {

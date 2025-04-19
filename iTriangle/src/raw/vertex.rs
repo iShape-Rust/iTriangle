@@ -1,6 +1,6 @@
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
-use i_overlay::i_shape::int::shape::IntShape;
+use i_overlay::i_shape::int::shape::{IntContour, IntShape};
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum VertexType {
@@ -17,7 +17,7 @@ pub(super) struct ChainVertex {
     pub(super) index: usize,
     pub(super) this: IntPoint,
     pub(super) next: IntPoint,
-    pub(super) prev: IntPoint
+    pub(super) prev: IntPoint,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -27,7 +27,6 @@ pub struct IndexPoint {
 }
 
 impl IndexPoint {
-
     #[inline]
     pub(super) fn new(index: usize, point: IntPoint) -> Self {
         Self { index, point }
@@ -50,7 +49,6 @@ impl Default for IndexPoint {
 }
 
 impl ChainVertex {
-
     #[inline]
     pub(super) fn new(this: IntPoint, next: IntPoint, prev: IntPoint) -> Self {
         Self {
@@ -99,33 +97,44 @@ impl ChainVertex {
     }
 }
 
-pub(super) trait ShapeToVertices {
-    fn to_chain_vertices(&self, implants: &[IntPoint]) -> Vec<ChainVertex>;
+struct ChainVerticesBuilder {
+    vertices: Vec<ChainVertex>,
 }
 
-impl ShapeToVertices for IntShape {
-    fn to_chain_vertices(&self, implants: &[IntPoint]) -> Vec<ChainVertex> {
-        let capacity = self.iter()
-            .fold(0, |s, path| s + path.len()) + implants.len();
+impl ChainVerticesBuilder {
+    #[inline]
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            vertices: Vec::with_capacity(capacity),
+        }
+    }
 
-        let mut vertices = Vec::with_capacity(capacity);
-        for path in self.iter() {
-            let n = path.len();
-
-            let mut prev = path[n - 2];
-            let mut this = path[n - 1];
-
-            for &next in path.iter() {
-                vertices.push(ChainVertex::new(this, next, prev));
-                prev = this;
-                this = next;
-            }
+    #[inline]
+    fn add_path(&mut self, path: &[IntPoint]) {
+        let n = path.len();
+        if n < 3 {
+            return;
         }
 
-        for &this in implants {
-            vertices.push(ChainVertex::implant(this));
-        }
+        let mut prev = path[n - 2];
+        let mut this = path[n - 1];
 
+        for &next in path.iter() {
+            self.vertices.push(ChainVertex::new(this, next, prev));
+            prev = this;
+            this = next;
+        }
+    }
+
+    #[inline]
+    fn add_steiner_points(&mut self, points: &[IntPoint]) {
+        for &this in points {
+            self.vertices.push(ChainVertex::implant(this));
+        }
+    }
+
+    fn into_chain_vertices(self) -> Vec<ChainVertex> {
+        let mut vertices = self.vertices;
         vertices.sort_unstable_by(|a, b| a.this.cmp(&b.this));
 
         debug_assert_eq!(vertices[0].index, 0); // must be 0 as default value
@@ -158,10 +167,76 @@ impl ShapeToVertices for IntShape {
     }
 }
 
+pub(super) trait ToChainVertices {
+    fn to_chain_vertices(&self) -> Vec<ChainVertex>;
+    fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex>;
+}
+
+impl ToChainVertices for IntShape {
+    fn to_chain_vertices(&self) -> Vec<ChainVertex> {
+        let capacity = self.iter().fold(0, |s, path| s + path.len());
+        let mut builder = ChainVerticesBuilder::with_capacity(capacity);
+
+        for path in self.iter() {
+            builder.add_path(path);
+        }
+
+        builder.into_chain_vertices()
+    }
+
+    fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex> {
+        let capacity = self.iter().fold(0, |s, path| s + path.len()) + points.len();
+        let mut builder = ChainVerticesBuilder::with_capacity(capacity);
+
+        for path in self.iter() {
+            builder.add_path(path);
+        }
+
+        builder.add_steiner_points(points);
+
+        builder.into_chain_vertices()
+    }
+}
+impl ToChainVertices for IntContour {
+    fn to_chain_vertices(&self) -> Vec<ChainVertex> {
+        let mut builder = ChainVerticesBuilder::with_capacity(self.len());
+        builder.add_path(self);
+        builder.into_chain_vertices()
+    }
+
+    fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex> {
+        let mut builder = ChainVerticesBuilder::with_capacity(self.len() + points.len());
+        builder.add_path(self);
+        builder.add_steiner_points(points);
+        builder.into_chain_vertices()
+    }
+}
+
+pub(super) trait IntoPoints {
+    fn into_points(self) -> Vec<IntPoint>;
+}
+
+impl IntoPoints for Vec<ChainVertex> {
+
+    #[inline]
+    fn into_points(self) -> Vec<IntPoint> {
+        let mut points = Vec::with_capacity(self.len());
+        let mut index = usize::MAX;
+        for v in self.iter() {
+            if v.index != index {
+                index = v.index;
+                points.push(v.this);
+            }
+        }
+        points
+    }
+}
+
+
 #[derive(Debug, PartialEq)]
 enum DirectionType {
     Next,
-    Prev
+    Prev,
 }
 
 struct Direction {
@@ -172,8 +247,14 @@ struct Direction {
 fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
     let mut dirs = Vec::with_capacity(2 * vertices.len());
     for v in vertices.iter() {
-        dirs.push(Direction { point: v.next, kind: DirectionType::Next });
-        dirs.push(Direction { point: v.prev, kind: DirectionType::Prev });
+        dirs.push(Direction {
+            point: v.next,
+            kind: DirectionType::Next,
+        });
+        dirs.push(Direction {
+            point: v.prev,
+            kind: DirectionType::Prev,
+        });
     }
 
     let c = vertices.first().unwrap().this;
@@ -182,7 +263,8 @@ fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
         let a = d0.point;
         let b = d1.point;
         if (a.x < c.x || a.x == c.x && a.y < c.y) && (b.x < c.x || b.x == c.x && b.y < c.y)
-            || (a.x > c.x || a.x == c.x && a.y > c.y) && (b.x > c.x || b.x == c.x && b.y > c.y) {
+            || (a.x > c.x || a.x == c.x && a.y > c.y) && (b.x > c.x || b.x == c.x && b.y > c.y)
+        {
             Triangle::clock_order_point(a, b, c)
         } else if a.x == c.x && b.x == c.x {
             a.y.cmp(&b.y)
@@ -239,12 +321,11 @@ fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
     };
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::raw::vertex::{sort_in_clockwise_order, ChainVertex, ToChainVertices};
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::shape::IntShape;
-    use crate::plain::vertex::{sort_in_clockwise_order, ChainVertex, ShapeToVertices};
 
     #[test]
     fn test_0() {
@@ -264,7 +345,7 @@ mod tests {
                 IntPoint::new(5, -5),
             ],
         ];
-        let vertices = shape.to_chain_vertices(&vec![]);
+        let vertices = shape.to_chain_vertices();
 
         assert_eq!(vertices.len(), 10);
     }
@@ -358,7 +439,6 @@ mod tests {
         assert_eq!(vv1[1].next, IntPoint::new(15, 0));
         assert_eq!(vv1[1].prev, IntPoint::new(20, 5));
     }
-
 
     #[test]
     fn test_5() {

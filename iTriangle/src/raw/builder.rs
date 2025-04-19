@@ -1,7 +1,7 @@
-use crate::plain::section::{Content, EdgeType, Section, TriangleEdge};
-use crate::plain::triangle::PlainTriangle;
-use crate::plain::v_segment::VSegment;
-use crate::plain::vertex::{ChainVertex, VertexType};
+use crate::raw::section::{Content, EdgeType, Section, TriangleEdge};
+use crate::raw::triangle::PlainTriangle;
+use crate::raw::v_segment::VSegment;
+use crate::raw::vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
@@ -623,8 +623,8 @@ mod tests {
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ContourDirection;
     use i_overlay::core::simplify::Simplify;
-    use crate::plain::builder::TriangleNetBuilder;
-    use crate::plain::vertex::ShapeToVertices;
+    use crate::raw::builder::TriangleNetBuilder;
+    use crate::raw::vertex::ToChainVertices;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;

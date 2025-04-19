@@ -11,11 +11,6 @@ pub(super) struct VSegment {
 impl VSegment {
     #[inline]
     fn is_under_segment_order(&self, other: &VSegment) -> Ordering {
-        // match self.a.cmp(&other.a) {
-        //     Ordering::Less => Triangle::clock_order_point(self.a, other.a, self.b),
-        //     Ordering::Equal => Triangle::clock_order_point(self.a, other.b, self.b),
-        //     Ordering::Greater => Triangle::clock_order_point(other.a, other.b, self.a),
-        // }
         match self.b.cmp(&other.b) {
             Ordering::Less => Triangle::clock_order_point(self.b, other.a, other.b),
             Ordering::Equal => Triangle::clock_order_point(self.b, self.a, other.a),
@@ -58,7 +53,7 @@ impl Default for VSegment {
 mod tests {
     use std::cmp::Ordering;
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::plain::v_segment::VSegment;
+    use crate::raw::v_segment::VSegment;
 
     #[test]
     fn test_0() {

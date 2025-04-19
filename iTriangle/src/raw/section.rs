@@ -1,6 +1,6 @@
-use crate::plain::vertex::IndexPoint;
+use crate::raw::vertex::IndexPoint;
 use i_tree::set::sort::KeyValue;
-use crate::plain::v_segment::VSegment;
+use crate::raw::v_segment::VSegment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EdgeType {
@@ -47,12 +47,12 @@ impl KeyValue<VSegment> for Section {
 #[cfg(test)]
 mod tests {
     use std::cmp::Ordering;
-    use crate::plain::section::{Content, Section, VSegment};
+    use crate::raw::section::{Content, Section, VSegment};
     use i_overlay::i_float::int::point::IntPoint;
     use i_tree::EMPTY_REF;
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;
-    use crate::plain::vertex::IndexPoint;
+    use crate::raw::vertex::IndexPoint;
 
     impl Section {
         fn with_sort(sort: VSegment) -> Section {
