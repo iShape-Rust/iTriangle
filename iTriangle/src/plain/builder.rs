@@ -1030,9 +1030,73 @@ mod tests {
 
     #[test]
     fn test_random_1() {
-        for _ in 0..500_000 {
+        for _ in 0..100_000 {
             let path = random(10, 6);
             let shape = vec![path];
+            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+                let shape_area = first.area_two();
+
+                let net = shape_to_builder(first);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_2() {
+        for _ in 0..100_000 {
+            let path = random(10, 12);
+            let shape = vec![path];
+            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+                let shape_area = first.area_two();
+
+                let net = shape_to_builder(first);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_3() {
+        for _ in 0..50_000 {
+            let path = random(20, 20);
+            let shape = vec![path];
+            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+                let shape_area = first.area_two();
+
+                let net = shape_to_builder(first);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_4() {
+        for _ in 0..10_000 {
+            let path = random(30, 50);
+            let shape = vec![path];
+            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+                let shape_area = first.area_two();
+
+                let net = shape_to_builder(first);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_5() {
+        for _ in 0..2_000 {
+            let main = random(50, 20);
+            let mut shape = vec![main];
+            for _ in 0..10 {
+                shape.push(random(30, 5));
+            }
+
             if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
                 let shape_area = first.area_two();
 
