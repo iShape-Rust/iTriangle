@@ -11,10 +11,15 @@ pub(super) struct VSegment {
 impl VSegment {
     #[inline]
     fn is_under_segment_order(&self, other: &VSegment) -> Ordering {
-        match self.a.cmp(&other.a) {
-            Ordering::Less => Triangle::clock_order_point(self.a, other.a, self.b),
-            Ordering::Equal => Triangle::clock_order_point(self.a, other.b, self.b),
-            Ordering::Greater => Triangle::clock_order_point(other.a, other.b, self.a),
+        // match self.a.cmp(&other.a) {
+        //     Ordering::Less => Triangle::clock_order_point(self.a, other.a, self.b),
+        //     Ordering::Equal => Triangle::clock_order_point(self.a, other.b, self.b),
+        //     Ordering::Greater => Triangle::clock_order_point(other.a, other.b, self.a),
+        // }
+        match self.b.cmp(&other.b) {
+            Ordering::Less => Triangle::clock_order_point(self.b, other.a, other.b),
+            Ordering::Equal => Triangle::clock_order_point(self.b, self.a, other.a),
+            Ordering::Greater => Triangle::clock_order_point(other.b, self.b, self.a),
         }
     }
 
@@ -46,5 +51,44 @@ impl Default for VSegment {
             a: IntPoint::ZERO,
             b: IntPoint::ZERO,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cmp::Ordering;
+    use i_overlay::i_float::int::point::IntPoint;
+    use crate::plain::v_segment::VSegment;
+
+    #[test]
+    fn test_0() {
+        let v0 = VSegment { a: IntPoint::new(0, 0), b: IntPoint::new(5, 0) };
+        let v1 = VSegment { a: IntPoint::new(0, 0), b: IntPoint::new(5, 5) };
+
+        assert_eq!(v0.is_under_segment_order(&v1), Ordering::Less);
+    }
+
+    #[test]
+    fn test_1() {
+        let v0 = VSegment { a: IntPoint::new(-2, -2), b: IntPoint::new(5, -2) };
+        let v1 = VSegment { a: IntPoint::new(0, 0), b: IntPoint::new(5, 0) };
+
+        assert_eq!(v0.is_under_segment_order(&v1), Ordering::Less);
+    }
+
+    #[test]
+    fn test_2() {
+        let v0 = VSegment { a: IntPoint::new(-2, -5), b: IntPoint::new(5, 0) };
+        let v1 = VSegment { a: IntPoint::new(0, 0), b: IntPoint::new(5, 0) };
+
+        assert_eq!(v0.is_under_segment_order(&v1), Ordering::Less);
+    }
+
+    #[test]
+    fn test_3() {
+        let v0 = VSegment { a: IntPoint::new(0, -5), b: IntPoint::new(5, 5) };
+        let v1 = VSegment { a: IntPoint::new(0, 0), b: IntPoint::new(5, 0) };
+
+        assert_eq!(v0.is_under_segment_order(&v1), Ordering::Greater);
     }
 }

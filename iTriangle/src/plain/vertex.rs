@@ -191,13 +191,19 @@ fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
         }
     });
 
-    let (mut prev, mut next) = if dirs[0].kind == DirectionType::Prev {
-        (0, 1)
+    let (mut prev, mut next, n) = if dirs[0].kind == DirectionType::Prev {
+        (0, 1, vertices.len())
     } else {
-        (dirs.len() - 1, 0)
+        let last = vertices.len() - 1;
+        let vl = &mut vertices[last];
+
+        vl.prev = dirs[dirs.len() - 1].point;
+        vl.next = dirs[0].point;
+
+        (1, 2, last)
     };
 
-    for vj in vertices.iter_mut() {
+    for vj in vertices.iter_mut().take(n) {
         vj.prev = dirs[prev].point;
         vj.next = dirs[next].point;
         debug_assert_eq!(dirs[prev].kind, DirectionType::Prev);
@@ -357,5 +363,35 @@ mod tests {
         assert_eq!(vv1[0].prev, IntPoint::new(10, 0));
         assert_eq!(vv1[1].next, IntPoint::new(20, 0));
         assert_eq!(vv1[1].prev, IntPoint::new(10, 20));
+    }
+
+    #[test]
+    fn test_6() {
+        let v0 = ChainVertex::new(
+            IntPoint::new(2, 0),
+            IntPoint::new(2, -5),
+            IntPoint::new(1, 3),
+        );
+        let v1 = ChainVertex::new(
+            IntPoint::new(2, 0),
+            IntPoint::new(-2, 2),
+            IntPoint::new(-5, 1),
+        );
+
+        let mut vv0 = vec![v0.clone(), v1.clone()];
+        sort_in_clockwise_order(&mut vv0);
+
+        assert_eq!(vv0[0].next, IntPoint::new(-2, 2));
+        assert_eq!(vv0[0].prev, IntPoint::new(-5, 1));
+        assert_eq!(vv0[1].next, IntPoint::new(2, -5));
+        assert_eq!(vv0[1].prev, IntPoint::new(1, 3));
+
+        let mut vv1 = vec![v1, v0];
+        sort_in_clockwise_order(&mut vv1);
+
+        assert_eq!(vv1[0].next, IntPoint::new(-2, 2));
+        assert_eq!(vv1[0].prev, IntPoint::new(-5, 1));
+        assert_eq!(vv1[1].next, IntPoint::new(2, -5));
+        assert_eq!(vv1[1].prev, IntPoint::new(1, 3));
     }
 }
