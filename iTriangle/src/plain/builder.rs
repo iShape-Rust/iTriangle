@@ -1000,6 +1000,20 @@ mod tests {
     }
 
     #[test]
+    fn test_21() {
+        let shape = vec![
+            path(&[[-2, 0], [-5, 1], [5, -5], [3, -1], [-1, 0], [2, 0], [3, -1], [4, 4]])
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder(&shape);
+        assert_eq!(net.triangles.len(), 6);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
     fn test_random_0() {
         for _ in 0..100_000 {
             let path = random(8, 5);
