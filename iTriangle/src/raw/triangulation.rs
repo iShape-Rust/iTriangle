@@ -10,6 +10,10 @@ pub struct RawTriangulation {
 
 impl RawTriangulation {
 
+    pub(super) fn empty() -> Self {
+        Self { triangles: vec![], points: vec![] }
+    }
+    
     #[inline]
     pub(super) fn new(triangles: Vec<ABCTriangle>, points: Vec<IntPoint>) -> Self {
         Self { triangles, points }
