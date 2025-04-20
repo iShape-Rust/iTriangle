@@ -188,7 +188,7 @@ impl TriangleState {
             .map(|s| {
                 Triangulator::default()
                     .raw_triangulate_shape(s)
-                    .into_pretty_triangulation(8)
+                    .into_delaunay().into_triangulation()
             })
             .collect();
 

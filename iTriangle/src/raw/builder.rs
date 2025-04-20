@@ -106,15 +106,6 @@ impl TriangleNetBuilder {
             }
         }
     }
-
-    pub(super) fn triangle_indices(&self) -> Vec<usize> {
-        let mut result = Vec::with_capacity(3 * self.triangles.len());
-        for t in &self.triangles {
-            let v = &t.vertices;
-            result.extend_from_slice(&[v[0].index, v[1].index, v[2].index]);
-        }
-        result
-    }
 }
 
 impl TriangleNetBuilder {

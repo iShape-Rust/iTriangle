@@ -1,7 +1,7 @@
 use crate::geom::point::IndexPoint;
 
 #[derive(Debug, Clone)]
-pub struct ABC {
+pub struct Abc {
     pub v0: ABCVertex,
     pub v1: ABCVertex,
     pub v2: ABCVertex,
@@ -15,9 +15,9 @@ pub struct ABCVertex {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct ABCTriangle {
-    pub(crate) vertices: [IndexPoint; 3],
-    pub(crate) neighbors: [usize; 3],
+pub struct ABCTriangle {
+    pub vertices: [IndexPoint; 3],
+    pub neighbors: [usize; 3],
 }
 
 impl ABCTriangle {
@@ -41,7 +41,7 @@ impl ABCTriangle {
     }
 
     #[inline]
-    pub(crate) fn abc_by_neighbor(&self, neighbor: usize) -> ABC {
+    pub(crate) fn abc_by_neighbor(&self, neighbor: usize) -> Abc {
         if neighbor == self.neighbors[0] {
             let a = ABCVertex {
                 vertex: self.vertices[0],
@@ -58,7 +58,7 @@ impl ABCTriangle {
                 position: 2,
                 neighbor: self.neighbors[2],
             };
-            ABC { v0: a, v1: b, v2: c }
+            Abc { v0: a, v1: b, v2: c }
         } else if neighbor == self.neighbors[1] {
             let a = ABCVertex {
                 vertex: self.vertices[1],
@@ -75,7 +75,7 @@ impl ABCTriangle {
                 position: 0,
                 neighbor: self.neighbors[0],
             };
-            ABC { v0: a, v1: b, v2: c }
+            Abc { v0: a, v1: b, v2: c }
         } else {
             let a = ABCVertex {
                 vertex: self.vertices[2],
@@ -92,7 +92,7 @@ impl ABCTriangle {
                 position: 1,
                 neighbor: self.neighbors[1],
             };
-            ABC { v0: a, v1: b, v2: c }
+            Abc { v0: a, v1: b, v2: c }
         }
     }
 }

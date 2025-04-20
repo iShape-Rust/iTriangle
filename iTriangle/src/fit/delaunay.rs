@@ -1,7 +1,6 @@
 use crate::geom::triangle::ABCTriangle;
 use crate::raw::triangulation::RawTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
-use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_float::u128::UInt128;
 
 pub struct Delaunay {
@@ -17,67 +16,97 @@ impl RawTriangulation {
             points: self.points,
         };
 
-        delaunay.build(usize::MAX);
+        delaunay.build();
 
         delaunay
     }
 }
 
 impl Delaunay {
-    pub(crate) fn build(&mut self, max_iter_count: usize) {
+    pub(crate) fn build(&mut self) {
+        let mut abc_index = 0;
         let mut dirty = vec![false; self.triangles.len()];
-        let mut unprocessed: Vec<usize> = (0..self.triangles.len()).collect();
-        let mut buffer = Vec::with_capacity(self.triangles.len());
-        for _ in 0..max_iter_count {
-            for &abc_index in unprocessed.iter() {
-                if dirty[abc_index] {
+        let mut buffer = Vec::with_capacity((self.triangles.len() >> 2).min(4));
+        let mut skip = usize::MAX; // to skip last flip pair
+        'main_loop: while abc_index < self.triangles.len() {
+            let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
+            for &pbc_index in neighbors.iter() {
+                if pbc_index >= self.triangles.len() || pbc_index == skip {
                     continue;
                 }
-                let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
-                for &pbc_index in neighbors.iter() {
-                    if pbc_index >= self.triangles.len() {
-                        continue;
-                    } 
 
-                    if self.swap_triangles(abc_index, pbc_index) {
-                        if !dirty[abc_index] {
-                            dirty[abc_index] = true;
-                            buffer.push(abc_index);
-                        }
-                        if !dirty[pbc_index] {
-                            dirty[pbc_index] = true;
-                            buffer.push(pbc_index);
-                        }
-                        break;
+                if self.swap_triangles(abc_index, pbc_index) {
+                    skip = pbc_index;
+                    let is_dirty = unsafe { dirty.get_unchecked_mut(abc_index) };
+                    if !*is_dirty {
+                        *is_dirty = true;
+                        buffer.push(pbc_index);
                     }
+                    continue 'main_loop;
                 }
             }
+            skip = usize::MAX;
+            abc_index += 1;
+        }
 
-            if buffer.is_empty() {
-                return;
-            }
-
-            for &i in buffer.iter() {
-                dirty[i] = false;
-            }
-
-            std::mem::swap(&mut unprocessed, &mut buffer);
-            buffer.clear();
+        if !buffer.is_empty() {
+            // this round happened only for real bad triangulation net
+            self.make_perfect(&mut dirty, &mut buffer);
         }
     }
+    
+    fn make_perfect(&mut self, dirty: &mut [bool], buffer: &mut Vec<usize>) {
+        let mut unprocessed = Vec::with_capacity(buffer.len());
+
+        while !buffer.is_empty() {
+            unprocessed.clear();
+            for &i in buffer.iter() {
+                let is_dirty = unsafe { dirty.get_unchecked_mut(i) };
+                if *is_dirty {
+                    unprocessed.push(i);
+                    *is_dirty = false;
+                }
+            }
+            buffer.clear();
+
+            let mut i = 0;
+            let mut skip = usize::MAX; // to skip last flip pair
+            'unprocessed_loop: while i < unprocessed.len() {
+                let &abc_index = unsafe { unprocessed.get_unchecked(i) };
+                let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
+                for &pbc_index in neighbors.iter() {
+                    if pbc_index >= self.triangles.len() || pbc_index == skip {
+                        continue;
+                    }
+
+                    if self.swap_triangles(abc_index, pbc_index) {
+                        skip = pbc_index;
+                        let is_dirty = unsafe { dirty.get_unchecked_mut(abc_index) };
+                        if !*is_dirty {
+                            *is_dirty = true;
+                            buffer.push(pbc_index);
+                        }
+
+                        continue 'unprocessed_loop;
+                    }
+                }
+                dirty[abc_index] = false;
+                skip = usize::MAX;
+                i += 1;
+            }
+        }        
+    }    
 
     #[inline]
     fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
         let abc = self.triangles[abc_index].abc_by_neighbor(pcb_index);
         let pcb = self.triangles[pcb_index].abc_by_neighbor(abc_index);
-        let is_pass = Self::condition(
+        if Self::is_flip_not_required(
             pcb.v0.vertex.point, // p
             abc.v0.vertex.point,
             abc.v1.vertex.point,
             abc.v2.vertex.point,
-        );
-
-        if is_pass {
+        ) {
             return false;
         }
 
@@ -114,7 +143,7 @@ impl Delaunay {
     // if p is inside circumscribe circle of a, b, c return false
     // if p is inside circumscribe A + B > 180
     // return true if triangle satisfied condition and do not need flip triangles
-    fn condition(p: IntPoint, a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
+    fn is_flip_not_required(p: IntPoint, a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
         // x, y of all coordinates must be in range of i32
         // p is a test point
         // b and c common points of triangle abc and pcb
@@ -180,6 +209,9 @@ impl ABCTriangle {
 #[cfg(test)]
 impl Delaunay {
     fn validate(&self) {
+
+        use i_overlay::i_float::triangle::Triangle;
+
         for (i, t) in self.triangles.iter().enumerate() {
             let a = t.vertices[0].point;
             let b = t.vertices[1].point;
@@ -204,6 +236,7 @@ impl Delaunay {
     }
 
     fn area(&self) -> i64 {
+        use i_overlay::i_float::triangle::Triangle;
         let mut s = 0;
         for t in self.triangles.iter() {
             let a = t.vertices[0].point;
@@ -321,6 +354,58 @@ mod tests {
     fn test_random_0() {
         for _ in 0..100_000 {
             let shape = vec![random(8, 5)];
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shape_area = first.area_two();
+
+                let delaunay = first.triangulate().into_delaunay();
+
+                delaunay.validate();
+                assert_eq!(delaunay.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_1() {
+        for _ in 0..100_000 {
+            let shape = vec![random(8, 12)];
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shape_area = first.area_two();
+
+                let delaunay = first.triangulate().into_delaunay();
+
+                delaunay.validate();
+                assert_eq!(delaunay.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_2() {
+        for _ in 0..2_000 {
+            let main = random(50, 20);
+            let mut shape = vec![main];
+            for _ in 0..10 {
+                shape.push(random(30, 5));
+            }
 
             if let Some(first) = shape
                 .simplify(

@@ -61,14 +61,6 @@ pub struct TriangulationBuilder<P> {
 }
 
 impl<P> TriangulationBuilder<P> {
-    /// Creates a new, empty `TriangulationBuilder`.
-    pub fn new() -> Self {
-        Self {
-            points: Vec::new(),
-            indices: Vec::new(),
-        }
-    }
-
     /// Appends another `Triangulation` to the builder.
     ///
     /// This method correctly offsets the indices of the appended triangulation
@@ -90,6 +82,15 @@ impl<P> TriangulationBuilder<P> {
         Triangulation {
             points: self.points,
             indices: self.indices,
+        }
+    }
+}
+
+impl<P> Default for TriangulationBuilder<P> {
+    fn default() -> Self {
+        Self {
+            points: Vec::new(),
+            indices: Vec::new(),
         }
     }
 }
