@@ -1,4 +1,3 @@
-use i_mesh::i_triangle::i_overlay::i_shape::int::reverse::IntContourReverse;
 use crate::app::design;
 use crate::app::main::{AppMessage, EditorApp};
 use crate::app::triangle::control::ModeOption;
@@ -7,15 +6,15 @@ use crate::data::triangle::TriangleResource;
 use crate::geom::camera::Camera;
 use crate::path_editor::widget::PathEditorUpdateEvent;
 use i_mesh::i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_mesh::i_triangle::i_overlay::core::overlay::ContourDirection;
 use i_mesh::i_triangle::i_overlay::core::simplify::Simplify;
 use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::raw::triangulator::Triangulator;
 use iced::widget::scrollable;
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
-use i_mesh::i_triangle::i_overlay::core::overlay::ContourDirection;
-use i_mesh::i_triangle::plain::triangulator::Triangulator;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,
@@ -177,12 +176,20 @@ impl TriangleState {
     }
 
     fn update_solution(&mut self) {
-        let mut shapes = self.workspace.paths.simplify(FillRule::NonZero, ContourDirection::CounterClockWise, 0);
-        // shapes.reverse_contours();
+        let shapes = self.workspace.paths.simplify(
+            FillRule::NonZero,
+            ContourDirection::CounterClockwise,
+            false,
+            0,
+        );
 
         self.workspace.triangulations = shapes
             .iter()
-            .map(|s| Triangulator::default().triangulate(s))
+            .map(|s| {
+                Triangulator::default()
+                    .raw_triangulate_shape(s)
+                    .into_pretty_triangulation(8)
+            })
             .collect();
 
         match self.mode {

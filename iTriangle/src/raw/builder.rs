@@ -1,5 +1,5 @@
-use crate::raw::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::geom::triangle::ABCTriangle;
+use crate::raw::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::raw::v_segment::VSegment;
 use crate::raw::vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
@@ -16,12 +16,14 @@ struct PhantomHandler {
 
 struct PhantomStore {
     buffer: Vec<PhantomHandler>,
-    unused: Vec<usize>
+    unused: Vec<usize>,
 }
 
 impl PhantomStore {
-
-    const EMPTY: PhantomHandler = PhantomHandler { vertex: usize::MAX , triangle: usize::MAX };
+    const EMPTY: PhantomHandler = PhantomHandler {
+        vertex: usize::MAX,
+        triangle: usize::MAX,
+    };
 
     fn new(capacity: usize) -> Self {
         let capacity = capacity.max(8);
@@ -362,13 +364,11 @@ impl Section {
                 };
                 edges.push(top_edge);
 
-                let bottom_edges = vec![
-                    TriangleEdge {
-                        a: vp,
-                        b: eb,
-                        kind: EdgeType::Phantom(phantom_index),
-                    }
-                ];
+                let bottom_edges = vec![TriangleEdge {
+                    a: vp,
+                    b: eb,
+                    kind: EdgeType::Phantom(phantom_index),
+                }];
 
                 let bottom_section = Section {
                     sort: self.sort,
@@ -381,7 +381,7 @@ impl Section {
                 };
 
                 bottom_section
-            }
+            };
         }
         let e0 = &edges[i];
 
@@ -592,7 +592,6 @@ impl TriangleNetBuilder {
 
         s
     }
-
 }
 
 trait FindSection {
@@ -620,11 +619,11 @@ impl FindSection for SetTree<VSegment, Section> {
 
 #[cfg(test)]
 mod tests {
+    use crate::raw::builder::TriangleNetBuilder;
+    use crate::raw::vertex::ToChainVertices;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ContourDirection;
     use i_overlay::core::simplify::Simplify;
-    use crate::raw::builder::TriangleNetBuilder;
-    use crate::raw::vertex::ToChainVertices;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
@@ -871,8 +870,26 @@ mod tests {
     #[test]
     fn test_12() {
         let shape = vec![
-            path(&[[-30, -30], [0, -15], [30, -30], [15, 0], [30, 30], [0, 15], [-30, 30], [-15, 0]]),
-            path(&[[-20, 20], [0, 10], [20, 20], [10, 0], [20, -20], [0, -10], [-20, -20], [-10, 0]]),
+            path(&[
+                [-30, -30],
+                [0, -15],
+                [30, -30],
+                [15, 0],
+                [30, 30],
+                [0, 15],
+                [-30, 30],
+                [-15, 0],
+            ]),
+            path(&[
+                [-20, 20],
+                [0, 10],
+                [20, 20],
+                [10, 0],
+                [20, -20],
+                [0, -10],
+                [-20, -20],
+                [-10, 0],
+            ]),
         ];
         let shape_area = shape.area_two();
 
@@ -885,9 +902,16 @@ mod tests {
 
     #[test]
     fn test_13() {
-        let shape = vec![
-            path(&[[-15, 15], [10, 15], [18, -15], [15, -15], [30, -30], [15, 0], [30, 30], [-15, 30]]),
-        ];
+        let shape = vec![path(&[
+            [-15, 15],
+            [10, 15],
+            [18, -15],
+            [15, -15],
+            [30, -30],
+            [15, 0],
+            [30, 30],
+            [-15, 30],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -899,11 +923,13 @@ mod tests {
 
     #[test]
     fn test_14() {
-        let shape = vec![
-            path(&[[-2, -3], [-4, -4], [5, -1], [1, -1], [2, 3]]),
-        ];
-        let s = &shape
-            .simplify(FillRule::NonZero, ContourDirection::CounterClockwise, false, 0)[0];
+        let shape = vec![path(&[[-2, -3], [-4, -4], [5, -1], [1, -1], [2, 3]])];
+        let s = &shape.simplify(
+            FillRule::NonZero,
+            ContourDirection::CounterClockwise,
+            false,
+            0,
+        )[0];
 
         let shape_area = s.area_two();
 
@@ -916,9 +942,7 @@ mod tests {
 
     #[test]
     fn test_15() {
-        let shape = vec![
-            path(&[[0, 2], [2, 0], [5, 0], [4, 6]]),
-        ];
+        let shape = vec![path(&[[0, 2], [2, 0], [5, 0], [4, 6]])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -930,9 +954,7 @@ mod tests {
 
     #[test]
     fn test_16() {
-        let shape = vec![
-            path(&[[0, 4], [-4, -3], [-2, -2], [1, -2], [0, -1]]),
-        ];
+        let shape = vec![path(&[[0, 4], [-4, -3], [-2, -2], [1, -2], [0, -1]])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -944,9 +966,16 @@ mod tests {
 
     #[test]
     fn test_17() {
-        let shape = vec![
-            path(&[[-1, -2], [-2, -2], [1, -4], [1, -1], [3, -1], [1, -2], [5, -2], [0, 5]]),
-        ];
+        let shape = vec![path(&[
+            [-1, -2],
+            [-2, -2],
+            [1, -4],
+            [1, -1],
+            [3, -1],
+            [1, -2],
+            [5, -2],
+            [0, 5],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -958,9 +987,15 @@ mod tests {
 
     #[test]
     fn test_18() {
-        let shape = vec![
-            path(&[[3, 3], [-4, 3], [1, -2], [-2, 2], [0, 1], [1, -2], [1, -4]]),
-        ];
+        let shape = vec![path(&[
+            [3, 3],
+            [-4, 3],
+            [1, -2],
+            [-2, 2],
+            [0, 1],
+            [1, -2],
+            [1, -4],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -972,9 +1007,14 @@ mod tests {
 
     #[test]
     fn test_19() {
-        let shape = vec![
-            path(&[[-2, 0], [-3, 2], [0, -10], [2, 1], [-1, 2], [-1, 5]]),
-        ];
+        let shape = vec![path(&[
+            [-2, 0],
+            [-3, 2],
+            [0, -10],
+            [2, 1],
+            [-1, 2],
+            [-1, 5],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -986,9 +1026,15 @@ mod tests {
 
     #[test]
     fn test_20() {
-        let shape = vec![
-            path(&[[5, 5], [-5, 1], [2, 0], [-2, 2], [1, 3], [2, 0], [2, -5]])
-        ];
+        let shape = vec![path(&[
+            [5, 5],
+            [-5, 1],
+            [2, 0],
+            [-2, 2],
+            [1, 3],
+            [2, 0],
+            [2, -5],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -1000,9 +1046,16 @@ mod tests {
 
     #[test]
     fn test_21() {
-        let shape = vec![
-            path(&[[-2, 0], [-5, 1], [5, -5], [3, -1], [-1, 0], [2, 0], [3, -1], [4, 4]])
-        ];
+        let shape = vec![path(&[
+            [-2, 0],
+            [-5, 1],
+            [5, -5],
+            [3, -1],
+            [-1, 0],
+            [2, 0],
+            [3, -1],
+            [4, 4],
+        ])];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder(&shape);
@@ -1017,7 +1070,15 @@ mod tests {
         for _ in 0..100_000 {
             let path = random(8, 5);
             let shape = vec![path];
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise, false,0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);
@@ -1032,7 +1093,15 @@ mod tests {
         for _ in 0..100_000 {
             let path = random(10, 6);
             let shape = vec![path];
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);
@@ -1047,7 +1116,15 @@ mod tests {
         for _ in 0..100_000 {
             let path = random(10, 12);
             let shape = vec![path];
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);
@@ -1062,7 +1139,15 @@ mod tests {
         for _ in 0..50_000 {
             let path = random(20, 20);
             let shape = vec![path];
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);
@@ -1077,7 +1162,15 @@ mod tests {
         for _ in 0..10_000 {
             let path = random(30, 50);
             let shape = vec![path];
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);
@@ -1096,7 +1189,15 @@ mod tests {
                 shape.push(random(30, 5));
             }
 
-            if let Some(first) = shape.simplify(FillRule::NonZero, ContourDirection::CounterClockwise,false, 0).first() {
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
                 let shape_area = first.area_two();
 
                 let net = shape_to_builder(first);

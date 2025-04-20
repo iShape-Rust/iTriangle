@@ -1,3 +1,3 @@
-mod delaunay;
-mod triangulation;
+pub mod delaunay;
+pub mod triangulation;
 

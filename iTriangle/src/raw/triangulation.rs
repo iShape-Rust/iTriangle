@@ -1,6 +1,7 @@
 use crate::geom::triangle::ABCTriangle;
 use crate::triangulation::int::Triangulation;
 use i_overlay::i_float::int::point::IntPoint;
+use crate::fit::delaunay::Delaunay;
 
 #[derive(Debug)]
 pub struct RawTriangulation {
@@ -35,6 +36,21 @@ impl RawTriangulation {
         Triangulation {
             indices: self.triangle_indices(),
             points: self.points,
+        }
+    }
+
+    #[inline]
+    pub fn into_pretty_triangulation(self, max_iter_count: usize) -> Triangulation {
+        if max_iter_count == 0 {
+            self.into_triangulation()
+        } else {
+            let mut delaunay = Delaunay {
+                triangles: self.triangles,
+                points: self.points,
+            };
+            delaunay.build(max_iter_count);
+
+            delaunay.into_triangulation()
         }
     }
 }

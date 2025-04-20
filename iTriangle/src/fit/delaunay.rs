@@ -1,6 +1,7 @@
 use crate::geom::triangle::ABCTriangle;
 use crate::raw::triangulation::RawTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_float::u128::UInt128;
 
 pub struct Delaunay {
@@ -10,7 +11,7 @@ pub struct Delaunay {
 
 impl RawTriangulation {
     #[inline]
-    fn into_delaunay(self) -> Delaunay {
+    pub fn into_delaunay(self) -> Delaunay {
         let mut delaunay = Delaunay {
             triangles: self.triangles,
             points: self.points,
@@ -23,21 +24,20 @@ impl RawTriangulation {
 }
 
 impl Delaunay {
-    fn build(&mut self, max_round_count: usize) {
+    pub(crate) fn build(&mut self, max_iter_count: usize) {
         let mut dirty = vec![false; self.triangles.len()];
         let mut unprocessed: Vec<usize> = (0..self.triangles.len()).collect();
         let mut buffer = Vec::with_capacity(self.triangles.len());
-        let mut neighbors = [usize::MAX; 3];
-        for _ in 0..max_round_count {
+        for _ in 0..max_iter_count {
             for &abc_index in unprocessed.iter() {
                 if dirty[abc_index] {
                     continue;
                 }
-                neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
+                let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
                 for &pbc_index in neighbors.iter() {
                     if pbc_index >= self.triangles.len() {
                         continue;
-                    }
+                    } 
 
                     if self.swap_triangles(abc_index, pbc_index) {
                         if !dirty[abc_index] {
@@ -48,6 +48,7 @@ impl Delaunay {
                             dirty[pbc_index] = true;
                             buffer.push(pbc_index);
                         }
+                        break;
                     }
                 }
             }
@@ -84,7 +85,7 @@ impl Delaunay {
 
         // abc -> abp
         // pcb -> pca
-        
+
         self.update_neighbor(abc.v1.neighbor, abc_index, pcb_index);
         self.update_neighbor(pcb.v1.neighbor, pcb_index, abc_index);
 
@@ -177,11 +178,62 @@ impl ABCTriangle {
 }
 
 #[cfg(test)]
+impl Delaunay {
+    fn validate(&self) {
+        for (i, t) in self.triangles.iter().enumerate() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+            let area = Triangle::area_two_point(a, b, c);
+            assert!(area <= 0);
+
+            let n0 = t.neighbors[0];
+            let n1 = t.neighbors[1];
+            let n2 = t.neighbors[2];
+
+            if n0 != usize::MAX {
+                assert!(self.triangles[n0].neighbors.contains(&i));
+            }
+            if n1 != usize::MAX {
+                assert!(self.triangles[n1].neighbors.contains(&i));
+            }
+            if n2 != usize::MAX {
+                assert!(self.triangles[n2].neighbors.contains(&i));
+            }
+        }
+    }
+
+    fn area(&self) -> i64 {
+        let mut s = 0;
+        for t in self.triangles.iter() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+
+            s += Triangle::area_two_point(a, b, c);
+        }
+
+        s
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::fit::delaunay::Delaunay;
     use crate::geom::point::IndexPoint;
     use crate::geom::triangle::ABCTriangle;
+    use crate::raw::triangulatable::Triangulatable;
+    use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::overlay::ContourDirection;
+    use i_overlay::core::simplify::Simplify;
     use i_overlay::i_float::int::point::IntPoint;
+    use i_overlay::i_shape::int::area::Area;
+    use i_overlay::i_shape::int::path::IntPath;
+    use rand::Rng;
+
+    fn path(slice: &[[i32; 2]]) -> IntPath {
+        slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
+    }
 
     #[test]
     fn test_0() {
@@ -252,5 +304,53 @@ mod tests {
 
         let is_swapped = delaunay.swap_triangles(0, 1);
         assert!(is_swapped);
+    }
+
+    #[test]
+    fn test_1() {
+        let shape = vec![path(&[[4, 2], [-4, 4], [-1, 0], [0, -1], [4, -4]])];
+        let shape_area = shape.area_two();
+
+        let delaunay = shape.triangulate().into_delaunay();
+        delaunay.validate();
+
+        assert_eq!(delaunay.area(), shape_area);
+    }
+
+    #[test]
+    fn test_random_0() {
+        for _ in 0..100_000 {
+            let shape = vec![random(8, 5)];
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shape_area = first.area_two();
+
+                let delaunay = first.triangulate().into_delaunay();
+
+                delaunay.validate();
+                assert_eq!(delaunay.area(), shape_area);
+            };
+        }
+    }
+
+    fn random(radius: i32, n: usize) -> IntPath {
+        let a = radius / 2;
+        let mut points = Vec::with_capacity(n);
+        let mut rng = rand::rng();
+        for _ in 0..n {
+            let x = rng.random_range(-a..=a);
+            let y = rng.random_range(-a..=a);
+            points.push(IntPoint { x, y })
+        }
+
+        points
     }
 }
