@@ -1,20 +1,8 @@
-use crate::geom::triangle::ABCTriangle;
-use crate::triangulation::int::Triangulation;
 use i_overlay::i_float::int::point::IntPoint;
+use crate::fit::delaunay::Delaunay;
+use crate::triangulation::int::Triangulation;
 
-#[derive(Debug)]
-pub struct RawTriangulation {
-    pub(crate) triangles: Vec<ABCTriangle>,
-    pub(crate) points: Vec<IntPoint>,
-}
-
-impl RawTriangulation {
-
-    #[inline]
-    pub(super) fn new(triangles: Vec<ABCTriangle>, points: Vec<IntPoint>) -> Self {
-        Self { triangles, points }
-    }
-
+impl Delaunay {
     #[inline]
     pub fn points(&self) -> &Vec<IntPoint> {
         &self.points

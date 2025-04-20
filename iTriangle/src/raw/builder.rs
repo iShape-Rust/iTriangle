@@ -1,5 +1,5 @@
 use crate::raw::section::{Content, EdgeType, Section, TriangleEdge};
-use crate::raw::triangle::PlainTriangle;
+use crate::geom::triangle::ABCTriangle;
 use crate::raw::v_segment::VSegment;
 use crate::raw::vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
@@ -76,7 +76,7 @@ impl PhantomStore {
 }
 
 pub(super) struct TriangleNetBuilder {
-    pub(super) triangles: Vec<PlainTriangle>,
+    pub(super) triangles: Vec<ABCTriangle>,
     phantom_store: PhantomStore,
 }
 
@@ -131,7 +131,7 @@ impl TriangleNetBuilder {
         &mut self,
         edge: &TriangleEdge,
         vertex: usize,
-        mut new_triangle: PlainTriangle,
+        mut new_triangle: ABCTriangle,
     ) -> usize {
         let new_index = self.next_triangle_index();
         match edge.kind {
@@ -248,7 +248,7 @@ impl Section {
         let vp = v.index_point();
         let mut prev_index = usize::MAX;
         for ei in edges.iter().take(edges.len() - 1) {
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            let mut triangle = ABCTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = net_builder.next_triangle_index() + 1;
             triangle.neighbors[2] = prev_index;
 
@@ -256,7 +256,7 @@ impl Section {
         }
 
         let el = edges.last().unwrap();
-        let mut triangle = PlainTriangle::abc(vp, el.a, el.b);
+        let mut triangle = ABCTriangle::abc(vp, el.a, el.b);
         triangle.neighbors[2] = prev_index;
 
         net_builder.add_triangle_and_join_by_edge(el, 0, triangle);
@@ -385,7 +385,7 @@ impl Section {
         }
         let e0 = &edges[i];
 
-        let mut t0 = PlainTriangle::abc(vp, e0.a, e0.b);
+        let mut t0 = ABCTriangle::abc(vp, e0.a, e0.b);
         t0.neighbors[1] = net_builder.triangles.len() + 1;
         let mut index = net_builder.add_triangle_and_join_by_edge(e0, 0, t0);
 
@@ -414,7 +414,7 @@ impl Section {
             if Triangle::is_cw_or_line_point(v.this, ei.a.point, ei.b.point) {
                 break;
             }
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            let mut triangle = ABCTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = next_index;
             triangle.neighbors[2] = index;
             index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
@@ -467,7 +467,7 @@ impl Section {
         }
 
         let mut index =
-            net_builder.add_triangle_and_join_by_edge(e0, 0, PlainTriangle::abc(vp, e0.a, e0.b));
+            net_builder.add_triangle_and_join_by_edge(e0, 0, ABCTriangle::abc(vp, e0.a, e0.b));
 
         let mut n = 1;
         let mut eb = e0.b;
@@ -477,7 +477,7 @@ impl Section {
             }
             eb = ei.b;
             n += 1;
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            let mut triangle = ABCTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[2] = index;
             let prev_index = index;
             index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
@@ -528,7 +528,7 @@ impl Section {
         }
 
         let mut index =
-            net_builder.add_triangle_and_join_by_edge(el, 0, PlainTriangle::abc(vp, el.a, el.b));
+            net_builder.add_triangle_and_join_by_edge(el, 0, ABCTriangle::abc(vp, el.a, el.b));
         let mut ea = el.a;
         let mut n = 1;
         for ei in edges.iter().rev().skip(1) {
@@ -537,7 +537,7 @@ impl Section {
             }
             ea = ei.a;
             n += 1;
-            let mut triangle = PlainTriangle::abc(vp, ei.a, ei.b);
+            let mut triangle = ABCTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = index;
             let prev_index = index;
             index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
@@ -638,9 +638,8 @@ mod tests {
     fn shape_to_builder(shape: &IntShape) -> TriangleNetBuilder {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
-        let chain_vertices = shape.to_chain_vertices(&[]);
         let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
-        net.build(&chain_vertices);
+        net.build(&shape.to_chain_vertices());
         net
     }
 

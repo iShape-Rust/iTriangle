@@ -1,5 +1,5 @@
-use crate::raw::vertex::IndexPoint;
 use i_tree::set::sort::KeyValue;
+use crate::geom::point::IndexPoint;
 use crate::raw::v_segment::VSegment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,7 +52,7 @@ mod tests {
     use i_tree::EMPTY_REF;
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;
-    use crate::raw::vertex::IndexPoint;
+    use crate::geom::point::IndexPoint;
 
     impl Section {
         fn with_sort(sort: VSegment) -> Section {
