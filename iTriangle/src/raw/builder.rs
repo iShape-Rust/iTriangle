@@ -1,3 +1,4 @@
+use crate::geom::point::IndexPoint;
 use crate::geom::triangle::ABCTriangle;
 use crate::raw::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::raw::v_segment::VSegment;
@@ -7,7 +8,6 @@ use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
 use std::mem::swap;
-use crate::geom::point::IndexPoint;
 
 #[derive(Copy, Clone)]
 struct PhantomHandler {
@@ -571,7 +571,6 @@ impl Section {
             Content::Edges(edges) => edges,
         };
 
-
         let mut i = 0;
         while i < edges.len() {
             let ei = &edges[i];
@@ -744,7 +743,7 @@ impl FindSection for SetTree<VSegment, Section> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use crate::raw::binder::SteinerInference;
     use crate::raw::builder::TriangleNetBuilder;
     use crate::raw::vertex::ToChainVertices;
     use i_overlay::core::fill_rule::FillRule;
@@ -755,6 +754,7 @@ mod tests {
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntShape;
     use rand::Rng;
+    use std::collections::HashSet;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
@@ -769,10 +769,7 @@ mod tests {
     }
 
     fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleNetBuilder {
-        let triangles_count = shape
-            .iter()
-            .fold(0, |s, path| s + path.len() - 2)
-            + 2 * points.len();
+        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2) + 2 * points.len();
 
         let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
         net.build(&shape.to_chain_vertices_with_steiner_points(points));
@@ -1231,7 +1228,13 @@ mod tests {
     #[test]
     fn test_24() {
         let shape = vec![path(&[
-            [-10, 10], [0, 5], [0, 0], [0, -5], [-10, -10], [10, -10], [10, 10]
+            [-10, 10],
+            [0, 5],
+            [0, 0],
+            [0, -5],
+            [-10, -10],
+            [10, -10],
+            [10, 10],
         ])];
         let points = vec![IntPoint::new(5, 0)];
         let shape_area = shape.area_two();
@@ -1414,6 +1417,19 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_random_7() {
+        let shapes = vec![vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])]];
+        let shape_area = shapes.area_two();
+        for _ in 0..100_000 {
+            let points = random_points(15, 5);
+            let group = shapes.group_by_shapes(&points);
+            let net = shape_to_builder_with_points(&shapes[0], &group[0]);
+            net.validate();
+            assert_eq!(net.area(), shape_area);
+        }
+    }
+
     fn random(radius: i32, n: usize) -> IntPath {
         let a = radius / 2;
         let mut points = Vec::with_capacity(n);
@@ -1437,6 +1453,6 @@ mod tests {
             points.insert(IntPoint { x, y });
         }
 
-        points.iter().map(|p|p).copied().collect()
+        points.iter().map(|p| p).copied().collect()
     }
 }

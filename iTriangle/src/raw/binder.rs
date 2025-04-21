@@ -1,19 +1,21 @@
 use crate::raw::v_segment::VSegment;
 use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::IntShape;
 use i_tree::key::exp::KeyExpCollection;
 use i_tree::key::tree::KeyExpTree;
 use i_tree::ExpiredKey;
 
 #[derive(Debug, Clone, Copy)]
-struct SegmentData {
-    direction: bool,
+struct ShapeEdge {
+    a: IntPoint,
+    b: IntPoint,
     shape_index: usize,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct IdSegment {
-    data: SegmentData,
+struct TargetSegment {
+    edge: ShapeEdge,
     v_segment: VSegment,
 }
 
@@ -49,15 +51,15 @@ impl SteinerInference for [IntShape] {
                         a = b;
                         continue;
                     }
-                    let direction = a.x < b.x;
-                    let v_segment = if direction {
+                    let v_segment = if a.x < b.x {
                         VSegment { a, b }
                     } else {
                         VSegment { a: b, b: a }
                     };
-                    segments.push(IdSegment {
-                        data: SegmentData {
-                            direction,
+                    segments.push(TargetSegment {
+                        edge: ShapeEdge {
+                            a,
+                            b,
                             shape_index,
                         },
                         v_segment,
@@ -72,8 +74,9 @@ impl SteinerInference for [IntShape] {
         let capacity = segments.len().ilog2() as usize;
         let mut tree = KeyExpTree::new(capacity);
 
-        let empty_data = SegmentData {
-            direction: false,
+        let empty_edge = ShapeEdge {
+            a: IntPoint::EMPTY,
+            b: IntPoint::EMPTY,
             shape_index: usize::MAX,
         };
 
@@ -86,21 +89,37 @@ impl SteinerInference for [IntShape] {
                 }
                 
                 if p.x < id_segment.v_segment.b.x {
-                    tree.insert(id_segment.v_segment, id_segment.data, p.x);
+                    tree.insert(id_segment.v_segment, id_segment.edge, p.x);
                 }
                 i += 1
             }
 
-            let segment_data = tree.first_less_by(p.x, empty_data, |s| s.is_under_point_order(p));
+            let edge = tree.first_less_or_equal_by(p.x, empty_edge, |s| s.is_under_point_order(p));
 
-            if segment_data.direction && segment_data.shape_index < groups.len() {
-                groups[segment_data.shape_index].push(p);
+            if edge.shape_index < groups.len() {
+                if edge.not_contains(p) && edge.is_direct() {
+                    groups[edge.shape_index].push(p);
+                }
             }
         }
 
         groups
     }
 }
+
+impl ShapeEdge {
+
+    #[inline]
+    fn not_contains(&self, p: IntPoint) -> bool {
+        Triangle::is_not_line_point(self.a, p, self.b)
+    }
+
+    #[inline]
+    fn is_direct(&self) -> bool {
+        self.a < self.b
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -165,5 +184,16 @@ mod tests {
 
         assert_eq!(groups[0].len(), 1);
         assert_eq!(groups[1].len(), 3);
+    }
+
+    #[test]
+    fn test_3() {
+        let shapes = vec![
+            vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])],
+        ];
+
+        let groups = shapes.group_by_shapes(&[IntPoint::new(-3, 7)]);
+
+        assert_eq!(groups[0].len(), 0);
     }
 }
