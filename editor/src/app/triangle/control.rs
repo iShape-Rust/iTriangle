@@ -35,14 +35,14 @@ fn on_select_mode(option: ModeOption) -> AppMessage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum ModeOption {
     #[default]
-    Edit,
-    Debug,
+    Raw,
+    Delaunay,
 }
 
 impl ModeOption {
     const ALL: [ModeOption; 2] = [
-        ModeOption::Edit,
-        ModeOption::Debug,
+        ModeOption::Raw,
+        ModeOption::Delaunay,
     ];
 }
 
@@ -52,8 +52,8 @@ impl std::fmt::Display for ModeOption {
             f,
             "{}",
             match self {
-                ModeOption::Edit => "Edit",
-                ModeOption::Debug => "Debug",
+                ModeOption::Raw => "Raw",
+                ModeOption::Delaunay => "Delaunay",
             }
         )
     }

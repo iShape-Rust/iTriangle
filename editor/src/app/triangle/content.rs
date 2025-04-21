@@ -146,7 +146,7 @@ impl TriangleState {
     pub(crate) fn new(resource: &mut TriangleResource) -> Self {
         let mut state = TriangleState {
             test: usize::MAX,
-            mode: ModeOption::Edit,
+            mode: ModeOption::Raw,
             workspace: Default::default(),
             cameras: HashMap::with_capacity(resource.count),
             size: Size::ZERO,
@@ -183,19 +183,26 @@ impl TriangleState {
             0,
         );
 
-        self.workspace.triangulations = shapes
-            .iter()
-            .map(|s| {
-                Triangulator::default()
-                    .raw_triangulate_shape(s)
-                    .into_delaunay().into_triangulation()
-            })
-            .collect();
-
         match self.mode {
-            ModeOption::Edit => {}
-            ModeOption::Debug => {
-                // self.workspace.vectors = Overlay::with_contours(subj, clip).into_separate_vectors(FillRule::NonZero, Default::default());
+            ModeOption::Raw => {
+                self.workspace.triangulations = shapes
+                    .iter()
+                    .map(|s| {
+                        Triangulator::default()
+                            .triangulate_shape(s)
+                            .into_triangulation()
+                    })
+                    .collect();
+            }
+            ModeOption::Delaunay => {
+                self.workspace.triangulations = shapes
+                    .iter()
+                    .map(|s| {
+                        Triangulator::default()
+                            .triangulate_shape(s)
+                            .into_delaunay().into_triangulation()
+                    })
+                    .collect();
             }
         }
     }

@@ -34,7 +34,7 @@ impl PathWidget {
             return None;
         }
 
-        let mut builder = TriangulationBuilder::new();
+        let mut builder = TriangulationBuilder::default();
 
         for path in paths.iter() {
             Self::append_path(&mut builder, camera, path, width, arrows);

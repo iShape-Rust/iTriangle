@@ -20,7 +20,7 @@ impl PathBuilder {
 
     #[inline]
     pub(crate) fn new(camera: Camera, offset: FloatPoint<f32>) -> Self {
-        Self { camera, offset, builder: TriangulationBuilder::new() }
+        Self { camera, offset, builder: TriangulationBuilder::default() }
     }
 
     #[inline]
