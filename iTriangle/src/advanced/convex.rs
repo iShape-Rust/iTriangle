@@ -1,5 +1,5 @@
-use crate::advanced::delaunay::Delaunay;
-use crate::geom::triangle::ABCTriangle;
+use crate::advanced::delaunay::IntDelaunay;
+use crate::geom::triangle::IntTriangle;
 use crate::index::Index;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::IntContour;
@@ -46,7 +46,7 @@ impl ConvexPolygonBuilder {
         path
     }
 
-    fn start(&mut self, triangle_index: usize, triangle: &ABCTriangle) {
+    fn start(&mut self, triangle_index: usize, triangle: &IntTriangle) {
         self.nodes.clear();
         self.edges.clear();
 
@@ -105,7 +105,7 @@ impl ConvexPolygonBuilder {
         }
     }
 
-    fn add(&mut self, edge: Edge, triangle: &ABCTriangle) -> bool {
+    fn add(&mut self, edge: Edge, triangle: &IntTriangle) -> bool {
         let v_index = triangle.opposite(edge.triangle_index);
         let v = triangle.vertices[v_index];
 
@@ -180,7 +180,7 @@ impl ConvexPolygonBuilder {
     }
 }
 
-impl Delaunay {
+impl IntDelaunay {
     /// Groups adjacent triangles into convex polygons in counter-clockwise order.
     ///
     /// This method traverses the Delaunay triangulation and greedily merges
@@ -198,7 +198,7 @@ impl Delaunay {
     /// # Example
     /// ```rust
     /// use i_overlay::i_float::int::point::IntPoint;
-    /// use i_triangle::raw::triangulatable::Triangulatable;
+    /// use i_triangle::int::triangulatable::IntTriangulatable;
     /// let path = vec![IntPoint::new(0, 0), IntPoint::new(2, 0), IntPoint::new(1, 2)];
     /// let triangulation = path.triangulate().into_delaunay();
     /// let polygons = triangulation.to_convex_polygons();
@@ -240,7 +240,7 @@ impl Delaunay {
 
 #[cfg(test)]
 mod tests {
-    use crate::raw::triangulatable::Triangulatable;
+    use crate::int::triangulatable::IntTriangulatable;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;

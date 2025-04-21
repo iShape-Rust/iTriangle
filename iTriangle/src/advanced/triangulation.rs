@@ -1,8 +1,8 @@
 use i_overlay::i_float::int::point::IntPoint;
-use crate::advanced::delaunay::Delaunay;
-use crate::triangulation::int::Triangulation;
+use crate::advanced::delaunay::IntDelaunay;
+use crate::int::triangulation::Triangulation;
 
-impl Delaunay {
+impl IntDelaunay {
     #[inline]
     pub fn points(&self) -> &Vec<IntPoint> {
         &self.points

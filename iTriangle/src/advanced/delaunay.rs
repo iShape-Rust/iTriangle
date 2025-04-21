@@ -1,31 +1,31 @@
-use crate::geom::triangle::ABCTriangle;
-use crate::raw::triangulation::RawTriangulation;
+use crate::geom::triangle::IntTriangle;
+use crate::int::triangulation::IntTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
 
 /// A refined triangle mesh where all interior edges satisfy the Delaunay condition.
 ///
-/// Created from a [`RawTriangulation`] via [`into_delaunay`], this structure applies edge flips
+/// Created from a [`IntTriangulation`] via [`into_delaunay`], this structure applies edge flips
 /// to enforce the empty circumcircle property for each triangle pair.
 ///
 /// Delaunay triangulations improve triangle quality and are preferred for numerical stability.
-pub struct Delaunay {
-    pub triangles: Vec<ABCTriangle>,
+pub struct IntDelaunay {
+    pub triangles: Vec<IntTriangle>,
     pub points: Vec<IntPoint>,
 }
 
-impl RawTriangulation {
+impl IntTriangulation {
 
-    /// Converts a raw triangle mesh into a Delaunay triangulation by applying edge flips.
+    /// Converts a int triangle mesh into a Delaunay triangulation by applying edge flips.
     ///
     /// The mesh is refined in-place by checking local angle conditions and
     /// flipping edges until the Delaunay criterion is satisfied.
     ///
     /// # Returns
-    /// A new [`Delaunay`] structure with updated triangle connectivity.
+    /// A new [`IntDelaunay`] structure with updated triangle connectivity.
     #[inline]
-    pub fn into_delaunay(self) -> Delaunay {
-        let mut delaunay = Delaunay {
+    pub fn into_delaunay(self) -> IntDelaunay {
+        let mut delaunay = IntDelaunay {
             triangles: self.triangles,
             points: self.points,
         };
@@ -36,7 +36,7 @@ impl RawTriangulation {
     }
 }
 
-impl Delaunay {
+impl IntDelaunay {
     pub(crate) fn build(&mut self) {
         let mut abc_index = 0;
         let mut modified = vec![false; self.triangles.len()];
@@ -210,7 +210,7 @@ impl Delaunay {
     }
 }
 
-impl ABCTriangle {
+impl IntTriangle {
     #[inline]
     fn update_neighbor(&mut self, old_index: usize, new_index: usize) {
         if self.neighbors[0] == old_index {
@@ -225,7 +225,7 @@ impl ABCTriangle {
 }
 
 #[cfg(test)]
-impl Delaunay {
+impl IntDelaunay {
     fn validate(&self) {
         use i_overlay::i_float::triangle::Triangle;
 
@@ -269,10 +269,10 @@ impl Delaunay {
 
 #[cfg(test)]
 mod tests {
-    use crate::advanced::delaunay::Delaunay;
+    use crate::advanced::delaunay::IntDelaunay;
     use crate::geom::point::IndexPoint;
-    use crate::geom::triangle::ABCTriangle;
-    use crate::raw::triangulatable::Triangulatable;
+    use crate::geom::triangle::IntTriangle;
+    use crate::int::triangulatable::IntTriangulatable;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::ContourDirection;
     use i_overlay::core::simplify::Simplify;
@@ -292,7 +292,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -4);
 
-        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, true);
     }
 
@@ -304,7 +304,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -2);
 
-        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, true);
     }
 
@@ -315,7 +315,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -1);
 
-        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, false);
     }
 
@@ -326,7 +326,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -1);
 
-        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, false);
     }
 
@@ -343,9 +343,9 @@ mod tests {
             IntPoint::new(3, 3),
         ];
 
-        let mut delaunay = Delaunay {
+        let mut delaunay = IntDelaunay {
             triangles: vec![
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(4, points[4]),
                         IndexPoint::new(2, points[2]),
@@ -353,7 +353,7 @@ mod tests {
                     ],
                     neighbors: [1, 3, 2],
                 },
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(2, points[2]),
                         IndexPoint::new(3, points[3]),
@@ -361,7 +361,7 @@ mod tests {
                     ],
                     neighbors: [5, 0, 4],
                 },
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(0, points[0]),
                         IndexPoint::new(2, points[2]),
@@ -369,7 +369,7 @@ mod tests {
                     ],
                     neighbors: [0, usize::MAX, usize::MAX],
                 },
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(4, points[4]),
                         IndexPoint::new(6, points[6]),
@@ -377,7 +377,7 @@ mod tests {
                     ],
                     neighbors: [usize::MAX, usize::MAX, 0],
                 },
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(2, points[2]),
                         IndexPoint::new(1, points[1]),
@@ -385,7 +385,7 @@ mod tests {
                     ],
                     neighbors: [usize::MAX, 1, usize::MAX],
                 },
-                ABCTriangle {
+                IntTriangle {
                     vertices: [
                         IndexPoint::new(3, points[3]),
                         IndexPoint::new(5, points[5]),

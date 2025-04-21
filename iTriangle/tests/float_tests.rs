@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use i_overlay::core::fill_rule::FillRule;
     use i_overlay::i_float::float::point::FloatPoint;
-    use i_triangle::triangulation::float::FloatTriangulate;
+    use i_triangle::float::triangulatable::Triangulatable;
 
     #[test]
     fn test_0() {
@@ -17,7 +16,7 @@ mod tests {
             ].to_vec(),
         ].to_vec();
 
-        let triangulation = shape.to_triangulation(Some(FillRule::NonZero), 0.0);
+        let triangulation = shape.triangulate().to_triangulation();
 
         assert_eq!(triangulation.points.len(), 6);
         assert_eq!(triangulation.indices.len(), 12);

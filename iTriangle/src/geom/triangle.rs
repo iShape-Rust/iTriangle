@@ -15,12 +15,12 @@ pub struct ABCVertex {
 }
 
 #[derive(Debug, Clone)]
-pub struct ABCTriangle {
+pub struct IntTriangle {
     pub vertices: [IndexPoint; 3],
     pub neighbors: [usize; 3],
 }
 
-impl ABCTriangle {
+impl IntTriangle {
     #[inline]
     pub fn abc(a: IndexPoint, b: IndexPoint, c: IndexPoint) -> Self {
         Self {

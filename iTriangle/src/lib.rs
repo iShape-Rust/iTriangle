@@ -1,9 +1,7 @@
-pub mod delaunay;
-pub mod monotone;
-pub mod triangulation;
-pub mod raw;
 pub mod advanced;
-mod index;
+pub mod float;
 mod geom;
+mod index;
+pub mod int;
 
 pub use i_overlay;
