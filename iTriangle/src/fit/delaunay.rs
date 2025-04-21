@@ -3,12 +3,26 @@ use crate::raw::triangulation::RawTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
 
+/// A refined triangle mesh where all interior edges satisfy the Delaunay condition.
+///
+/// Created from a [`RawTriangulation`] via [`into_delaunay`], this structure applies edge flips
+/// to enforce the empty circumcircle property for each triangle pair.
+///
+/// Delaunay triangulations improve triangle quality and are preferred for numerical stability.
 pub struct Delaunay {
     pub triangles: Vec<ABCTriangle>,
     pub points: Vec<IntPoint>,
 }
 
 impl RawTriangulation {
+
+    /// Converts a raw triangle mesh into a Delaunay triangulation by applying edge flips.
+    ///
+    /// The mesh is refined in-place by checking local angle conditions and
+    /// flipping edges until the Delaunay criterion is satisfied.
+    ///
+    /// # Returns
+    /// A new [`Delaunay`] structure with updated triangle connectivity.
     #[inline]
     pub fn into_delaunay(self) -> Delaunay {
         let mut delaunay = Delaunay {

@@ -44,6 +44,7 @@ impl SteinerInference for [IntShape] {
 
         let mut points = points.to_vec();
         points.sort_unstable_by(|a, b| a.x.cmp(&b.x));
+        points.dedup();
 
         let x_min = points[0].x;
         let x_max = points.last().unwrap().x;
@@ -62,7 +63,7 @@ impl SteinerInference for [IntShape] {
                     }
 
                     x_points.push(a);
-                    
+
                     if a.x == b.x {
                         v_edges.push(VEdge::new(a, b));
                         a = b;
@@ -88,7 +89,7 @@ impl SteinerInference for [IntShape] {
             return vec![Vec::new(); self.len()];
         }
 
-        segments.sort_unstable_by(|e0, e1| e0.edge.a.cmp(&e1.edge.b));
+        segments.sort_unstable_by(|s0, s1| s0.v_segment.a.cmp(&s1.v_segment.a));
         v_edges.sort_unstable_by(|e0, e1| e0.x.cmp(&e1.x));
         x_points.sort_unstable_by(|p0, p1| p0.x.cmp(&p1.x));
 
@@ -136,7 +137,7 @@ impl SteinerInference for [IntShape] {
                 }
                 k += 1;
             }
-            
+
             // scroll to relevant x
             while t < x_points.len() {
                 let xp = &x_points[t];
@@ -282,6 +283,47 @@ mod tests {
 
     #[test]
     fn test_5() {
+        let shapes = vec![vec![path(&[[-1, 2], [-5, -2], [2, -2], [3, 4]])]];
+        let groups = shapes.group_by_shapes(&[IntPoint::new(1, 5)]);
+
+        assert_eq!(groups[0].len(), 0);
+    }
+
+    #[test]
+    fn test_6() {
+        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
+        let groups = shapes.group_by_shapes(&[
+            IntPoint::new(0, 0),
+            IntPoint::new(0, 0),
+        ]);
+
+        assert_eq!(groups[0].len(), 1);
+    }
+
+    #[test]
+    fn test_7() {
+        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
+        let groups = shapes.group_by_shapes(&[
+            IntPoint::new(-4, 3),
+            IntPoint::new(0, 3),
+        ]);
+
+        assert_eq!(groups[0].len(), 1);
+    }
+
+    #[test]
+    fn test_8() {
+        let shapes = vec![vec![path(&[[1, 0], [-4, -2], [3, 0], [5, 1], [4, 1], [-4, -1]])]];
+        let groups = shapes.group_by_shapes(&[
+            IntPoint::new(0, 3),
+            IntPoint::new(4, 3),
+        ]);
+
+        assert_eq!(groups[0].len(), 0);
+    }
+
+    #[test]
+    fn test_9() {
         let shapes = vec![vec![path(&[[-10, -10], [10, -10], [10, 10], [-10, 10]])]];
         let groups = shapes.group_by_shapes(&[
             IntPoint::new(-10, 10),

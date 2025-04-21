@@ -1367,6 +1367,52 @@ mod tests {
     }
 
     #[test]
+    fn test_28() {
+        let shape = vec![path(&[[3, -1], [0, 0], [1, -1], [3, -5]])];
+        let points = vec![
+            IntPoint::new(2, -2)
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 4);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_29() {
+        let shape = vec![path(&[[1, 0], [-4, -2], [3, 0], [5, 1], [4, 1], [-4, -1]])];
+        let points = vec![
+            IntPoint::new(0, 3),
+            IntPoint::new(4, 3),
+        ];
+        let shape_area = shape.area_two();
+        let group = vec![shape.clone()].group_by_shapes(&points);
+
+        let net = shape_to_builder_with_points(&shape, &group[0]);
+        assert_eq!(net.triangles.len(), 4);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_30() {
+        let shape = vec![path(&[[-1, 2], [-5, -2], [2, -2], [3, 4]])];
+        let points = vec![IntPoint::new(1, 5)];
+        let shape_area = shape.area_two();
+        let group = vec![shape.clone()].group_by_shapes(&points);
+
+        let net = shape_to_builder_with_points(&shape, &group[0]);
+        assert_eq!(net.triangles.len(), 2);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
     fn test_random_0() {
         for _ in 0..100_000 {
             let path = random(8, 5);
@@ -1522,10 +1568,10 @@ mod tests {
 
     #[test]
     fn test_random_7() {
-        let shapes = vec![vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])]];
+        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
         let shape_area = shapes.area_two();
         for _ in 0..100_000 {
-            let points = random_points(15, 5);
+            let points = random_points(8, 2);
             let group = shapes.group_by_shapes(&points);
             let net = shape_to_builder_with_points(&shapes[0], &group[0]);
             net.validate();
@@ -1535,7 +1581,7 @@ mod tests {
 
     #[test]
     fn test_random_8() {
-        for _ in 0..10_000 {
+        for _ in 0..100_000 {
             let points = random_points(15, 1);
             let shape = random(10, 4);
 
@@ -1553,6 +1599,86 @@ mod tests {
 
                 let group = shapes.group_by_shapes(&points);
                 let net = shape_to_builder_with_points(&shapes[0], &group[0]);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_9() {
+        for _ in 0..100_000 {
+            let points = random_points(10, 2);
+            let shape = random(10, 4);
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shapes = vec![first.clone()];
+                let shape_area = shapes.area_two();
+
+                let group = shapes.group_by_shapes(&points);
+                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_10() {
+        for _ in 0..50_000 {
+            let points = random_points(10, 8);
+            let shape = random(10, 8);
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shapes = vec![first.clone()];
+                let shape_area = shapes.area_two();
+
+                let group = shapes.group_by_shapes(&points);
+                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
+        }
+    }
+
+    #[test]
+    fn test_random_11() {
+        for _ in 0..10_000 {
+            let main = random(50, 20);
+            let mut shape = vec![main];
+            for _ in 0..10 {
+                shape.push(random(30, 5));
+            }
+            let points = random_points(20, 8);
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shape_area = first.area_two();
+
+                let group = vec![first.clone()].group_by_shapes(&points);
+                let net = shape_to_builder_with_points(&first, &group[0]);
                 net.validate();
                 assert_eq!(net.area(), shape_area);
             };
