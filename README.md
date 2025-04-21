@@ -35,43 +35,45 @@ After that, represent your polygon as an array of vertices. Here's an example of
 </p>
 
 ```rust
-let shape = [
-    [ // body
-        F64Point::new(0.0, 20.0),    // 0
-        F64Point::new(8.0, 10.0),    // 1
-        F64Point::new(7.0, 6.0),     // 2
-        F64Point::new(9.0, 1.0),     // 3
-        F64Point::new(13.0, -1.0),   // 4
-        F64Point::new(17.0, 1.0),    // 5
-        F64Point::new(26.0, -7.0),   // 6
-        F64Point::new(14.0, -15.0),  // 7
-        F64Point::new(0.0, -18.0),   // 8
-        F64Point::new(-14.0, -15.0), // 9
-        F64Point::new(-25.0, -7.0),  // 10
-        F64Point::new(-18.0, 0.0),   // 11
-        F64Point::new(-16.0, -3.0),  // 12
-        F64Point::new(-13.0, -4.0),  // 13
-        F64Point::new(-8.0, -2.0),   // 14
-        F64Point::new(-6.0, 2.0),    // 15
-        F64Point::new(-7.0, 6.0),    // 16
-        F64Point::new(-10.0, 8.0)    // 17
-    ].to_vec(),
-    [ // hole
-        F64Point::new(2.0, 0.0),     // 18
-        F64Point::new(-2.0, -2.0),   // 19
-        F64Point::new(-4.0, -5.0),   // 20
-        F64Point::new(-2.0, -9.0),   // 21
-        F64Point::new(2.0, -11.0),   // 22
-        F64Point::new(5.0, -9.0),    // 23
-        F64Point::new(7.0, -5.0),    // 24
-        F64Point::new(5.0, -2.0)     // 25
-    ].to_vec()
-].to_vec();
+let shape = vec![
+    vec![
+        // body
+        [0.0, 20.0],    // 0
+        [8.0, 10.0],    // 1
+        [7.0, 6.0],     // 2
+        [9.0, 1.0],     // 3
+        [13.0, -1.0],   // 4
+        [17.0, 1.0],    // 5
+        [26.0, -7.0],   // 6
+        [14.0, -15.0],  // 7
+        [0.0, -18.0],   // 8
+        [-14.0, -15.0], // 9
+        [-25.0, -7.0],  // 10
+        [-18.0, 0.0],   // 11
+        [-16.0, -3.0],  // 12
+        [-13.0, -4.0],  // 13
+        [-8.0, -2.0],   // 14
+        [-6.0, 2.0],    // 15
+        [-7.0, 6.0],    // 16
+        [-10.0, 8.0],   // 17
+    ],
+    vec![
+        // hole
+        [2.0, 0.0],   // 18
+        [-2.0, -2.0], // 19
+        [-4.0, -5.0], // 20
+        [-2.0, -9.0], // 21
+        [2.0, -11.0], // 22
+        [5.0, -9.0],  // 23
+        [7.0, -5.0],  // 24
+        [5.0, -2.0],  // 25
+    ],
+];
 
-let triangulation = shape.to_triangulation(Some(FillRule::NonZero), 0.0);
+let triangulation = shape.triangulate().to_triangulation();
 
 println!("points: {:?}", triangulation.points);
 println!("indices: {:?}", triangulation.indices);
 ```
 
-**Output Triangulation**: *triangles indices and vertices, where all triangles oriented in a clockwise direction.*
+**Output Triangulation**: *triangles indices and vertices, where all triangles oriented in a counter-clockwise direction.*
