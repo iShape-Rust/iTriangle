@@ -270,6 +270,51 @@ mod tests {
 
     #[test]
     fn test_0() {
+        let a = IntPoint::new(0, 4);
+        let b = IntPoint::new(-2, 0);
+        let c = IntPoint::new(2, 0);
+        let p = IntPoint::new(0, -4);
+
+        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        assert_eq!(is_flip_not_required, true);
+    }
+
+    #[test]
+    fn test_1() {
+        // border case
+        let a = IntPoint::new(0, 2);
+        let b = IntPoint::new(-2, 0);
+        let c = IntPoint::new(2, 0);
+        let p = IntPoint::new(0, -2);
+
+        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        assert_eq!(is_flip_not_required, true);
+    }
+
+    #[test]
+    fn test_2() {
+        let a = IntPoint::new(0, 2);
+        let b = IntPoint::new(-2, 0);
+        let c = IntPoint::new(2, 0);
+        let p = IntPoint::new(0, -1);
+
+        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        assert_eq!(is_flip_not_required, false);
+    }
+
+    #[test]
+    fn test_3() {
+        let a = IntPoint::new(0, 1);
+        let b = IntPoint::new(-2, 0);
+        let c = IntPoint::new(2, 0);
+        let p = IntPoint::new(0, -1);
+
+        let is_flip_not_required = Delaunay::is_flip_not_required(p, a, b, c);
+        assert_eq!(is_flip_not_required, false);
+    }
+
+    #[test]
+    fn test_4() {
         let points = vec![
             IntPoint::new(-3, 3),
             IntPoint::new(-2, -3),
@@ -340,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn test_1() {
+    fn test_5() {
         let shape = vec![path(&[[4, 2], [-4, 4], [-1, 0], [0, -1], [4, -4]])];
         let shape_area = shape.area_two();
 
