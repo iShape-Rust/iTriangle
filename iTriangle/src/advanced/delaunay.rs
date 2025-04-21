@@ -240,13 +240,13 @@ impl Delaunay {
             let n1 = t.neighbors[1];
             let n2 = t.neighbors[2];
 
-            if n0 != usize::MAX {
+            if n0 < self.triangles.len() {
                 assert!(self.triangles[n0].neighbors.contains(&i));
             }
-            if n1 != usize::MAX {
+            if n1 < self.triangles.len() {
                 assert!(self.triangles[n1].neighbors.contains(&i));
             }
-            if n2 != usize::MAX {
+            if n2 < self.triangles.len() {
                 assert!(self.triangles[n2].neighbors.contains(&i));
             }
         }
@@ -269,7 +269,7 @@ impl Delaunay {
 
 #[cfg(test)]
 mod tests {
-    use crate::fit::delaunay::Delaunay;
+    use crate::advanced::delaunay::Delaunay;
     use crate::geom::point::IndexPoint;
     use crate::geom::triangle::ABCTriangle;
     use crate::raw::triangulatable::Triangulatable;

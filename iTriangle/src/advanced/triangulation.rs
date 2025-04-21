@@ -1,5 +1,5 @@
 use i_overlay::i_float::int::point::IntPoint;
-use crate::fit::delaunay::Delaunay;
+use crate::advanced::delaunay::Delaunay;
 use crate::triangulation::int::Triangulation;
 
 impl Delaunay {

@@ -2,7 +2,7 @@ pub mod delaunay;
 pub mod monotone;
 pub mod triangulation;
 pub mod raw;
-pub mod fit;
+pub mod advanced;
 mod index;
 mod geom;
 

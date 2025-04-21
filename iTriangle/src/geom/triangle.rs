@@ -22,7 +22,7 @@ pub struct ABCTriangle {
 
 impl ABCTriangle {
     #[inline]
-    pub(crate) fn abc(a: IndexPoint, b: IndexPoint, c: IndexPoint) -> Self {
+    pub fn abc(a: IndexPoint, b: IndexPoint, c: IndexPoint) -> Self {
         Self {
             vertices: [a, b, c],
             neighbors: [usize::MAX; 3],
@@ -30,7 +30,7 @@ impl ABCTriangle {
     }
 
     #[inline]
-    pub(crate) fn other_vertex(&self, a: usize, b: usize) -> usize {
+    pub fn other_vertex(&self, a: usize, b: usize) -> usize {
         if self.vertices[0].index != a && self.vertices[0].index != b {
             0
         } else if self.vertices[1].index != a && self.vertices[1].index != b {
@@ -40,6 +40,30 @@ impl ABCTriangle {
         }
     }
 
+    pub fn opposite(&self, neighbor: usize) -> usize {
+        #[cfg(debug_assertions)]
+        {
+            for i in 0..3 {
+                if self.neighbors[i] == neighbor {
+                    return i;
+                }
+            }
+
+            panic!("Neighbor is not present");
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            for i in 0..2 {
+                if self.neighbors[i] == neighbor {
+                    return i;
+                }
+            }
+
+            2
+        }
+    }
+    
     #[inline]
     pub(crate) fn abc_by_neighbor(&self, neighbor: usize) -> Abc {
         if neighbor == self.neighbors[0] {
