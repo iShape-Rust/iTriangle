@@ -633,6 +633,14 @@ mod tests {
         net
     }
 
+    fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleNetBuilder {
+        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
+
+        let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
+        net.build(&shape.to_chain_vertices_with_steiner_points(points));
+        net
+    }
+    
     #[test]
     fn test_0() {
         let shape = vec![vec![
@@ -1051,6 +1059,19 @@ mod tests {
 
         let net = shape_to_builder(&shape);
         assert_eq!(net.triangles.len(), 6);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_22() {
+        let shape = vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])];
+        let points = vec![IntPoint::new(0, 0)];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 4);
         net.validate();
 
         assert_eq!(net.area(), shape_area);
