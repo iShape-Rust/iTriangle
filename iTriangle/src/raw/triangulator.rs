@@ -31,7 +31,6 @@ impl Default for Triangulator {
 }
 
 impl Triangulator {
-
     pub fn triangulate_shapes(&self, shapes: &IntShapes) -> RawTriangulation {
         if let Some(validation) = self.validation {
             let shapes = shapes.simplify(
@@ -46,7 +45,11 @@ impl Triangulator {
         }
     }
 
-    pub fn triangulate_shapes_with_steiner_points(&self, shapes: &IntShapes, points: &[IntPoint]) -> RawTriangulation {
+    pub fn triangulate_shapes_with_steiner_points(
+        &self,
+        shapes: &IntShapes,
+        points: &[IntPoint],
+    ) -> RawTriangulation {
         if let Some(validation) = self.validation {
             let shapes = shapes.simplify(
                 validation.fill_rule,
@@ -146,7 +149,6 @@ impl Triangulator {
         RawTriangulation::new(net_builder.triangles, chain_vertices.into_points())
     }
 
-
     fn triangulate_valid_shape(&self, shape: &IntShape) -> RawTriangulation {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
@@ -201,7 +203,11 @@ impl Triangulator {
 
         RawTriangulation::new(triangles, points)
     }
-    fn triangulate_valid_shapes_with_steiner_points(&self, shapes: &IntShapes, points: &[IntPoint]) -> RawTriangulation {
+    fn triangulate_valid_shapes_with_steiner_points(
+        &self,
+        shapes: &IntShapes,
+        points: &[IntPoint],
+    ) -> RawTriangulation {
         if shapes.len() <= 1 {
             return if let Some(first) = shapes.first() {
                 self.triangulate_valid_shape_with_steiner_points(first, points)

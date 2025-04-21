@@ -25,8 +25,8 @@ impl RawTriangulation {
 impl Delaunay {
     pub(crate) fn build(&mut self) {
         let mut abc_index = 0;
-        let mut dirty = vec![false; self.triangles.len()];
-        let mut buffer = Vec::with_capacity((self.triangles.len() >> 2).min(4));
+        let mut modified = vec![false; self.triangles.len()];
+        let mut buffer = Vec::with_capacity((self.triangles.len() / 4).max(4));
         let mut skip = usize::MAX; // to skip last flip pair
         'main_loop: while abc_index < self.triangles.len() {
             let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
@@ -37,9 +37,9 @@ impl Delaunay {
 
                 if self.swap_triangles(abc_index, pbc_index) {
                     skip = pbc_index;
-                    let is_dirty = unsafe { dirty.get_unchecked_mut(abc_index) };
-                    if !*is_dirty {
-                        *is_dirty = true;
+                    let is_modified = unsafe { modified.get_unchecked_mut(abc_index) };
+                    if !*is_modified {
+                        *is_modified = true;
                         buffer.push(pbc_index);
                     }
                     continue 'main_loop;
@@ -51,20 +51,20 @@ impl Delaunay {
 
         if !buffer.is_empty() {
             // this round happened only for real bad triangulation net
-            self.make_perfect(&mut dirty, &mut buffer);
+            self.make_perfect(&mut modified, &mut buffer);
         }
     }
-    
-    fn make_perfect(&mut self, dirty: &mut [bool], buffer: &mut Vec<usize>) {
+
+    fn make_perfect(&mut self, modified: &mut [bool], buffer: &mut Vec<usize>) {
         let mut unprocessed = Vec::with_capacity(buffer.len());
 
         while !buffer.is_empty() {
             unprocessed.clear();
             for &i in buffer.iter() {
-                let is_dirty = unsafe { dirty.get_unchecked_mut(i) };
-                if *is_dirty {
+                let is_modified = unsafe { modified.get_unchecked_mut(i) };
+                if *is_modified {
                     unprocessed.push(i);
-                    *is_dirty = false;
+                    *is_modified = false;
                 }
             }
             buffer.clear();
@@ -81,36 +81,39 @@ impl Delaunay {
 
                     if self.swap_triangles(abc_index, pbc_index) {
                         skip = pbc_index;
-                        let is_dirty = unsafe { dirty.get_unchecked_mut(abc_index) };
-                        if !*is_dirty {
-                            *is_dirty = true;
+                        let is_modified = unsafe { modified.get_unchecked_mut(abc_index) };
+                        if !*is_modified {
+                            *is_modified = true;
                             buffer.push(pbc_index);
                         }
 
                         continue 'unprocessed_loop;
                     }
                 }
-                dirty[abc_index] = false;
+                modified[abc_index] = false;
                 skip = usize::MAX;
                 i += 1;
             }
-        }        
-    }    
+        }
+    }
 
     #[inline]
     fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
-        let abc = self.triangles[abc_index].abc_by_neighbor(pcb_index);
-        let pcb = self.triangles[pcb_index].abc_by_neighbor(abc_index);
+        // abc_index & pcb_index can not be more self.triangles.len()
+        let t_abc = unsafe { self.triangles.get_unchecked(abc_index) };
+        let t_pcb = unsafe { self.triangles.get_unchecked(pcb_index) };
+        let abc = t_abc.abc_by_neighbor(pcb_index);
+        let pcb = t_pcb.abc_by_neighbor(abc_index);
         if Self::is_flip_not_required(
             pcb.v0.vertex.point, // p
-            abc.v0.vertex.point,
-            abc.v1.vertex.point,
-            abc.v2.vertex.point,
+            abc.v0.vertex.point, // a
+            abc.v1.vertex.point, // b
+            abc.v2.vertex.point, // c
         ) {
             return false;
         }
 
-        // abc and pcb are clock-wised triangles
+        // abc and pcb are clock-wised ordered triangles
 
         // abc -> abp
         // pcb -> pca
@@ -129,6 +132,7 @@ impl Delaunay {
         pca.neighbors[pcb.v1.position] = abc_index;
         pca.neighbors[pcb.v2.position] = pcb.v2.neighbor;
         pca.vertices[pcb.v2.position] = abc.v0.vertex;
+
         true
     }
 
@@ -209,7 +213,6 @@ impl ABCTriangle {
 #[cfg(test)]
 impl Delaunay {
     fn validate(&self) {
-
         use i_overlay::i_float::triangle::Triangle;
 
         for (i, t) in self.triangles.iter().enumerate() {

@@ -7,6 +7,7 @@ use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
 use std::mem::swap;
+use crate::geom::point::IndexPoint;
 
 #[derive(Copy, Clone)]
 struct PhantomHandler {
@@ -102,7 +103,7 @@ impl TriangleNetBuilder {
                 VertexType::Merge => self.merge(v, &mut tree),
                 VertexType::Split => self.split(v, &mut tree),
                 VertexType::Join => self.join(v, &mut tree),
-                VertexType::Implant => self.implant(v, &mut tree),
+                VertexType::Steiner => self.steiner(v, &mut tree),
             }
         }
     }
@@ -223,8 +224,10 @@ impl TriangleNetBuilder {
         tree.delete_by_index(next_index);
     }
 
-    fn implant(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
-        self.split(v, tree)
+    fn steiner(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+        let index = tree.find_section(v);
+        let section = tree.value_by_index_mut(index);
+        section.add_steiner(v.index_point(), self);
     }
 }
 
@@ -543,6 +546,137 @@ impl Section {
             kind: EdgeType::Regular(index),
         });
     }
+
+    #[inline]
+    fn add_steiner(&mut self, vp: IndexPoint, net_builder: &mut TriangleNetBuilder) {
+        let edges = match &mut self.content {
+            Content::Point(point) => {
+                let phantom_index = net_builder.get_unique_phantom_edge_index();
+                let top_edge = TriangleEdge {
+                    a: *point,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                let bottom_edge = TriangleEdge {
+                    a: vp,
+                    b: *point,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                self.content = Content::Edges(vec![top_edge, bottom_edge]);
+
+                return;
+            }
+            Content::Edges(edges) => edges,
+        };
+
+
+        let mut i = 0;
+        while i < edges.len() {
+            let ei = &edges[i];
+            // skip first not valid triangles
+            if Triangle::is_cw_or_line_point(vp.point, ei.a.point, ei.b.point) {
+                i += 1;
+                continue;
+            }
+            break;
+        }
+
+        if i >= edges.len() {
+            let last = edges[edges.len() - 1].b;
+            let mut index = edges.len();
+            let mut min_dist = vp.point.x - last.point.x;
+            for (ei, e) in edges.iter().enumerate() {
+                let dist = vp.point.x - e.a.point.x;
+                if dist < min_dist {
+                    min_dist = dist;
+                    index = ei;
+                }
+            }
+
+            let phantom_index = net_builder.get_unique_phantom_edge_index();
+            if index == edges.len() {
+                let top_edge = TriangleEdge {
+                    a: last,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+                edges.push(top_edge);
+
+                let bottom_edge = TriangleEdge {
+                    a: vp,
+                    b: last,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                edges.push(top_edge);
+                edges.push(bottom_edge);
+            } else {
+                let ea = edges[index].a;
+                let top_edge = TriangleEdge {
+                    a: ea,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                let bottom_edge = TriangleEdge {
+                    a: vp,
+                    b: ea,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                edges.insert(index, top_edge);
+                edges.insert(index + 1, bottom_edge);
+            }
+            return;
+        }
+        let e0 = &edges[i];
+
+        let mut t0 = ABCTriangle::abc(vp, e0.a, e0.b);
+        t0.neighbors[1] = net_builder.triangles.len() + 1;
+        let mut index = net_builder.add_triangle_and_join_by_edge(e0, 0, t0);
+
+        let top_edge = TriangleEdge {
+            a: e0.a,
+            b: vp,
+            kind: EdgeType::Regular(index),
+        };
+
+        let mut new_edges = edges.split_off(i);
+        swap(&mut new_edges, edges);
+        new_edges.push(top_edge);
+
+        let mut next_index = index + 2;
+        i = 1;
+        while i < edges.len() {
+            let ei = &edges[i];
+            if Triangle::is_cw_or_line_point(vp.point, ei.a.point, ei.b.point) {
+                break;
+            }
+            let mut triangle = ABCTriangle::abc(vp, ei.a, ei.b);
+            triangle.neighbors[1] = next_index;
+            triangle.neighbors[2] = index;
+            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            next_index = index + 2;
+
+            i += 1;
+        }
+        net_builder.triangles[index].neighbors[1] = usize::MAX;
+
+        let bottom_edge = TriangleEdge {
+            a: vp,
+            b: edges[i - 1].b,
+            kind: EdgeType::Regular(index),
+        };
+
+        let mut tail = edges.split_off(i);
+
+        new_edges.push(bottom_edge);
+        new_edges.append(&mut tail);
+
+        self.content = Content::Edges(new_edges);
+    }
 }
 
 #[cfg(test)]
@@ -610,6 +744,7 @@ impl FindSection for SetTree<VSegment, Section> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{HashMap, HashSet};
     use crate::raw::builder::TriangleNetBuilder;
     use crate::raw::vertex::ToChainVertices;
     use i_overlay::core::fill_rule::FillRule;
@@ -634,13 +769,16 @@ mod tests {
     }
 
     fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleNetBuilder {
-        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
+        let triangles_count = shape
+            .iter()
+            .fold(0, |s, path| s + path.len() - 2)
+            + 2 * points.len();
 
         let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
         net.build(&shape.to_chain_vertices_with_steiner_points(points));
         net
     }
-    
+
     #[test]
     fn test_0() {
         let shape = vec![vec![
@@ -1066,12 +1204,57 @@ mod tests {
 
     #[test]
     fn test_22() {
+        let shape = vec![path(&[[-10, 0], [10, -10], [10, 10]])];
+        let points = vec![IntPoint::new(0, 0)];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 3);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_23() {
         let shape = vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])];
         let points = vec![IntPoint::new(0, 0)];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder_with_points(&shape, &points);
         assert_eq!(net.triangles.len(), 4);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_24() {
+        let shape = vec![path(&[
+            [-10, 10], [0, 5], [0, 0], [0, -5], [-10, -10], [10, -10], [10, 10]
+        ])];
+        let points = vec![IntPoint::new(5, 0)];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 7);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_25() {
+        let shape = vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])];
+        let points = vec![
+            IntPoint::new(-2, 0),
+            IntPoint::new(-1, 0),
+            IntPoint::new(1, -2),
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 8);
         net.validate();
 
         assert_eq!(net.area(), shape_area);
@@ -1219,6 +1402,18 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_random_6() {
+        let shape = vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])];
+        let shape_area = shape.area_two();
+        for _ in 0..100_000 {
+            let points = random_points(5, 10);
+            let net = shape_to_builder_with_points(&shape, &points);
+            net.validate();
+            assert_eq!(net.area(), shape_area);
+        }
+    }
+
     fn random(radius: i32, n: usize) -> IntPath {
         let a = radius / 2;
         let mut points = Vec::with_capacity(n);
@@ -1230,5 +1425,18 @@ mod tests {
         }
 
         points
+    }
+
+    fn random_points(radius: i32, n: usize) -> Vec<IntPoint> {
+        let a = radius / 2;
+        let mut points = HashSet::new();
+        let mut rng = rand::rng();
+        for _ in 0..n {
+            let x = rng.random_range(-a..=a);
+            let y = rng.random_range(-a..=a);
+            points.insert(IntPoint { x, y });
+        }
+
+        points.iter().map(|p|p).copied().collect()
     }
 }

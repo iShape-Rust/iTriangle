@@ -10,7 +10,7 @@ pub(super) enum VertexType {
     Merge,
     Split,
     Join,
-    Implant,
+    Steiner,
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +47,7 @@ impl ChainVertex {
     pub(super) fn get_type(&self) -> VertexType {
         let clock_wise = Triangle::is_clockwise_point(self.prev, self.this, self.next);
         if self.prev == IntPoint::EMPTY && self.next == IntPoint::EMPTY {
-            VertexType::Implant
+            VertexType::Steiner
         } else if self.prev < self.this && self.next < self.this {
             if clock_wise {
                 VertexType::Merge
