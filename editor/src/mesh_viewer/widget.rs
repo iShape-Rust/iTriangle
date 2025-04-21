@@ -1,4 +1,4 @@
-use i_mesh::i_triangle::triangulation::int::Triangulation;
+use i_mesh::i_triangle::int::triangulation::Triangulation;
 use crate::compat::convert::Convert;
 use crate::geom::camera::Camera;
 use crate::mesh::path_builder::PathBuilder;

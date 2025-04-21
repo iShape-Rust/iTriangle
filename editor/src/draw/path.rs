@@ -1,8 +1,8 @@
+use i_mesh::i_triangle::float::builder::TriangulationBuilder;
+use i_mesh::i_triangle::float::triangulation::Triangulation;
 use i_mesh::i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
-use i_mesh::i_triangle::triangulation::float::Triangulation;
-use i_mesh::i_triangle::triangulation::float::TriangulationBuilder;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
 use iced::advanced::layout::{self, Layout};

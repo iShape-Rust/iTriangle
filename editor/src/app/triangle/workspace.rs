@@ -1,5 +1,5 @@
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
-use i_mesh::i_triangle::triangulation::int::Triangulation;
+use i_mesh::i_triangle::int::triangulation::Triangulation;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
 use crate::app::triangle::content::IntersectMessage;

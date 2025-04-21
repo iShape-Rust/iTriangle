@@ -4,3 +4,4 @@ pub mod unchecked;
 pub mod custom;
 pub mod delaunay;
 pub mod convex;
+pub mod builder;

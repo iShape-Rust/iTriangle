@@ -10,11 +10,11 @@ use i_mesh::i_triangle::i_overlay::core::overlay::ContourDirection;
 use i_mesh::i_triangle::i_overlay::core::simplify::Simplify;
 use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
-use i_mesh::i_triangle::raw::triangulator::Triangulator;
 use iced::widget::scrollable;
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
+use i_mesh::i_triangle::int::triangulator::Triangulator;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,
