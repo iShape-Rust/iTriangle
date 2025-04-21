@@ -14,6 +14,13 @@ struct ShapeEdge {
 }
 
 #[derive(Debug, Clone, Copy)]
+struct VEdge {
+    min_y: i32,
+    max_y: i32,
+    x: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
 struct TargetSegment {
     edge: ShapeEdge,
     v_segment: VSegment,
@@ -42,26 +49,33 @@ impl SteinerInference for [IntShape] {
         let x_max = points.last().unwrap().x;
 
         let mut segments = Vec::new();
+        let mut v_edges = Vec::new();
+        let mut x_points = Vec::new();
 
         for (shape_index, shape) in self.iter().enumerate() {
             for path in shape.iter() {
                 let mut a = *path.last().unwrap();
                 for &b in path.iter() {
-                    if a.x == b.x || a.x < x_min && b.x < x_min || a.x > x_max && b.x > x_max {
+                    if a.x < x_min && b.x < x_min || a.x > x_max && b.x > x_max {
                         a = b;
                         continue;
                     }
+
+                    x_points.push(a);
+                    
+                    if a.x == b.x {
+                        v_edges.push(VEdge::new(a, b));
+                        a = b;
+                        continue;
+                    };
+
                     let v_segment = if a.x < b.x {
                         VSegment { a, b }
                     } else {
                         VSegment { a: b, b: a }
                     };
                     segments.push(TargetSegment {
-                        edge: ShapeEdge {
-                            a,
-                            b,
-                            shape_index,
-                        },
+                        edge: ShapeEdge { a, b, shape_index },
                         v_segment,
                     });
 
@@ -69,6 +83,14 @@ impl SteinerInference for [IntShape] {
                 }
             }
         }
+
+        if segments.is_empty() {
+            return vec![Vec::new(); self.len()];
+        }
+
+        segments.sort_unstable_by(|e0, e1| e0.edge.a.cmp(&e1.edge.b));
+        v_edges.sort_unstable_by(|e0, e1| e0.x.cmp(&e1.x));
+        x_points.sort_unstable_by(|p0, p1| p0.x.cmp(&p1.x));
 
         let mut groups = vec![Vec::new(); self.len()];
         let capacity = segments.len().ilog2() as usize;
@@ -81,17 +103,56 @@ impl SteinerInference for [IntShape] {
         };
 
         let mut i = 0;
+        let mut j = 0;
+        let mut t = 0;
+        'loop_by_points:
         for &p in points.iter() {
             while i < segments.len() {
                 let id_segment = &segments[i];
                 if p.x < id_segment.v_segment.a.x {
                     break;
                 }
-                
+
                 if p.x < id_segment.v_segment.b.x {
                     tree.insert(id_segment.v_segment, id_segment.edge, p.x);
                 }
                 i += 1
+            }
+
+            // scroll to relevant x
+            while j < v_edges.len() {
+                let e = &v_edges[j];
+                if p.x <= e.x {
+                    break;
+                }
+                j += 1
+            }
+
+            // TODO can be adjusted for binary search
+            let mut k = j;
+            while k < v_edges.len() && v_edges[k].x == p.x {
+                if v_edges[k].contains(p.y) {
+                    continue 'loop_by_points;
+                }
+                k += 1;
+            }
+            
+            // scroll to relevant x
+            while t < x_points.len() {
+                let xp = &x_points[t];
+                if p.x <= xp.x {
+                    break;
+                }
+                t += 1
+            }
+
+            // TODO can be adjusted for binary search
+            let mut k = t;
+            while k < x_points.len() && x_points[k].x == p.x {
+                if x_points[k].y == p.y {
+                    continue 'loop_by_points;
+                }
+                k += 1;
             }
 
             let edge = tree.first_less_or_equal_by(p.x, empty_edge, |s| s.is_under_point_order(p));
@@ -108,7 +169,6 @@ impl SteinerInference for [IntShape] {
 }
 
 impl ShapeEdge {
-
     #[inline]
     fn not_contains(&self, p: IntPoint) -> bool {
         Triangle::is_not_line_point(self.a, p, self.b)
@@ -120,6 +180,23 @@ impl ShapeEdge {
     }
 }
 
+impl VEdge {
+    #[inline]
+    fn new(a: IntPoint, b: IntPoint) -> Self {
+        let (min_y, max_y) = if a.y < b.y { (a.y, b.y) } else { (b.y, a.y) };
+
+        Self {
+            min_y,
+            max_y,
+            x: a.x,
+        }
+    }
+
+    #[inline]
+    fn contains(&self, y: i32) -> bool {
+        self.min_y <= y && y <= self.max_y
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -148,7 +225,7 @@ mod tests {
     fn test_1() {
         let shapes = vec![
             vec![path(&[[0, 0], [10, 0], [10, 10], [0, 10]])],
-            vec![path(&[[20, 0], [30, 0], [30, 10], [20, 10]])]
+            vec![path(&[[20, 0], [30, 0], [30, 10], [20, 10]])],
         ];
 
         let groups = shapes.group_by_shapes(&[
@@ -188,11 +265,37 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let shapes = vec![
-            vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])],
-        ];
+        let shapes = vec![vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])]];
 
         let groups = shapes.group_by_shapes(&[IntPoint::new(-3, 7)]);
+
+        assert_eq!(groups[0].len(), 0);
+    }
+
+    #[test]
+    fn test_4() {
+        let shapes = vec![vec![path(&[[3, -2], [-5, 3], [0, -1], [-2, -3]])]];
+        let groups = shapes.group_by_shapes(&[IntPoint::new(0, -1)]);
+
+        assert_eq!(groups[0].len(), 0);
+    }
+
+    #[test]
+    fn test_5() {
+        let shapes = vec![vec![path(&[[-10, -10], [10, -10], [10, 10], [-10, 10]])]];
+        let groups = shapes.group_by_shapes(&[
+            IntPoint::new(-10, 10),
+            IntPoint::new(-10, 5),
+            IntPoint::new(-10, 0),
+            IntPoint::new(-10, -5),
+            IntPoint::new(-10, -10),
+            IntPoint::new(10, 10),
+            IntPoint::new(10, 5),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, -5),
+            IntPoint::new(10, -10),
+
+        ]);
 
         assert_eq!(groups[0].len(), 0);
     }

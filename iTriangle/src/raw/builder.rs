@@ -321,6 +321,80 @@ impl Section {
 
         let vp = v.index_point();
         if i >= edges.len() {
+            let last = edges[edges.len() - 1].b;
+            let mut index = edges.len();
+            let mut min_dist = vp.point.x - last.point.x;
+            for (ei, e) in edges.iter().enumerate() {
+                let dist = vp.point.x - e.a.point.x;
+                if dist < min_dist {
+                    min_dist = dist;
+                    index = ei;
+                }
+            }
+
+            let phantom_index = net_builder.get_unique_phantom_edge_index();
+
+            return if index == edges.len() {
+                let eb = edges[i - 1].b;
+                let top_edge = TriangleEdge {
+                    a: eb,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+                edges.push(top_edge);
+
+                let bottom_edges = vec![TriangleEdge {
+                    a: vp,
+                    b: eb,
+                    kind: EdgeType::Phantom(phantom_index),
+                }];
+
+                let bottom_section = Section {
+                    sort: self.sort,
+                    content: Content::Edges(bottom_edges),
+                };
+
+                self.sort = VSegment {
+                    a: v.this,
+                    b: v.next,
+                };
+
+                bottom_section
+            } else {
+                let ea = edges[index].a;
+                let mut bottom_edges = edges.split_off(index);
+
+                let top_edge = TriangleEdge {
+                    a: ea,
+                    b: vp,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                let bottom_edge = TriangleEdge {
+                    a: vp,
+                    b: ea,
+                    kind: EdgeType::Phantom(phantom_index),
+                };
+
+                edges.push(top_edge);
+
+                bottom_edges.insert(0, bottom_edge);
+
+                // bottom section
+                let bottom_section = Section {
+                    sort: self.sort,
+                    content: Content::Edges(bottom_edges),
+                };
+
+                self.sort = VSegment {
+                    a: v.this,
+                    b: v.next,
+                };
+
+                bottom_section
+            }
+
+            /*
             let ax = vp.point.x - edges[0].a.point.x;
             let bx = vp.point.x - edges[edges.len() - 1].b.point.x;
 
@@ -376,6 +450,7 @@ impl Section {
 
                 bottom_section
             };
+            */
         }
         let e0 = &edges[i];
 
@@ -601,8 +676,6 @@ impl Section {
                     b: vp,
                     kind: EdgeType::Phantom(phantom_index),
                 };
-                edges.push(top_edge);
-
                 let bottom_edge = TriangleEdge {
                     a: vp,
                     b: last,
@@ -1264,6 +1337,36 @@ mod tests {
     }
 
     #[test]
+    fn test_26() {
+        let shape = vec![path(&[[4, 4], [-5, 3], [3, -3], [2, 3]])];
+        let points = vec![
+            IntPoint::new(1, 3)
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 4);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
+    fn test_27() {
+        let shape = vec![path(&[[3, -1], [0, 0], [1, -1], [3, -5]])];
+        let points = vec![
+            IntPoint::new(2, -2)
+        ];
+        let shape_area = shape.area_two();
+
+        let net = shape_to_builder_with_points(&shape, &points);
+        assert_eq!(net.triangles.len(), 4);
+        net.validate();
+
+        assert_eq!(net.area(), shape_area);
+    }
+
+    #[test]
     fn test_random_0() {
         for _ in 0..100_000 {
             let path = random(8, 5);
@@ -1427,6 +1530,32 @@ mod tests {
             let net = shape_to_builder_with_points(&shapes[0], &group[0]);
             net.validate();
             assert_eq!(net.area(), shape_area);
+        }
+    }
+
+    #[test]
+    fn test_random_8() {
+        for _ in 0..10_000 {
+            let points = random_points(15, 1);
+            let shape = random(10, 4);
+
+            if let Some(first) = shape
+                .simplify(
+                    FillRule::NonZero,
+                    ContourDirection::CounterClockwise,
+                    false,
+                    0,
+                )
+                .first()
+            {
+                let shapes = vec![first.clone()];
+                let shape_area = shapes.area_two();
+
+                let group = shapes.group_by_shapes(&points);
+                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
+                net.validate();
+                assert_eq!(net.area(), shape_area);
+            };
         }
     }
 
