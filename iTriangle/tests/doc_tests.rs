@@ -43,5 +43,18 @@ mod tests {
 
         println!("points: {:?}", triangulation.points);
         println!("indices: {:?}", triangulation.indices);
+
+        let delaunay_triangulation = shape.triangulate()
+            .into_delaunay()
+            .to_triangulation();
+
+        println!("points: {:?}", delaunay_triangulation.points);
+        println!("indices: {:?}", delaunay_triangulation.indices);
+
+        let convex_polygons = shape.triangulate()
+            .into_delaunay()
+            .to_convex_polygons();
+
+        println!("convex polygons: {:?}", convex_polygons);
     }
 }
