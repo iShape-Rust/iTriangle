@@ -3,6 +3,7 @@ use crate::geom::triangle::IntTriangle;
 use crate::index::Index;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::IntContour;
+use i_overlay::i_shape::int::simple::Simplify;
 
 #[derive(Debug, Clone, Copy)]
 struct Node {
@@ -35,15 +36,17 @@ impl ConvexPolygonBuilder {
 
     fn to_contour(&self) -> IntContour {
         let count = self.nodes.len();
-        let mut path = Vec::with_capacity(count);
+        let mut contour = Vec::with_capacity(count);
 
         let mut node = self.nodes[count - 1];
         for _ in 0..count {
-            path.push(node.point);
+            contour.push(node.point);
             node = self.nodes[node.next];
         }
 
-        path
+        contour.simplify_contour();
+        
+        contour
     }
 
     fn start(&mut self, triangle_index: usize, triangle: &IntTriangle) {

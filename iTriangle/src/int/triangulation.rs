@@ -71,9 +71,9 @@ impl IntTriangulation {
             t.vertices[0].index += points_offset;
             t.vertices[1].index += points_offset;
             t.vertices[2].index += points_offset;
-            t.neighbors[0].saturating_add(triangle_offset);
-            t.neighbors[1].saturating_add(triangle_offset);
-            t.neighbors[2].saturating_add(triangle_offset);
+            t.neighbors[0] = t.neighbors[0].saturating_add(triangle_offset);
+            t.neighbors[1] = t.neighbors[1].saturating_add(triangle_offset);
+            t.neighbors[2] = t.neighbors[2].saturating_add(triangle_offset);
         }
     }
 }
