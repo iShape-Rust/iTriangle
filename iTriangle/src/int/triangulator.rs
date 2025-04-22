@@ -3,7 +3,7 @@ use crate::int::builder::TriangleNetBuilder;
 use crate::int::triangulation::IntTriangulation;
 use crate::int::vertex::{IntoPoints, ToChainVertices};
 use i_overlay::core::fill_rule::FillRule;
-use i_overlay::core::overlay::ContourDirection;
+use i_overlay::core::overlay::IntOverlayOptions;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::count::PointsCount;
@@ -12,7 +12,7 @@ use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 #[derive(Debug, Clone, Copy)]
 pub struct Validation {
     pub fill_rule: FillRule,
-    pub min_area: usize,
+    pub options: IntOverlayOptions,
 }
 
 /// A reusable configuration object for performing 2D triangulation on shapes, contours, and paths.
@@ -22,7 +22,7 @@ pub struct Validation {
 ///
 /// # Default Validation
 /// - `fill_rule`: [`FillRule::NonZero`]
-/// - `min_area`: `0` (include all areas)
+/// - `options`: Adjust custom behavior.
 ///
 /// Use `.triangulate_*` for auto-validation and `.unchecked_triangulate_*` if you guarantee valid input.
 #[derive(Debug, Clone, Copy)]
@@ -35,14 +35,13 @@ impl Default for Triangulator {
         Self {
             validation: Validation {
                 fill_rule: FillRule::NonZero,
-                min_area: 0,
+                options: IntOverlayOptions::keep_all_points(),
             },
         }
     }
 }
 
 impl Triangulator {
-
     /// Triangulates a list of shapes after validating and simplifying them.
     ///
     /// Applies the configured fill rule, contour direction, and area threshold before triangulation.
@@ -53,12 +52,7 @@ impl Triangulator {
     /// # See Also
     /// - [`Triangulator::unchecked_triangulate_shapes`] for int input without validation.
     pub fn triangulate_shapes(&self, shapes: &IntShapes) -> IntTriangulation {
-        let shapes = shapes.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = shapes.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
 
@@ -120,12 +114,7 @@ impl Triangulator {
         shapes: &IntShapes,
         points: &[IntPoint],
     ) -> IntTriangulation {
-        let shapes = shapes.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = shapes.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
     }
@@ -186,15 +175,9 @@ impl Triangulator {
 }
 
 impl Triangulator {
-
     /// Triangulates a single shape after validation and simplification.
     pub fn triangulate_shape(&self, shape: &IntShape) -> IntTriangulation {
-        let shapes = shape.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = shape.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
 
@@ -215,12 +198,7 @@ impl Triangulator {
         shape: &IntShape,
         points: &[IntPoint],
     ) -> IntTriangulation {
-        let shapes = shape.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = shape.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
     }
@@ -250,16 +228,10 @@ impl Triangulator {
 }
 
 impl Triangulator {
-
     /// Triangulates a single closed contour after simplification.
     /// Converts it into a valid shape before processing.
     pub fn triangulate_contour(&self, contour: &IntContour) -> IntTriangulation {
-        let shapes = contour.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = contour.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
 
@@ -283,12 +255,7 @@ impl Triangulator {
         contour: &IntContour,
         points: &[IntPoint],
     ) -> IntTriangulation {
-        let shapes = contour.simplify(
-            self.validation.fill_rule,
-            ContourDirection::CounterClockwise,
-            false,
-            self.validation.min_area,
-        );
+        let shapes = contour.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
     }

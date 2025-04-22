@@ -274,7 +274,7 @@ mod tests {
     use crate::geom::triangle::IntTriangle;
     use crate::int::triangulatable::IntTriangulatable;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::ContourDirection;
+    use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
@@ -420,9 +420,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -444,9 +442,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -472,9 +468,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {

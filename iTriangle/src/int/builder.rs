@@ -393,64 +393,6 @@ impl Section {
 
                 bottom_section
             }
-
-            /*
-            let ax = vp.point.x - edges[0].a.point.x;
-            let bx = vp.point.x - edges[edges.len() - 1].b.point.x;
-
-            let phantom_index = net_builder.get_unique_phantom_edge_index();
-            return if ax < bx {
-                let ea = edges[0].a;
-                let top_edges = vec![TriangleEdge {
-                    a: ea,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                }];
-
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: ea,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-
-                edges.insert(0, bottom_edge);
-
-                // top section
-                Section {
-                    sort: VSegment {
-                        a: v.this,
-                        b: v.next,
-                    },
-                    content: Content::Edges(top_edges),
-                }
-            } else {
-                let eb = edges[i - 1].b;
-                let top_edge = TriangleEdge {
-                    a: eb,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-                edges.push(top_edge);
-
-                let bottom_edges = vec![TriangleEdge {
-                    a: vp,
-                    b: eb,
-                    kind: EdgeType::Phantom(phantom_index),
-                }];
-
-                let bottom_section = Section {
-                    sort: self.sort,
-                    content: Content::Edges(bottom_edges),
-                };
-
-                self.sort = VSegment {
-                    a: v.this,
-                    b: v.next,
-                };
-
-                bottom_section
-            };
-            */
         }
         let e0 = &edges[i];
 
@@ -820,7 +762,7 @@ mod tests {
     use crate::int::builder::TriangleNetBuilder;
     use crate::int::vertex::ToChainVertices;
     use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::ContourDirection;
+    use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
@@ -1132,10 +1074,8 @@ mod tests {
     fn test_14() {
         let shape = vec![path(&[[-2, -3], [-4, -4], [5, -1], [1, -1], [2, 3]])];
         let s = &shape.simplify(
-            FillRule::NonZero,
-            ContourDirection::CounterClockwise,
-            false,
-            0,
+            FillRule::EvenOdd,
+            IntOverlayOptions::default(),
         )[0];
 
         let shape_area = s.area_two();
@@ -1420,9 +1360,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1443,9 +1381,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1466,9 +1402,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1489,9 +1423,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1512,9 +1444,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1539,9 +1469,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1588,9 +1516,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1614,9 +1540,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1640,9 +1564,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
@@ -1669,9 +1591,7 @@ mod tests {
             if let Some(first) = shape
                 .simplify(
                     FillRule::NonZero,
-                    ContourDirection::CounterClockwise,
-                    false,
-                    0,
+                    IntOverlayOptions::keep_all_points(),
                 )
                 .first()
             {
