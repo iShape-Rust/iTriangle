@@ -37,12 +37,14 @@ pub(crate) enum ModeOption {
     #[default]
     Raw,
     Delaunay,
+    Convex,
 }
 
 impl ModeOption {
-    const ALL: [ModeOption; 2] = [
+    const ALL: [ModeOption; 3] = [
         ModeOption::Raw,
         ModeOption::Delaunay,
+        ModeOption::Convex,
     ];
 }
 
@@ -54,6 +56,7 @@ impl std::fmt::Display for ModeOption {
             match self {
                 ModeOption::Raw => "Raw",
                 ModeOption::Delaunay => "Delaunay",
+                ModeOption::Convex => "Convex",
             }
         )
     }

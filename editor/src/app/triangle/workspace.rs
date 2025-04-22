@@ -1,4 +1,5 @@
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_mesh::i_triangle::i_overlay::i_shape::int::shape::IntContour;
 use i_mesh::i_triangle::int::triangulation::Triangulation;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
@@ -7,7 +8,9 @@ use crate::app::design::{style_sheet_background, Design};
 use crate::app::main::{EditorApp, AppMessage};
 use iced::widget::Stack;
 use iced::widget::Container;
-use iced::{Length, Padding, Size, Vector};
+use iced::{Color, Length, Padding, Size, Vector};
+use crate::app::triangle::control::ModeOption;
+use crate::draw::path::PathWidget;
 use crate::mesh_viewer::widget::MeshViewerWidget;
 use crate::path_editor::widget::{PathEditorUpdateEvent, PathEditorWidget};
 
@@ -15,6 +18,7 @@ pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
     pub(crate) paths: Vec<IntPath>,
     pub(crate) triangulations: Vec<Triangulation>,
+    pub(crate) polygons: Vec<IntContour>,
 }
 
 impl EditorApp {
@@ -44,17 +48,34 @@ impl EditorApp {
                         .height(Length::Fill)
                 );
             }
-            for triangulation in self.state.triangle.workspace.triangulations.iter() {
-                stack = stack.push(
-                    Container::new(MeshViewerWidget::new(
-                        triangulation,
-                        self.state.triangle.workspace.camera
-                    ))
-                        .width(Length::Fill)
-                        .height(Length::Fill)
-                );
-            }
+            match self.state.triangle.mode {
+                ModeOption::Delaunay | ModeOption::Raw=> {
+                    for triangulation in self.state.triangle.workspace.triangulations.iter() {
+                        stack = stack.push(
+                            Container::new(MeshViewerWidget::new(
+                                triangulation,
+                                self.state.triangle.workspace.camera
+                            ))
+                                .width(Length::Fill)
+                                .height(Length::Fill)
+                        );
+                    }
+                }
+                ModeOption::Convex => {
+                    stack = stack.push(
+                        Container::new(PathWidget::with_paths(
+                            &self.state.triangle.workspace.polygons,
+                            self.state.triangle.workspace.camera,
+                            Color::from_rgb8(100, 255, 100),
+                            4.0,
+                            false
+                        ))
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                    );
 
+                }
+            }
             stack.push(
                 Container::new(self.triangle_control())
                     .width(Length::Shrink)
@@ -96,6 +117,6 @@ fn on_update_drag(drag: Vector<f32>) -> AppMessage {
 
 impl Default for WorkspaceState {
     fn default() -> Self {
-        WorkspaceState { camera: Camera::empty(), paths: vec![], triangulations: vec![] }
+        WorkspaceState { camera: Camera::empty(), paths: vec![], triangulations: vec![], polygons: vec![] }
     }
 }
