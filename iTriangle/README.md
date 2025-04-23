@@ -17,6 +17,10 @@ A fast and efficient library for Delaunay triangulation and converting complex p
 - **Convex Polygons**: *Break complex polygons into simpler convex polygons.*
 - **Self-Intersection**: *Smart intersection resolution with Even-Odd or Non-Zero rules.*
 
+## Demo
+
+- [Triangulation](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
+
 ## Documentation
 - [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
 
