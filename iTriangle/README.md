@@ -13,9 +13,10 @@ A fast and efficient library for Delaunay triangulation and converting complex p
 
 ## Features
 
+- **Raw Triangulation**: *Fast and robust implementation for generating simple triangulations.*
 - **Delaunay Triangulation**: *Efficient and robust implementation for generating Delaunay triangulations.*
 - **Convex Polygons**: *Break complex polygons into simpler convex polygons.*
-- **Self-Intersection**: *Smart intersection resolution with Even-Odd or Non-Zero rules.*
+- **Self-Intersection**: *Smart intersection resolution with Even-Odd, Non-Zero, Positive, Negative rules.*
 
 ## Demo
 
