@@ -161,6 +161,7 @@ impl IntDelaunay {
     // if p is inside circumscribe circle of a, b, c return false
     // if p is inside circumscribe A + B > 180
     // return true if triangle satisfied condition and do not need flip triangles
+    // more detail explanation and demo https://ishape-rust.github.io/iShape-js/triangle/delaunay.html
     fn is_flip_not_required(p: IntPoint, a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
         // x, y of all coordinates must be in range of i32
         // p is a test point

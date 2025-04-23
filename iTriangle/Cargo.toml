@@ -19,7 +19,7 @@ serde = { version = "^1.0", features = ["derive"] }
 
 
 i_tree = { version = "~0.14.0" }
-i_overlay = "~3.1"
+i_overlay = "~3.2"
 
 [dev-dependencies]
 serde_json = "^1.0"

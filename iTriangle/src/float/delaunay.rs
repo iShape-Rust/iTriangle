@@ -39,7 +39,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> Delaunay<P, T> {
 
     /// Converts this refined mesh into a flat float [`Triangulation`].
     #[inline]
-    pub fn to_triangulation(self) -> Triangulation<P> {
+    pub fn to_triangulation(&self) -> Triangulation<P> {
         Triangulation {
             indices: self.triangle_indices(),
             points: self.points(),
