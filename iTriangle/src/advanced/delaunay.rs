@@ -51,7 +51,7 @@ impl IntDelaunay {
 
                 if self.swap_triangles(abc_index, pbc_index) {
                     skip = pbc_index;
-                    let is_modified = unsafe { modified.get_unchecked_mut(abc_index) };
+                    let is_modified = unsafe { modified.get_unchecked_mut(pbc_index) };
                     if !*is_modified {
                         *is_modified = true;
                         buffer.push(pbc_index);
@@ -95,7 +95,7 @@ impl IntDelaunay {
 
                     if self.swap_triangles(abc_index, pbc_index) {
                         skip = pbc_index;
-                        let is_modified = unsafe { modified.get_unchecked_mut(abc_index) };
+                        let is_modified = unsafe { modified.get_unchecked_mut(pbc_index) };
                         if !*is_modified {
                             *is_modified = true;
                             buffer.push(pbc_index);
