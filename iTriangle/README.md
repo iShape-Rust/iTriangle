@@ -1,6 +1,6 @@
 # iTriangle
-A fast and efficient library for Delaunay triangulation and converting complex polygons into convex shapes, including advanced self-intersection resolution.
- 
+A fast and efficient library for Delaunay triangulation and converting complex polygons into convex shapes — with full support for self-intersections, holes, Steiner points, and multi-polygons.
+
 ## Delaunay triangulation
 <p align="center">
  <img src="readme/star_triangle.svg" width="500"/>
@@ -13,9 +13,14 @@ A fast and efficient library for Delaunay triangulation and converting complex p
 
 ## Features
 
+- **Raw Triangulation**: *Fast and robust implementation for generating simple triangulations.*
 - **Delaunay Triangulation**: *Efficient and robust implementation for generating Delaunay triangulations.*
 - **Convex Polygons**: *Break complex polygons into simpler convex polygons.*
-- **Self-Intersection**: *Smart intersection resolution with Even-Odd or Non-Zero rules.*
+- **Polygon Flexibility**: *Supports complex polygon configurations — including multi-polygons, holes, self-intersections, and Steiner points.*
+
+## Demo
+
+- [Triangulation](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
 
 ## Documentation
 - [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
