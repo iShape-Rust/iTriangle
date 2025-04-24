@@ -1,6 +1,6 @@
 use crate::int::binder::SteinerInference;
 use crate::int::builder::TriangleNetBuilder;
-use crate::int::triangulation::IntTriangulation;
+use crate::int::triangulation::RawIntTriangulation;
 use crate::int::vertex::{IntoPoints, ToChainVertices};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::IntOverlayOptions;
@@ -42,16 +42,25 @@ impl Default for Triangulator {
 }
 
 impl Triangulator {
+    pub fn with_fill_rule(fill_rule: FillRule) -> Self {
+        Self {
+            validation: Validation {
+                fill_rule,
+                options: IntOverlayOptions::keep_output_points(),
+            }
+        }
+    }
+
     /// Triangulates a list of shapes after validating and simplifying them.
     ///
     /// Applies the configured fill rule, contour direction, and area threshold before triangulation.
     ///
     /// # Returns
-    /// A [`IntTriangulation`] containing the resulting triangle mesh.
+    /// A [`RawIntTriangulation`] containing the resulting triangle mesh.
     ///
     /// # See Also
     /// - [`Triangulator::unchecked_triangulate_shapes`] for int input without validation.
-    pub fn triangulate_shapes(&self, shapes: &IntShapes) -> IntTriangulation {
+    pub fn triangulate_shapes(&self, shapes: &IntShapes) -> RawIntTriangulation {
         let shapes = shapes.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
@@ -67,12 +76,12 @@ impl Triangulator {
     ///
     /// # Returns
     /// - A flat triangulation result combining all input shapes.
-    pub fn unchecked_triangulate_shapes(&self, shapes: &IntShapes) -> IntTriangulation {
+    pub fn unchecked_triangulate_shapes(&self, shapes: &IntShapes) -> RawIntTriangulation {
         if shapes.len() <= 1 {
             return if let Some(first) = shapes.first() {
                 self.unchecked_triangulate_shape(first)
             } else {
-                IntTriangulation::empty()
+                RawIntTriangulation::empty()
             };
         }
 
@@ -103,7 +112,7 @@ impl Triangulator {
             }
         }
 
-        IntTriangulation::new(triangles, points)
+        RawIntTriangulation::new(triangles, points)
     }
 
     /// Triangulates a list of shapes, inserting user-provided Steiner points before processing.
@@ -113,7 +122,7 @@ impl Triangulator {
         &self,
         shapes: &IntShapes,
         points: &[IntPoint],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         let shapes = shapes.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
@@ -128,12 +137,12 @@ impl Triangulator {
         &self,
         shapes: &IntShapes,
         groups: &[Vec<IntPoint>],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         if shapes.len() <= 1 {
             return if let Some(first) = shapes.first() {
                 self.unchecked_triangulate_shape_with_steiner_points(first, &groups[0])
             } else {
-                IntTriangulation::empty()
+                RawIntTriangulation::empty()
             };
         }
 
@@ -170,26 +179,26 @@ impl Triangulator {
             points.append(&mut raw.points);
         }
 
-        IntTriangulation::new(triangles, points)
+        RawIntTriangulation::new(triangles, points)
     }
 }
 
 impl Triangulator {
     /// Triangulates a single shape after validation and simplification.
-    pub fn triangulate_shape(&self, shape: &IntShape) -> IntTriangulation {
+    pub fn triangulate_shape(&self, shape: &IntShape) -> RawIntTriangulation {
         let shapes = shape.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
 
     /// Triangulates a single valid shape without simplification or validation.
-    pub fn unchecked_triangulate_shape(&self, shape: &IntShape) -> IntTriangulation {
+    pub fn unchecked_triangulate_shape(&self, shape: &IntShape) -> RawIntTriangulation {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
         let chain_vertices = shape.to_chain_vertices();
         let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
-        IntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
+        RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
     }
 
     /// Triangulates a shape with Steiner points after simplifying and validating it.
@@ -197,7 +206,7 @@ impl Triangulator {
         &self,
         shape: &IntShape,
         points: &[IntPoint],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         let shapes = shape.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
@@ -208,12 +217,12 @@ impl Triangulator {
         &self,
         shape: &IntShape,
         points: &[IntPoint],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         if shape.len() <= 1 {
             return if let Some(first) = shape.first() {
                 self.unchecked_triangulate_contour_with_steiner_points(first, points)
             } else {
-                IntTriangulation::empty()
+                RawIntTriangulation::empty()
             };
         }
 
@@ -223,22 +232,22 @@ impl Triangulator {
         let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
-        IntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
+        RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
     }
 }
 
 impl Triangulator {
     /// Triangulates a single closed contour after simplification.
     /// Converts it into a valid shape before processing.
-    pub fn triangulate_contour(&self, contour: &IntContour) -> IntTriangulation {
+    pub fn triangulate_contour(&self, contour: &IntContour) -> RawIntTriangulation {
         let shapes = contour.simplify(self.validation.fill_rule, self.validation.options);
         self.unchecked_triangulate_shapes(&shapes)
     }
 
     /// Triangulates a single closed contour assuming it is valid and oriented correctly.
-    pub fn unchecked_triangulate_contour(&self, contour: &IntContour) -> IntTriangulation {
+    pub fn unchecked_triangulate_contour(&self, contour: &IntContour) -> RawIntTriangulation {
         if contour.len() < 3 {
-            return IntTriangulation::empty();
+            return RawIntTriangulation::empty();
         }
         let triangles_count = contour.len() - 2;
 
@@ -246,7 +255,7 @@ impl Triangulator {
         let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
-        IntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
+        RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
     }
 
     /// Triangulates a closed contour with Steiner points after validation.
@@ -254,7 +263,7 @@ impl Triangulator {
         &self,
         contour: &IntContour,
         points: &[IntPoint],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         let shapes = contour.simplify(self.validation.fill_rule, self.validation.options);
         let groups = shapes.group_by_shapes(points);
         self.unchecked_triangulate_shapes_with_steiner_points(&shapes, &groups)
@@ -269,9 +278,9 @@ impl Triangulator {
         &self,
         contour: &IntContour,
         points: &[IntPoint],
-    ) -> IntTriangulation {
+    ) -> RawIntTriangulation {
         if contour.len() < 3 {
-            return IntTriangulation::empty();
+            return RawIntTriangulation::empty();
         }
         let triangles_count = contour.len() - 2 + 2 * points.len();
 
@@ -279,6 +288,6 @@ impl Triangulator {
         let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
-        IntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
+        RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
     }
 }

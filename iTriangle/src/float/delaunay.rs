@@ -1,13 +1,13 @@
 use crate::advanced::delaunay::IntDelaunay;
-use crate::float::triangulation::{RawTriangulation, Triangulation};
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
+use crate::float::triangulation::{RawTriangulation, Triangulation};
 
 /// A Delaunay-refined triangle mesh with float-mapped geometry.
 ///
-/// Produced from [`RawTriangulation::into_delaunay`] by applying edge flips
+/// Produced from [`Triangulation::into_delaunay`] by applying edge flips
 /// to satisfy the Delaunay condition.
 pub struct Delaunay<P: FloatPointCompatible<T>, T: FloatNumber> {
     pub(super) delaunay: IntDelaunay,

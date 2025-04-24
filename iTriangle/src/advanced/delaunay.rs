@@ -1,11 +1,11 @@
 use crate::geom::triangle::IntTriangle;
-use crate::int::triangulation::IntTriangulation;
+use crate::int::triangulation::RawIntTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
 
 /// A refined triangle mesh where all interior edges satisfy the Delaunay condition.
 ///
-/// Created from a [`IntTriangulation`] via [`into_delaunay`], this structure applies edge flips
+/// Created from a [`RawIntTriangulation`] via [`into_delaunay`], this structure applies edge flips
 /// to enforce the empty circumcircle property for each triangle pair.
 ///
 /// Delaunay triangulations improve triangle quality and are preferred for numerical stability.
@@ -14,7 +14,7 @@ pub struct IntDelaunay {
     pub points: Vec<IntPoint>,
 }
 
-impl IntTriangulation {
+impl RawIntTriangulation {
 
     /// Converts a int triangle mesh into a Delaunay triangulation by applying edge flips.
     ///

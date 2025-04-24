@@ -1,2 +1,2 @@
-pub(crate) mod point;
-pub(crate) mod triangle;
+pub mod point;
+pub mod triangle;

@@ -1,6 +1,6 @@
 use i_overlay::i_float::int::point::IntPoint;
 use crate::advanced::delaunay::IntDelaunay;
-use crate::int::triangulation::Triangulation;
+use crate::int::triangulation::IntTriangulation;
 
 impl IntDelaunay {
     #[inline]
@@ -19,8 +19,8 @@ impl IntDelaunay {
     }
 
     #[inline]
-    pub fn into_triangulation(self) -> Triangulation {
-        Triangulation {
+    pub fn into_triangulation(self) -> IntTriangulation {
+        IntTriangulation {
             indices: self.triangle_indices(),
             points: self.points,
         }

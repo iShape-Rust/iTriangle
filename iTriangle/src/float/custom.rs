@@ -1,6 +1,4 @@
-use crate::float::triangulation::RawTriangulation;
 use crate::int::custom::IntCustomTriangulatable;
-use crate::int::triangulation::IntTriangulation;
 use crate::int::triangulator::Validation;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
@@ -9,6 +7,8 @@ use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_shape::base::data::{Contour, Shape};
 use i_overlay::i_shape::float::adapter::{PathToInt, ShapeToInt, ShapesToInt};
 use i_overlay::i_shape::float::rect::RectInit;
+use crate::float::triangulation::RawTriangulation;
+use crate::int::triangulation::RawIntTriangulation;
 
 /// A trait for triangulating float geometry with user-defined validation rules.
 ///
@@ -34,7 +34,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -54,7 +54,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -69,7 +69,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -89,7 +89,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -104,7 +104,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -124,7 +124,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }

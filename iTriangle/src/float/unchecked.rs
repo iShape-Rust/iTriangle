@@ -1,5 +1,5 @@
 use crate::float::triangulation::RawTriangulation;
-use crate::int::triangulation::IntTriangulation;
+use crate::int::triangulation::RawIntTriangulation;
 use crate::int::unchecked::IntUncheckedTriangulatable;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
@@ -32,7 +32,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -48,7 +48,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -63,7 +63,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -79,7 +79,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -94,7 +94,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -110,7 +110,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: IntTriangulation::empty(),
+                raw: RawIntTriangulation::empty(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }

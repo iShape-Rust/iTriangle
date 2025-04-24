@@ -1,20 +1,20 @@
-use crate::int::triangulation::IntTriangulation;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
 use serde::Serialize;
+use crate::int::triangulation::RawIntTriangulation;
 
 /// A triangulation result based on integer computation, with float mapping.
 ///
-/// Internally uses an [`IntTriangulation`] for performance and robustness,
+/// Internally uses an [`Triangulation`] for performance and robustness,
 /// and maps results back to user-provided float types via a [`FloatPointAdapter`].
 ///
 /// # Parameters
 /// - `P`: Float point type (e.g., `Vec2`, `[f32; 2]`, etc.)
 /// - `T`: Float scalar type (e.g., `f32`, `f64`)
 pub struct RawTriangulation<P: FloatPointCompatible<T>, T: FloatNumber> {
-    pub raw: IntTriangulation,
+    pub raw: RawIntTriangulation,
     pub adapter: FloatPointAdapter<P, T>,
 }
 

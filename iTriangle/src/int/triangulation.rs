@@ -2,7 +2,7 @@ use crate::geom::triangle::IntTriangle;
 use i_overlay::i_float::int::point::IntPoint;
 
 #[derive(Debug)]
-pub struct Triangulation {
+pub struct IntTriangulation {
     pub points: Vec<IntPoint>,
     pub indices: Vec<usize>,
 }
@@ -16,12 +16,12 @@ pub struct Triangulation {
 /// Use this when you need detailed control over topology, neighbor tracking, or
 /// advanced mesh manipulation.
 #[derive(Debug)]
-pub struct IntTriangulation {
+pub struct RawIntTriangulation {
     pub(crate) triangles: Vec<IntTriangle>,
     pub(crate) points: Vec<IntPoint>,
 }
 
-impl IntTriangulation {
+impl RawIntTriangulation {
 
     pub(crate) fn empty() -> Self {
         Self { triangles: vec![], points: vec![] }
@@ -30,6 +30,12 @@ impl IntTriangulation {
     #[inline]
     pub(super) fn new(triangles: Vec<IntTriangle>, points: Vec<IntPoint>) -> Self {
         Self { triangles, points }
+    }
+
+    /// Returns true if the triangulation contains no triangles.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.triangles.is_empty()
     }
 
     /// Returns a reference to the list of points used in the triangulation.
@@ -56,10 +62,10 @@ impl IntTriangulation {
 
     /// Converts the int triangulation into a simpler index-based mesh.
     ///
-    /// Returns a [`Triangulation`] with separate index buffer and point list.
+    /// Returns a [`IntTriangulation`] with separate index buffer and point list.
     #[inline]
-    pub fn into_triangulation(self) -> Triangulation {
-        Triangulation {
+    pub fn into_triangulation(self) -> IntTriangulation {
+        IntTriangulation {
             indices: self.triangle_indices(),
             points: self.points,
         }
