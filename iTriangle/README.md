@@ -1,5 +1,5 @@
 # iTriangle
-A fast and efficient library for Delaunay triangulation and converting complex polygons into convex shapes — with full support for self-intersections, holes, Steiner points, and multi-polygons.
+A fast, efficient and extremely stable triangulation library.
 
 ## Delaunay triangulation
 <p align="center">
@@ -17,6 +17,7 @@ A fast and efficient library for Delaunay triangulation and converting complex p
 - **Delaunay Triangulation**: *Efficient and robust implementation for generating Delaunay triangulations.*
 - **Convex Polygons**: *Break complex polygons into simpler convex polygons.*
 - **Polygon Flexibility**: *Supports complex polygon configurations — including multi-polygons, holes, self-intersections, and Steiner points.*
+- **Steiner Points**: *Supports inner points.*
 
 ## Demo
 
