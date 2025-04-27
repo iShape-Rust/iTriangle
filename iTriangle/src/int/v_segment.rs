@@ -3,9 +3,9 @@ use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct VSegment {
-    pub(super) a: IntPoint,
-    pub(super) b: IntPoint,
+pub(crate) struct VSegment {
+    pub(crate) a: IntPoint,
+    pub(crate) b: IntPoint,
 }
 
 impl VSegment {

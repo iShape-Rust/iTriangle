@@ -6,5 +6,5 @@ pub mod triangulatable;
 pub mod triangulation;
 pub mod triangulator;
 pub mod unchecked;
-mod v_segment;
 pub mod vertex;
+pub(crate) mod v_segment;

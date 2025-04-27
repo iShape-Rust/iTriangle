@@ -6,7 +6,7 @@ use iced::{Alignment, Element, Length};
 use iced::keyboard::Event as KeyboardEvent;
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
-use crate::app::triangle::content::IntersectMessage;
+use crate::app::triangle::content::TriangleMessage;
 use crate::app::triangle::content::TriangleState;
 
 
@@ -47,7 +47,7 @@ pub(crate) enum MainMessage {
 #[derive(Debug, Clone)]
 pub(crate) enum AppMessage {
     Main(MainMessage),
-    Triangle(IntersectMessage),
+    Triangle(TriangleMessage),
     EventOccurred(MainEvent),
 }
 

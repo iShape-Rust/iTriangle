@@ -1,9 +1,9 @@
 use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
 use i_mesh::i_triangle::i_overlay::i_shape::int::shape::IntContour;
-use i_mesh::i_triangle::int::triangulation::Triangulation;
+use i_mesh::i_triangle::int::triangulation::IntTriangulation;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
-use crate::app::triangle::content::IntersectMessage;
+use crate::app::triangle::content::TriangleMessage;
 use crate::app::design::{style_sheet_background, Design};
 use crate::app::main::{EditorApp, AppMessage};
 use iced::widget::Stack;
@@ -17,7 +17,7 @@ use crate::path_editor::widget::{PathEditorUpdateEvent, PathEditorWidget};
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
     pub(crate) paths: Vec<IntPath>,
-    pub(crate) triangulations: Vec<Triangulation>,
+    pub(crate) triangulations: Vec<IntTriangulation>,
     pub(crate) polygons: Vec<IntContour>,
 }
 
@@ -49,7 +49,7 @@ impl EditorApp {
                 );
             }
             match self.state.triangle.mode {
-                ModeOption::Delaunay | ModeOption::Raw=> {
+                ModeOption::Delaunay | ModeOption::Raw | ModeOption::Tessellation => {
                     for triangulation in self.state.triangle.workspace.triangulations.iter() {
                         stack = stack.push(
                             Container::new(MeshViewerWidget::new(
@@ -97,22 +97,26 @@ impl EditorApp {
     pub(super) fn triangle_update_drag(&mut self, new_pos: Vector<f32>) {
         self.state.triangle.workspace.camera.pos = new_pos;
     }
+
+    pub(super) fn triangle_update_radius(&mut self, radius: f64) {
+        self.state.triangle.triangle_update_radius(radius);
+    }
 }
 
 fn on_update_anchor(event: PathEditorUpdateEvent) -> AppMessage {
-    AppMessage::Triangle(IntersectMessage::PathEdited(event))
+    AppMessage::Triangle(TriangleMessage::PathEdited(event))
 }
 
 fn on_update_size(size: Size) -> AppMessage {
-    AppMessage::Triangle(IntersectMessage::WorkspaceSized(size))
+    AppMessage::Triangle(TriangleMessage::WorkspaceSized(size))
 }
 
 fn on_update_zoom(zoom: Camera) -> AppMessage {
-    AppMessage::Triangle(IntersectMessage::WorkspaceZoomed(zoom))
+    AppMessage::Triangle(TriangleMessage::WorkspaceZoomed(zoom))
 }
 
 fn on_update_drag(drag: Vector<f32>) -> AppMessage {
-    AppMessage::Triangle(IntersectMessage::WorkspaceDragged(drag))
+    AppMessage::Triangle(TriangleMessage::WorkspaceDragged(drag))
 }
 
 impl Default for WorkspaceState {

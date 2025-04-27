@@ -103,7 +103,7 @@ fn extract(a: IntPoint, b: IntPoint, radius: u64, sqr_radius: u64, contour: &mut
 #[cfg(test)]
 mod tests {
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::tesselator::split::Split;
+    use crate::tessellation::split::Split;
 
     #[test]
     fn test_0() {
