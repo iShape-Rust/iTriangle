@@ -134,7 +134,7 @@ println!("indices: {:?}", tessellation.indices);
 let centroids = shape.triangulate()
     .into_delaunay()
     .refine_with_circumcenters_by_obtuse_angle(0.0)
-    .centroid_net(0.0);
+    .to_centroid_net(0.0);
 
 println!("centroids: {:?}", centroids);
 ```
