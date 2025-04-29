@@ -116,6 +116,21 @@ let convex_polygons = shape.triangulate()
     .to_convex_polygons();
 
 println!("convex polygons: {:?}", convex_polygons);
+
+let tessellation = shape.triangulate()
+    .into_delaunay()
+    .refine_with_circumcenters_by_obtuse_angle(0.0)
+    .to_triangulation();
+
+println!("points: {:?}", tessellation.points);
+println!("indices: {:?}", tessellation.indices);
+
+let centroids = shape.triangulate()
+    .into_delaunay()
+    .refine_with_circumcenters_by_obtuse_angle(0.0)
+    .centroid_net(0.0);
+
+println!("centroids: {:?}", centroids);
 ```
 
 **Output Triangulation**: *triangles indices and vertices, where all triangles oriented in a counter-clockwise direction.*
