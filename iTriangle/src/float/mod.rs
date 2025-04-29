@@ -6,3 +6,4 @@ pub mod delaunay;
 pub mod convex;
 pub mod builder;
 mod circumcenter;
+mod centroid_net;

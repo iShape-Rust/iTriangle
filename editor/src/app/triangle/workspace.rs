@@ -61,7 +61,7 @@ impl EditorApp {
                         );
                     }
                 }
-                ModeOption::Convex => {
+                ModeOption::Convex | ModeOption::CentroidNet => {
                     stack = stack.push(
                         Container::new(PathWidget::with_paths(
                             &self.state.triangle.workspace.polygons,

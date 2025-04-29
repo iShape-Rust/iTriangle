@@ -18,7 +18,7 @@ pub struct IntDelaunay {
 
 impl RawIntTriangulation {
 
-    /// Converts a int triangle mesh into a Delaunay triangulation by applying edge flips.
+    /// Converts an int triangle mesh into a Delaunay triangulation by applying edge flips.
     ///
     /// The mesh is refined in-place by checking local angle conditions and
     /// flipping edges until the Delaunay criterion is satisfied.

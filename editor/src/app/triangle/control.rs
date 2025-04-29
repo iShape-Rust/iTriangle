@@ -26,7 +26,7 @@ impl EditorApp {
         let mut columns = Column::new()
             .push(mode_pick_list);
         
-        if self.state.triangle.mode == ModeOption::Tessellation {
+        if self.state.triangle.mode == ModeOption::Tessellation || self.state.triangle.mode == ModeOption::CentroidNet {
             let radius_list = Row::new()
                 .push(
                     Text::new("Max Radius:")
@@ -86,15 +86,17 @@ pub(crate) enum ModeOption {
     Raw,
     Delaunay,
     Convex,
-    Tessellation
+    Tessellation,
+    CentroidNet,
 }
 
 impl ModeOption {
-    const ALL: [ModeOption; 4] = [
+    const ALL: [ModeOption; 5] = [
         ModeOption::Raw,
         ModeOption::Delaunay,
         ModeOption::Convex,
         ModeOption::Tessellation,
+        ModeOption::CentroidNet,
     ];
 }
 
@@ -108,6 +110,7 @@ impl std::fmt::Display for ModeOption {
                 ModeOption::Delaunay => "Delaunay",
                 ModeOption::Convex => "Convex",
                 ModeOption::Tessellation => "Tessellation",
+                ModeOption::CentroidNet => "CentroidNet",
             }
         )
     }

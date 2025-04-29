@@ -217,6 +217,13 @@ impl TriangleState {
                         .into_triangulation())
                     .collect();
             }
+            ModeOption::CentroidNet => {
+                // let max_edge = self.radius as u32;
+                let max_area = self.max_area as u64;
+                self.workspace.polygons = shapes.triangulate().into_delaunay()
+                    .refine_with_circumcenters(max_area)
+                    .centroid_net(0, false);
+            }
         }
     }
 
