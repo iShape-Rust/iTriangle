@@ -51,6 +51,7 @@ A fast, stable, and robust triangulation library for 2D integer geometry — tes
 ## Demo
 
 - [Triangulation](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
+- [Tessellation](https://ishape-rust.github.io/iShape-js/triangle/tessellation.html)
 
 ## Documentation
 - [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
