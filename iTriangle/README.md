@@ -1,5 +1,5 @@
 # iTriangle
-A fast, efficient and extremely stable triangulation library.
+A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
 ## Delaunay triangulation
 <p align="center">
@@ -13,11 +13,19 @@ A fast, efficient and extremely stable triangulation library.
 
 ## Features
 
-- **Raw Triangulation**: *Fast and robust implementation for generating simple triangulations.*
-- **Delaunay Triangulation**: *Efficient and robust implementation for generating Delaunay triangulations.*
-- **Convex Polygons**: *Break complex polygons into simpler convex polygons.*
-- **Polygon Flexibility**: *Supports complex polygon configurations — including multi-polygons, holes, self-intersections, and Steiner points.*
-- **Steiner Points**: *Supports inner points.*
+- **Raw Triangulation** - Fast and simple triangulation of polygons with or without holes.
+- **Delaunay Triangulation** - Efficient and robust implementation for generating Delaunay triangulations.
+- **Adaptive Tessellation** - Refine Delaunay triangles using circumcenters for better shape quality.
+- **Convex Decomposition** - Convert triangulation into convex polygons.
+- **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
+- **Steiner Points**: Add custom inner points to influence triangulation.
+- **Robust Geometry**: All operations use 2D integer arithmetic for maximum stability.
+
+## Reliability
+
+- Extremely Stable: The core triangulation and Delaunay algorithms have been tested against over 1 billion randomized polygon samples.
+- Uses pure integer math to avoid floating-point precision issues.
+- Designed for use in CAD, EDA, game engines, and any application where robustness is critical.
 
 ## Demo
 
@@ -28,10 +36,10 @@ A fast, efficient and extremely stable triangulation library.
 
 ## Getting Started
 
-Add the following to your Cargo.toml:
+Add to your `Cargo.toml`:
 ```
 [dependencies]
-i_triangle = "^0.29.0"
+i_triangle = "^0.30.0"
 ```
 
 After that, represent your polygon as an array of vertices. Here's an example of a cheese polygon:
