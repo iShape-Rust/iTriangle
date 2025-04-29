@@ -1,3 +1,5 @@
+![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
+
 # iTriangle
 A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
