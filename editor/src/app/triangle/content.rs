@@ -222,7 +222,7 @@ impl TriangleState {
                 let max_area = self.max_area as u64;
                 self.workspace.polygons = shapes.triangulate().into_delaunay()
                     .refine_with_circumcenters(max_area)
-                    .centroid_net(0, false);
+                    .centroid_net(0);
             }
         }
     }
