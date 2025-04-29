@@ -1,14 +1,29 @@
 # iTriangle
 A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
-## Delaunay triangulation
+## Delaunay
 <p align="center">
  <img src="readme/star_triangle.svg" width="500"/>
 </p>
 
-## Breaking into convex polygons
+## Convex polygons
 <p align="center">
  <img src="readme/star_polygon.svg" width="500"/>
+</p>
+
+## Steiner points
+<p align="center">
+ <img src="readme/eagle_triangles_extra_points.svg" width="500"/>
+</p>
+
+## Tessellation
+<p align="center">
+ <img src="readme/eagle_tessellation.svg" width="500"/>
+</p>
+
+## Centroid net
+<p align="center">
+ <img src="readme/eagle_centroid.svg" width="500"/>
 </p>
 
 ## Features
