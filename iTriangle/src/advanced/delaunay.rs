@@ -1,14 +1,16 @@
+use std::collections::HashSet;
 use crate::geom::triangle::IntTriangle;
 use crate::int::triangulation::RawIntTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
 
-/// A refined triangle mesh where all interior edges satisfy the Delaunay condition.
+/// A 2D integer-based Delaunay triangulation.
+/// Each triangle satisfies the Delaunay condition.
 ///
-/// Created from a [`RawIntTriangulation`] via [`into_delaunay`], this structure applies edge flips
-/// to enforce the empty circumcircle property for each triangle pair.
+/// # Fields
+/// - `triangles`: A list of `IntTriangle` elements (triangle vertex indices and neighbors)
+/// - `points`: A list of `IntPoint` elements (original and inserted points)
 ///
-/// Delaunay triangulations improve triangle quality and are preferred for numerical stability.
 pub struct IntDelaunay {
     pub triangles: Vec<IntTriangle>,
     pub points: Vec<IntPoint>,
@@ -38,11 +40,36 @@ impl RawIntTriangulation {
 
 impl IntDelaunay {
     pub(crate) fn build(&mut self) {
-        let mut abc_index = 0;
-        let mut modified = vec![false; self.triangles.len()];
-        let mut buffer = Vec::with_capacity((self.triangles.len() / 4).max(4));
-        let mut skip = usize::MAX; // to skip last flip pair
-        'main_loop: while abc_index < self.triangles.len() {
+        let mut unchecked = HashSet::with_capacity(self.triangles.len());
+
+        for abc_index in 0..self.triangles.len() {
+            self.fix_triangle(abc_index, &mut unchecked);
+        }
+
+        if !unchecked.is_empty() {
+            let mut buffer = Vec::with_capacity(unchecked.len());
+            buffer.extend(unchecked.drain());
+            self.fix_triangles(&mut buffer, &mut unchecked);
+        }
+    }
+
+    pub fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>) {
+        debug_assert!(unchecked.is_empty());
+        while !buffer.is_empty() {
+            for &abc_index in buffer.iter() {
+                self.fix_triangle(abc_index, unchecked);
+            }
+            buffer.clear();
+            buffer.extend(unchecked.drain());
+        }
+    }
+
+    fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut HashSet<usize>) {
+        // loop by same triangle increase cache locality
+        let mut skip = usize::MAX;
+        let mut perfect= false;
+        while !perfect {
+            perfect = true;
             let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
             for &pbc_index in neighbors.iter() {
                 if pbc_index >= self.triangles.len() || pbc_index == skip {
@@ -51,68 +78,17 @@ impl IntDelaunay {
 
                 if self.swap_triangles(abc_index, pbc_index) {
                     skip = pbc_index;
-                    let is_modified = unsafe { modified.get_unchecked_mut(pbc_index) };
-                    if !*is_modified {
-                        *is_modified = true;
-                        buffer.push(pbc_index);
-                    }
-                    continue 'main_loop;
+                    unchecked.insert(pbc_index);
+                    perfect = false;
+                    break;
                 }
             }
-            skip = usize::MAX;
-            abc_index += 1;
         }
-
-        if !buffer.is_empty() {
-            // this round happened only for real bad triangulation net
-            self.make_perfect(&mut modified, &mut buffer);
-        }
-    }
-
-    fn make_perfect(&mut self, modified: &mut [bool], buffer: &mut Vec<usize>) {
-        let mut unprocessed = Vec::with_capacity(buffer.len());
-
-        while !buffer.is_empty() {
-            unprocessed.clear();
-            for &i in buffer.iter() {
-                let is_modified = unsafe { modified.get_unchecked_mut(i) };
-                if *is_modified {
-                    unprocessed.push(i);
-                    *is_modified = false;
-                }
-            }
-            buffer.clear();
-
-            let mut i = 0;
-            let mut skip = usize::MAX; // to skip last flip pair
-            'unprocessed_loop: while i < unprocessed.len() {
-                let &abc_index = unsafe { unprocessed.get_unchecked(i) };
-                let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
-                for &pbc_index in neighbors.iter() {
-                    if pbc_index >= self.triangles.len() || pbc_index == skip {
-                        continue;
-                    }
-
-                    if self.swap_triangles(abc_index, pbc_index) {
-                        skip = pbc_index;
-                        let is_modified = unsafe { modified.get_unchecked_mut(pbc_index) };
-                        if !*is_modified {
-                            *is_modified = true;
-                            buffer.push(pbc_index);
-                        }
-
-                        continue 'unprocessed_loop;
-                    }
-                }
-                modified[abc_index] = false;
-                skip = usize::MAX;
-                i += 1;
-            }
-        }
+        unchecked.remove(&abc_index);
     }
 
     #[inline]
-    fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
+    pub fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
         // abc_index & pcb_index can not be more self.triangles.len()
         let t_abc = unsafe { self.triangles.get_unchecked(abc_index) };
         let t_pcb = unsafe { self.triangles.get_unchecked(pcb_index) };
@@ -151,17 +127,18 @@ impl IntDelaunay {
     }
 
     #[inline]
-    fn update_neighbor(&mut self, index: usize, old_index: usize, new_index: usize) {
-        if index >= self.triangles.len() {
+    pub(crate) fn update_neighbor(&mut self, neighbor_index: usize, old_index: usize, new_index: usize) {
+        if neighbor_index >= self.triangles.len() {
             return;
         }
-        self.triangles[index].update_neighbor(old_index, new_index);
+        self.triangles[neighbor_index].update_neighbor(old_index, new_index);
     }
 
     // if p is inside circumscribe circle of a, b, c return false
     // if p is inside circumscribe A + B > 180
     // return true if triangle satisfied condition and do not need flip triangles
     // more detail explanation and demo https://ishape-rust.github.io/iShape-js/triangle/delaunay.html
+    #[inline]
     fn is_flip_not_required(p: IntPoint, a: IntPoint, b: IntPoint, c: IntPoint) -> bool {
         // x, y of all coordinates must be in range of i32
         // p is a test point

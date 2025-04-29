@@ -101,6 +101,9 @@ impl EditorApp {
     pub(super) fn triangle_update_radius(&mut self, radius: f64) {
         self.state.triangle.triangle_update_radius(radius);
     }
+    pub(super) fn triangle_update_area(&mut self, area: f64) {
+        self.state.triangle.triangle_update_area(area);
+    }
 }
 
 fn on_update_anchor(event: PathEditorUpdateEvent) -> AppMessage {

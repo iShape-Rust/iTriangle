@@ -1,22 +1,23 @@
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
-pub(super) trait Split {
-    fn split_contour(&self, radius: u64) -> Self;
+pub trait SliceContour {
+    fn slice_contour(&self, max_edge_length: u32) -> Self;
 }
 
 const SCALE: u32 = 29;
 
-impl Split for IntContour {
+impl SliceContour for IntContour {
     #[inline]
-    fn split_contour(&self, radius: u64) -> Self {
+    fn slice_contour(&self, max_edge_length: u32) -> Self {
         let mut a = if let Some(last) = self.last() {
             *last
         } else {
             return Vec::new();
         };
 
-        let sqr_radius= radius.pow(2);
+        let radius = max_edge_length as u64;
+        let sqr_radius = radius.pow(2);
 
         let mut contour = IntContour::with_capacity(2 * self.len());
 
@@ -29,26 +30,26 @@ impl Split for IntContour {
     }
 }
 
-impl Split for IntShape {
+impl SliceContour for IntShape {
     #[inline]
-    fn split_contour(&self, radius: u64) -> Self {
+    fn slice_contour(&self, max_edge_length: u32) -> Self {
         let mut shape = Vec::with_capacity(self.len());
 
         for contour in self.iter() {
-            shape.push(contour.split_contour(radius));
+            shape.push(contour.slice_contour(max_edge_length));
         }
 
         shape
     }
 }
 
-impl Split for IntShapes {
+impl SliceContour for IntShapes {
     #[inline]
-    fn split_contour(&self, radius: u64) -> Self {
+    fn slice_contour(&self, max_edge_length: u32) -> Self {
         let mut shapes = Vec::with_capacity(self.len());
 
         for shape in self.iter() {
-            shapes.push(shape.split_contour(radius));
+            shapes.push(shape.slice_contour(max_edge_length));
         }
 
         shapes
@@ -103,7 +104,7 @@ fn extract(a: IntPoint, b: IntPoint, radius: u64, sqr_radius: u64, contour: &mut
 #[cfg(test)]
 mod tests {
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::tessellation::split::Split;
+    use crate::tessellation::split::SliceContour;
 
     #[test]
     fn test_0() {
@@ -114,19 +115,19 @@ mod tests {
             IntPoint::new(0, 10),
         ];
 
-        let s0 = contour.split_contour(8);
+        let s0 = contour.slice_contour(8);
         assert_eq!(s0.len(), 4);
 
-        let s1 = contour.split_contour(7);
+        let s1 = contour.slice_contour(7);
         assert_eq!(s1.len(), 4);
 
-        let s2 = contour.split_contour(6);
+        let s2 = contour.slice_contour(6);
         assert_eq!(s2.len(), 8);
 
-        let s3 = contour.split_contour(5);
+        let s3 = contour.slice_contour(5);
         assert_eq!(s3.len(), 8);
 
-        let s4 = contour.split_contour(3);
+        let s4 = contour.slice_contour(3);
         assert_eq!(s4.len(), 12);
     }
 }

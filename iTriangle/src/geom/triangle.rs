@@ -67,56 +67,71 @@ impl IntTriangle {
     #[inline]
     pub(crate) fn abc_by_neighbor(&self, neighbor: usize) -> Abc {
         if neighbor == self.neighbors[0] {
-            let a = ABCVertex {
-                vertex: self.vertices[0],
-                position: 0,
-                neighbor: self.neighbors[0],
-            };
-            let b = ABCVertex {
-                vertex: self.vertices[1],
-                position: 1,
-                neighbor: self.neighbors[1],
-            };
-            let c = ABCVertex {
-                vertex: self.vertices[2],
-                position: 2,
-                neighbor: self.neighbors[2],
-            };
-            Abc { v0: a, v1: b, v2: c }
+            self.abc_by_a()
         } else if neighbor == self.neighbors[1] {
-            let a = ABCVertex {
-                vertex: self.vertices[1],
-                position: 1,
-                neighbor: self.neighbors[1],
-            };
-            let b = ABCVertex {
-                vertex: self.vertices[2],
-                position: 2,
-                neighbor: self.neighbors[2],
-            };
-            let c = ABCVertex {
-                vertex: self.vertices[0],
-                position: 0,
-                neighbor: self.neighbors[0],
-            };
-            Abc { v0: a, v1: b, v2: c }
+            self.abc_by_b()
         } else {
-            let a = ABCVertex {
-                vertex: self.vertices[2],
-                position: 2,
-                neighbor: self.neighbors[2],
-            };
-            let b = ABCVertex {
-                vertex: self.vertices[0],
-                position: 0,
-                neighbor: self.neighbors[0],
-            };
-            let c = ABCVertex {
-                vertex: self.vertices[1],
-                position: 1,
-                neighbor: self.neighbors[1],
-            };
-            Abc { v0: a, v1: b, v2: c }
+            self.abc_by_c()
         }
+    }
+
+    #[inline]
+    pub(crate) fn abc_by_a(&self) -> Abc {
+        let a = ABCVertex {
+            vertex: self.vertices[0],
+            position: 0,
+            neighbor: self.neighbors[0],
+        };
+        let b = ABCVertex {
+            vertex: self.vertices[1],
+            position: 1,
+            neighbor: self.neighbors[1],
+        };
+        let c = ABCVertex {
+            vertex: self.vertices[2],
+            position: 2,
+            neighbor: self.neighbors[2],
+        };
+        Abc { v0: a, v1: b, v2: c }
+    }
+
+    #[inline]
+    pub(crate) fn abc_by_b(&self) -> Abc {
+        let a = ABCVertex {
+            vertex: self.vertices[1],
+            position: 1,
+            neighbor: self.neighbors[1],
+        };
+        let b = ABCVertex {
+            vertex: self.vertices[2],
+            position: 2,
+            neighbor: self.neighbors[2],
+        };
+        let c = ABCVertex {
+            vertex: self.vertices[0],
+            position: 0,
+            neighbor: self.neighbors[0],
+        };
+        Abc { v0: a, v1: b, v2: c }
+    }
+
+    #[inline]
+    pub(crate) fn abc_by_c(&self) -> Abc {
+        let a = ABCVertex {
+            vertex: self.vertices[2],
+            position: 2,
+            neighbor: self.neighbors[2],
+        };
+        let b = ABCVertex {
+            vertex: self.vertices[0],
+            position: 0,
+            neighbor: self.neighbors[0],
+        };
+        let c = ABCVertex {
+            vertex: self.vertices[1],
+            position: 1,
+            neighbor: self.neighbors[1],
+        };
+        Abc { v0: a, v1: b, v2: c }
     }
 }

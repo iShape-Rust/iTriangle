@@ -29,7 +29,7 @@ impl EditorApp {
         if self.state.triangle.mode == ModeOption::Tessellation {
             let radius_list = Row::new()
                 .push(
-                    Text::new("Radius:")
+                    Text::new("Max Radius:")
                         .width(Length::Fixed(120.0))
                         .height(Length::Fill)
                         .align_y(Alignment::Center),
@@ -43,8 +43,24 @@ impl EditorApp {
                         .align_y(Alignment::Center),
                 )
                 .height(Length::Fixed(40.0));
-
+            let area_list = Row::new()
+                .push(
+                    Text::new("Max Area:")
+                        .width(Length::Fixed(120.0))
+                        .height(Length::Fill)
+                        .align_y(Alignment::Center),
+                )
+                .push(
+                    Container::new(
+                        slider(10.0f64..=1000.0f64, self.state.triangle.max_area, on_update_area).step(0.1f32)
+                    )
+                        .width(410)
+                        .height(Length::Fill)
+                        .align_y(Alignment::Center),
+                )
+                .height(Length::Fixed(40.0));
             columns = columns.push(radius_list);
+            columns = columns.push(area_list);
         }
 
 
@@ -54,6 +70,10 @@ impl EditorApp {
 
 fn on_update_radius(value: f64) -> AppMessage {
     AppMessage::Triangle(TriangleMessage::RadiusUpdated(value))
+}
+
+fn on_update_area(value: f64) -> AppMessage {
+    AppMessage::Triangle(TriangleMessage::AreaUpdated(value))
 }
 
 fn on_select_mode(option: ModeOption) -> AppMessage {

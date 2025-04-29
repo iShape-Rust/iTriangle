@@ -15,13 +15,13 @@ use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
 use i_mesh::i_triangle::int::triangulatable::IntTriangulatable;
-use i_mesh::i_triangle::tessellation::tessellatable::IntTessellatable;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,
     pub(crate) mode: ModeOption,
     pub(crate) workspace: WorkspaceState,
     pub(crate) radius: f64,
+    pub(crate) max_area: f64,
     pub(crate) size: Size,
     pub(crate) cameras: HashMap<usize, Camera>,
 }
@@ -30,6 +30,7 @@ pub(crate) struct TriangleState {
 pub(crate) enum TriangleMessage {
     TestSelected(usize),
     RadiusUpdated(f64),
+    AreaUpdated(f64),
     ModeSelected(ModeOption),
     PathEdited(PathEditorUpdateEvent),
     WorkspaceSized(Size),
@@ -100,7 +101,8 @@ impl EditorApp {
             TriangleMessage::WorkspaceSized(size) => self.triangle_update_size(size),
             TriangleMessage::WorkspaceZoomed(zoom) => self.triangle_update_zoom(zoom),
             TriangleMessage::WorkspaceDragged(drag) => self.triangle_update_drag(drag),
-            TriangleMessage::RadiusUpdated(radius) => self.triangle_update_radius(radius)
+            TriangleMessage::RadiusUpdated(radius) => self.triangle_update_radius(radius),
+            TriangleMessage::AreaUpdated(area) => self.triangle_update_area(area)
         }
     }
 
@@ -155,6 +157,7 @@ impl TriangleState {
             cameras: HashMap::with_capacity(resource.count),
             size: Size::ZERO,
             radius: 5.0,
+            max_area: 5.0,
         };
 
         state.load_test(0, resource);
@@ -203,9 +206,15 @@ impl TriangleState {
                 self.workspace.polygons = shapes.triangulate().into_delaunay().to_convex_polygons();
             }
             ModeOption::Tessellation => {
+                // let max_edge = self.radius as u32;
+                let max_area = self.max_area as u64;
+
                 self.workspace.triangulations = shapes
                     .iter()
-                    .map(|s| s.tessellate(self.radius as i32).into_triangulation())
+                    .map(|s| shapes.triangulate()
+                        .into_delaunay()
+                        .refine_with_circumcenters(max_area)
+                        .into_triangulation())
                     .collect();
             }
         }
@@ -218,6 +227,11 @@ impl TriangleState {
 
     pub(super) fn triangle_update_radius(&mut self, radius: f64) {
         self.radius = radius;
+        self.update_solution();
+    }
+
+    pub(super) fn triangle_update_area(&mut self, area: f64) {
+        self.max_area = area;
         self.update_solution();
     }
 }
