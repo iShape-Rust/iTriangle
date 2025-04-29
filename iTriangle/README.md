@@ -36,6 +36,7 @@ A fast, stable, and robust triangulation library for 2D integer geometry — tes
 
 - **Raw Triangulation** - Fast and simple triangulation of polygons with or without holes.
 - **Delaunay Triangulation** - Efficient and robust implementation for generating Delaunay triangulations.
+- **Self-Intersection Handling** – Fully supports self-intersecting polygons with automatic resolution.
 - **Adaptive Tessellation** - Refine Delaunay triangles using circumcenters for better shape quality.
 - **Convex Decomposition** - Convert triangulation into convex polygons.
 - **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
