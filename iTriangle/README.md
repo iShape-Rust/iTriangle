@@ -1,25 +1,46 @@
 # iTriangle
+
+
+[![crates.io version](https://img.shields.io/crates/v/i_triangle.svg)](https://crates.io/crates/i_triangle)
+![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
+[![docs.rs docs](https://docs.rs/i_triangle/badge.svg)](https://docs.rs/i_triangle)
+
 A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
-## Delaunay triangulation
+## Delaunay
 <p align="center">
  <img src="readme/star_triangle.svg" width="500"/>
 </p>
 
-## Breaking into convex polygons
+## Convex polygons
 <p align="center">
  <img src="readme/star_polygon.svg" width="500"/>
+</p>
+
+## Steiner points
+<p align="center">
+ <img src="readme/eagle_triangles_extra_points.svg" width="500"/>
+</p>
+
+## Tessellation
+<p align="center">
+ <img src="readme/eagle_tessellation.svg" width="500"/>
+</p>
+
+## Centroid net
+<p align="center">
+ <img src="readme/eagle_centroid.svg" width="500"/>
 </p>
 
 ## Features
 
 - **Raw Triangulation** - Fast and simple triangulation of polygons with or without holes.
 - **Delaunay Triangulation** - Efficient and robust implementation for generating Delaunay triangulations.
+- **Self-Intersection Handling** – Fully supports self-intersecting polygons with automatic resolution.
 - **Adaptive Tessellation** - Refine Delaunay triangles using circumcenters for better shape quality.
 - **Convex Decomposition** - Convert triangulation into convex polygons.
 - **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
 - **Steiner Points**: Add custom inner points to influence triangulation.
-- **Robust Geometry**: All operations use 2D integer arithmetic for maximum stability.
 
 ## Reliability
 
@@ -101,6 +122,21 @@ let convex_polygons = shape.triangulate()
     .to_convex_polygons();
 
 println!("convex polygons: {:?}", convex_polygons);
+
+let tessellation = shape.triangulate()
+    .into_delaunay()
+    .refine_with_circumcenters_by_obtuse_angle(0.0)
+    .to_triangulation();
+
+println!("points: {:?}", tessellation.points);
+println!("indices: {:?}", tessellation.indices);
+
+let centroids = shape.triangulate()
+    .into_delaunay()
+    .refine_with_circumcenters_by_obtuse_angle(0.0)
+    .centroid_net(0.0);
+
+println!("centroids: {:?}", centroids);
 ```
 
 **Output Triangulation**: *triangles indices and vertices, where all triangles oriented in a counter-clockwise direction.*
