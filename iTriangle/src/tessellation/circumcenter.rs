@@ -8,16 +8,28 @@ use i_overlay::i_float::triangle::Triangle;
 impl IntDelaunay {
 
     #[inline]
-    pub fn refine_with_circumcenters(self, min_area: u64) -> Self {
-        self.refine_with_circumcenters_and_selector::<SelectBiggerAngle>(min_area)
+    pub fn refine_with_circumcenters(mut self, min_area: u64) -> Self {
+        self.refine_with_circumcenters_mut(min_area);
+        self
     }
 
     #[inline]
-    pub fn refine_with_circumcenters_by_obtuse_angle(self, min_area: u64) -> Self {
+    pub fn refine_with_circumcenters_mut(&mut self, min_area: u64) {
+        self.refine_with_circumcenters_and_selector::<SelectBiggerAngle>(min_area);
+    }
+
+    #[inline]
+    pub fn refine_with_circumcenters_by_obtuse_angle(mut self, min_area: u64) -> Self {
+        self.refine_with_circumcenters_by_obtuse_angle_mut(min_area);
+        self
+    }
+
+    #[inline]
+    pub fn refine_with_circumcenters_by_obtuse_angle_mut(&mut self, min_area: u64) {
         self.refine_with_circumcenters_and_selector::<SelectObtuseAngle>(min_area)
     }
     
-    fn refine_with_circumcenters_and_selector<S: EdgeSelector>(mut self, min_area: u64) -> Self {
+    fn refine_with_circumcenters_and_selector<S: EdgeSelector>(&mut self, min_area: u64) {
         let two_area = min_area << 1;
         let mut unchecked = HashSet::with_capacity(self.triangles.len());
         let mut buffer = Vec::with_capacity(16);
@@ -42,8 +54,6 @@ impl IntDelaunay {
 
             iter_counter += 1;
         }
-
-        self
     }
 
     #[inline]
