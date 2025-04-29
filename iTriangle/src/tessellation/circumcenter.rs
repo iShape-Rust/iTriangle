@@ -7,23 +7,17 @@ use i_overlay::i_float::triangle::Triangle;
 
 impl IntDelaunay {
 
-    /// Refines the Delaunay triangulation by inserting points at triangle circumcenters
-    /// to improve triangle quality.
-    ///
-    /// A triangle is refined if:
-    /// - Its area is larger than `min_area`
-    /// - It has a bad edge quality (skinny shape based on edge ratios)
-    ///
-    /// Circumcenter insertion is used if possible; otherwise, an edge midpoint is used.
-    ///
-    /// # Arguments
-    /// - `min_area`: minimum allowed area for triangles after refinement
-    ///
-    /// # Details
-    /// - Only local triangulation is updated (very fast)
-    /// - Avoids overrefining tiny triangles
-    /// - All refinement is integer-based and robust
-    pub fn refine_with_circumcenters(mut self, min_area: u64) -> Self {
+    #[inline]
+    pub fn refine_with_circumcenters(self, min_area: u64) -> Self {
+        self.refine_with_circumcenters_and_selector::<SelectBiggerAngle>(min_area)
+    }
+
+    #[inline]
+    pub fn refine_with_circumcenters_by_obtuse_angle(self, min_area: u64) -> Self {
+        self.refine_with_circumcenters_and_selector::<SelectObtuseAngle>(min_area)
+    }
+    
+    fn refine_with_circumcenters_and_selector<S: EdgeSelector>(mut self, min_area: u64) -> Self {
         let two_area = min_area << 1;
         let mut unchecked = HashSet::with_capacity(self.triangles.len());
         let mut buffer = Vec::with_capacity(16);
@@ -37,7 +31,7 @@ impl IntDelaunay {
             split_counter = 0;
             while abc_index < self.triangles.len() {
                 let abc = &self.triangles[abc_index];
-                if let Some(t) = self.select_edge_for_refinement(two_area, abc) {
+                if let Some(t) = self.select_edge_for_refinement::<S>(two_area, abc) {
                     self.split_triangle(abc_index, t, &mut buffer);
                     self.fix_triangles(&mut buffer, &mut unchecked);
                     debug_assert!(buffer.is_empty());
@@ -52,7 +46,8 @@ impl IntDelaunay {
         self
     }
 
-    fn select_edge_for_refinement(&self, min_area: u64, abc: &IntTriangle) -> Option<Abc> {
+    #[inline]
+    fn select_edge_for_refinement<S: EdgeSelector>(&self, min_area: u64, abc: &IntTriangle) -> Option<Abc> {
         let a = abc.vertices[0].point;
         let b = abc.vertices[1].point;
         let c = abc.vertices[2].point;
@@ -62,33 +57,10 @@ impl IntDelaunay {
             return None;
         }
 
-        let sqr_c = a.sqr_distance(b);
-        let sqr_a = b.sqr_distance(c);
-        let sqr_b = c.sqr_distance(a);
-
-        let aa = sqr_a << 1;
-        let bb = sqr_b << 1;
-        let cc = sqr_c << 1;
-
-        if sqr_c >= sqr_a && sqr_c >= sqr_b {
-            if sqr_c < aa || sqr_c < bb {
-                Some(abc.abc_by_c())
-            } else {
-                None
-            }
-        } else if sqr_b >= sqr_a && sqr_b >= sqr_c {
-            if sqr_b < aa || sqr_b < cc {
-                Some(abc.abc_by_b())
-            } else {
-                None
-            }
-        } else if sqr_a < bb || sqr_a < cc {
-            Some(abc.abc_by_a())
-        } else {
-            None
-        }
+        S::select(abc)
     }
 
+    #[inline]
     fn split_triangle(&mut self, abc_index: usize, abc: Abc, buffer: &mut Vec<usize>) {
         let pcb_index = abc.v0.neighbor;
         if pcb_index < self.triangles.len() {
@@ -236,5 +208,57 @@ impl Abc {
         let y = (b.y as i64 + c.y as i64) >> 1;
 
         IntPoint::new(x as i32, y as i32)
+    }
+}
+
+trait EdgeSelector {
+    fn select(abc: &IntTriangle) -> Option<Abc>;
+}
+
+struct SelectBiggerAngle {}
+struct SelectObtuseAngle {}
+
+impl EdgeSelector for SelectObtuseAngle {
+
+    #[inline]
+    fn select(abc: &IntTriangle) -> Option<Abc> {
+        let a = abc.vertices[0].point;
+        let b = abc.vertices[1].point;
+        let c = abc.vertices[2].point;
+
+        let sqr_c = a.sqr_distance(b);
+        let sqr_a = b.sqr_distance(c);
+        let sqr_b = c.sqr_distance(a);
+
+        if sqr_c > sqr_a + sqr_b {
+            Some(abc.abc_by_c())
+        } else if sqr_b > sqr_a + sqr_c {
+            Some(abc.abc_by_b())
+        } else if sqr_a > sqr_b + sqr_c {
+            Some(abc.abc_by_a())
+        } else {
+            None
+        }
+    }
+}
+
+impl EdgeSelector for SelectBiggerAngle {
+    #[inline]
+    fn select(abc: &IntTriangle) -> Option<Abc> {
+        let a = abc.vertices[0].point;
+        let b = abc.vertices[1].point;
+        let c = abc.vertices[2].point;
+
+        let sqr_c = a.sqr_distance(b);
+        let sqr_a = b.sqr_distance(c);
+        let sqr_b = c.sqr_distance(a);
+
+        if sqr_c >= sqr_a && sqr_c >= sqr_b {
+            Some(abc.abc_by_c())
+        } else if sqr_b >= sqr_a && sqr_b >= sqr_c {
+            Some(abc.abc_by_b())
+        } else {
+            Some(abc.abc_by_a())
+        }
     }
 }

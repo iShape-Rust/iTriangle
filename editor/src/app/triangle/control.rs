@@ -52,7 +52,7 @@ impl EditorApp {
                 )
                 .push(
                     Container::new(
-                        slider(10.0f64..=1000.0f64, self.state.triangle.max_area, on_update_area).step(0.1f32)
+                        slider(10.0f64..=10000.0f64, self.state.triangle.max_area, on_update_area).step(0.1f32)
                     )
                         .width(410)
                         .height(Length::Fill)
