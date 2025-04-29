@@ -1,6 +1,10 @@
-![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
-
 # iTriangle
+
+
+[![crates.io version](https://img.shields.io/crates/v/i_triangle.svg)](https://crates.io/crates/i_triangle)
+![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
+[![docs.rs docs](https://docs.rs/i_triangle/badge.svg)](https://docs.rs/i_triangle)
+
 A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
 ## Delaunay
