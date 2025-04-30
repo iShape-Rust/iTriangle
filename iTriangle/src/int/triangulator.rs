@@ -1,5 +1,5 @@
 use crate::int::binder::SteinerInference;
-use crate::int::builder::TriangleNetBuilder;
+use crate::int::builder::TriangleMeshBuilder;
 use crate::int::triangulation::RawIntTriangulation;
 use crate::int::vertex::{IntoPoints, ToChainVertices};
 use i_overlay::core::fill_rule::FillRule;
@@ -195,7 +195,7 @@ impl Triangulator {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
         let chain_vertices = shape.to_chain_vertices();
-        let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net_builder = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
         RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
@@ -229,7 +229,7 @@ impl Triangulator {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2) + 2 * points.len();
 
         let chain_vertices = shape.to_chain_vertices_with_steiner_points(points);
-        let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net_builder = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
         RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
@@ -252,7 +252,7 @@ impl Triangulator {
         let triangles_count = contour.len() - 2;
 
         let chain_vertices = contour.to_chain_vertices();
-        let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net_builder = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
         RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())
@@ -285,7 +285,7 @@ impl Triangulator {
         let triangles_count = contour.len() - 2 + 2 * points.len();
 
         let chain_vertices = contour.to_chain_vertices_with_steiner_points(points);
-        let mut net_builder = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net_builder = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net_builder.build(&chain_vertices);
 
         RawIntTriangulation::new(net_builder.triangles, chain_vertices.into_points())

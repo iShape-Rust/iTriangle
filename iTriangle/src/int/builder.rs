@@ -15,12 +15,12 @@ struct PhantomHandler {
     triangle: usize,
 }
 
-struct PhantomStore {
+struct PhantomEdgePool {
     buffer: Vec<PhantomHandler>,
     unused: Vec<usize>,
 }
 
-impl PhantomStore {
+impl PhantomEdgePool {
     const EMPTY: PhantomHandler = PhantomHandler {
         vertex: usize::MAX,
         triangle: usize::MAX,
@@ -58,13 +58,13 @@ impl PhantomStore {
     }
 
     #[inline]
-    fn set(&mut self, index: usize, handler: PhantomHandler) {
+    fn register_phantom_link(&mut self, index: usize, handler: PhantomHandler) {
         debug_assert!(self.buffer[index].triangle == usize::MAX);
         self.buffer[index] = handler;
     }
 
     #[inline]
-    fn get_free_index(&mut self) -> usize {
+    fn alloc_phantom_index(&mut self) -> usize {
         if self.unused.is_empty() {
             self.reserve(self.unused.capacity());
         }
@@ -72,23 +72,23 @@ impl PhantomStore {
     }
 
     #[inline]
-    fn put_back(&mut self, index: usize) {
+    fn free_phantom_index(&mut self, index: usize) {
         self.buffer[index] = Self::EMPTY;
         self.unused.push(index)
     }
 }
 
-pub(super) struct TriangleNetBuilder {
+pub(super) struct TriangleMeshBuilder {
     pub(super) triangles: Vec<IntTriangle>,
-    phantom_store: PhantomStore,
+    phantom_store: PhantomEdgePool,
 }
 
-impl TriangleNetBuilder {
+impl TriangleMeshBuilder {
     #[inline]
     pub(super) fn with_triangles_count(triangles_count: usize) -> Self {
         Self {
             triangles: Vec::with_capacity(triangles_count),
-            phantom_store: PhantomStore::new(16),
+            phantom_store: PhantomEdgePool::new(16),
         }
     }
 
@@ -109,7 +109,7 @@ impl TriangleNetBuilder {
     }
 }
 
-impl TriangleNetBuilder {
+impl TriangleMeshBuilder {
     #[inline]
     fn next_triangle_index(&self) -> usize {
         self.triangles.len()
@@ -117,11 +117,11 @@ impl TriangleNetBuilder {
 
     #[inline]
     fn get_unique_phantom_edge_index(&mut self) -> usize {
-        self.phantom_store.get_free_index()
+        self.phantom_store.alloc_phantom_index()
     }
 
     #[inline]
-    fn add_triangle_and_join_by_edge(
+    fn insert_triangle_with_neighbor_link(
         &mut self,
         edge: &TriangleEdge,
         vertex: usize,
@@ -144,10 +144,10 @@ impl TriangleNetBuilder {
                     // if exist update neighbor
                     self.triangles[handler.triangle].neighbors[handler.vertex] = new_index;
                     new_triangle.neighbors[vertex] = handler.triangle;
-                    self.phantom_store.put_back(edge_index);
+                    self.phantom_store.free_phantom_index(edge_index);
                 } else {
                     // create a phantom edge
-                    self.phantom_store.set(
+                    self.phantom_store.register_phantom_link(
                         edge_index,
                         PhantomHandler {
                             vertex,
@@ -233,7 +233,7 @@ impl TriangleNetBuilder {
 
 impl Section {
     #[inline]
-    fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+    fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         let edges = match &mut self.content {
             Content::Point(_) => {
                 panic!("not implemented case")
@@ -248,23 +248,23 @@ impl Section {
             triangle.neighbors[1] = net_builder.next_triangle_index() + 1;
             triangle.neighbors[2] = prev_index;
 
-            prev_index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            prev_index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
         }
 
         let el = edges.last().unwrap();
         let mut triangle = IntTriangle::abc(vp, el.a, el.b);
         triangle.neighbors[2] = prev_index;
 
-        net_builder.add_triangle_and_join_by_edge(el, 0, triangle);
+        net_builder.insert_triangle_with_neighbor_link(el, 0, triangle);
     }
 
     #[inline]
-    fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+    fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         self.add_from_start(v, net_builder);
     }
 
     #[inline]
-    fn add_to_bottom(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+    fn add_to_bottom(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         self.sort = VSegment {
             a: v.this,
             b: v.next,
@@ -273,7 +273,7 @@ impl Section {
     }
 
     #[inline]
-    fn add_to_middle(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) -> Section {
+    fn add_to_middle(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) -> Section {
         let edges = match &mut self.content {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
@@ -392,13 +392,13 @@ impl Section {
                 };
 
                 bottom_section
-            }
+            };
         }
         let e0 = &edges[i];
 
         let mut t0 = IntTriangle::abc(vp, e0.a, e0.b);
         t0.neighbors[1] = net_builder.triangles.len() + 1;
-        let mut index = net_builder.add_triangle_and_join_by_edge(e0, 0, t0);
+        let mut index = net_builder.insert_triangle_with_neighbor_link(e0, 0, t0);
 
         let top_edge = TriangleEdge {
             a: e0.a,
@@ -428,7 +428,7 @@ impl Section {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = next_index;
             triangle.neighbors[2] = index;
-            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
             next_index = index + 2;
 
             i += 1;
@@ -447,7 +447,7 @@ impl Section {
         top_section
     }
 
-    fn add_from_start(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+    fn add_from_start(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         let vp = v.index_point();
 
         let edges = match &mut self.content {
@@ -478,7 +478,7 @@ impl Section {
         }
 
         let mut index =
-            net_builder.add_triangle_and_join_by_edge(e0, 0, IntTriangle::abc(vp, e0.a, e0.b));
+            net_builder.insert_triangle_with_neighbor_link(e0, 0, IntTriangle::abc(vp, e0.a, e0.b));
 
         let mut n = 1;
         let mut eb = e0.b;
@@ -491,7 +491,7 @@ impl Section {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[2] = index;
             let prev_index = index;
-            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
 
             net_builder.triangles[prev_index].neighbors[1] = index;
         }
@@ -512,7 +512,7 @@ impl Section {
         );
     }
 
-    fn add_from_end(&mut self, v: &ChainVertex, net_builder: &mut TriangleNetBuilder) {
+    fn add_from_end(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         let vp = v.index_point();
         let edges = match &mut self.content {
             Content::Point(point) => {
@@ -539,7 +539,7 @@ impl Section {
         }
 
         let mut index =
-            net_builder.add_triangle_and_join_by_edge(el, 0, IntTriangle::abc(vp, el.a, el.b));
+            net_builder.insert_triangle_with_neighbor_link(el, 0, IntTriangle::abc(vp, el.a, el.b));
         let mut ea = el.a;
         let mut n = 1;
         for ei in edges.iter().rev().skip(1) {
@@ -551,7 +551,7 @@ impl Section {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = index;
             let prev_index = index;
-            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
 
             net_builder.triangles[prev_index].neighbors[2] = index;
         }
@@ -565,7 +565,7 @@ impl Section {
     }
 
     #[inline]
-    fn add_steiner(&mut self, vp: IndexPoint, net_builder: &mut TriangleNetBuilder) {
+    fn add_steiner(&mut self, vp: IndexPoint, net_builder: &mut TriangleMeshBuilder) {
         let edges = match &mut self.content {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
@@ -649,7 +649,7 @@ impl Section {
 
         let mut t0 = IntTriangle::abc(vp, e0.a, e0.b);
         t0.neighbors[1] = net_builder.triangles.len() + 1;
-        let mut index = net_builder.add_triangle_and_join_by_edge(e0, 0, t0);
+        let mut index = net_builder.insert_triangle_with_neighbor_link(e0, 0, t0);
 
         let top_edge = TriangleEdge {
             a: e0.a,
@@ -671,7 +671,7 @@ impl Section {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = next_index;
             triangle.neighbors[2] = index;
-            index = net_builder.add_triangle_and_join_by_edge(ei, 0, triangle);
+            index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
             next_index = index + 2;
 
             i += 1;
@@ -694,7 +694,7 @@ impl Section {
 }
 
 #[cfg(test)]
-impl TriangleNetBuilder {
+impl TriangleMeshBuilder {
     pub fn validate(&self) {
         for (i, t) in self.triangles.iter().enumerate() {
             let a = t.vertices[0].point;
@@ -759,7 +759,7 @@ impl FindSection for SetTree<VSegment, Section> {
 #[cfg(test)]
 mod tests {
     use crate::int::binder::SteinerInference;
-    use crate::int::builder::TriangleNetBuilder;
+    use crate::int::builder::TriangleMeshBuilder;
     use crate::int::vertex::ToChainVertices;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
@@ -775,18 +775,18 @@ mod tests {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
     }
 
-    fn shape_to_builder(shape: &IntShape) -> TriangleNetBuilder {
+    fn shape_to_builder(shape: &IntShape) -> TriangleMeshBuilder {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
 
-        let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net.build(&shape.to_chain_vertices());
         net
     }
 
-    fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleNetBuilder {
+    fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleMeshBuilder {
         let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2) + 2 * points.len();
 
-        let mut net = TriangleNetBuilder::with_triangles_count(triangles_count);
+        let mut net = TriangleMeshBuilder::with_triangles_count(triangles_count);
         net.build(&shape.to_chain_vertices_with_steiner_points(points));
         net
     }
@@ -1073,10 +1073,7 @@ mod tests {
     #[test]
     fn test_14() {
         let shape = vec![path(&[[-2, -3], [-4, -4], [5, -1], [1, -1], [2, 3]])];
-        let s = &shape.simplify(
-            FillRule::EvenOdd,
-            IntOverlayOptions::default(),
-        )[0];
+        let s = &shape.simplify(FillRule::EvenOdd, IntOverlayOptions::default())[0];
 
         let shape_area = s.area_two();
 
@@ -1279,9 +1276,7 @@ mod tests {
     #[test]
     fn test_26() {
         let shape = vec![path(&[[4, 4], [-5, 3], [3, -3], [2, 3]])];
-        let points = vec![
-            IntPoint::new(1, 3)
-        ];
+        let points = vec![IntPoint::new(1, 3)];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder_with_points(&shape, &points);
@@ -1294,9 +1289,7 @@ mod tests {
     #[test]
     fn test_27() {
         let shape = vec![path(&[[3, -1], [0, 0], [1, -1], [3, -5]])];
-        let points = vec![
-            IntPoint::new(2, -2)
-        ];
+        let points = vec![IntPoint::new(2, -2)];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder_with_points(&shape, &points);
@@ -1309,9 +1302,7 @@ mod tests {
     #[test]
     fn test_28() {
         let shape = vec![path(&[[3, -1], [0, 0], [1, -1], [3, -5]])];
-        let points = vec![
-            IntPoint::new(2, -2)
-        ];
+        let points = vec![IntPoint::new(2, -2)];
         let shape_area = shape.area_two();
 
         let net = shape_to_builder_with_points(&shape, &points);
@@ -1324,10 +1315,7 @@ mod tests {
     #[test]
     fn test_29() {
         let shape = vec![path(&[[1, 0], [-4, -2], [3, 0], [5, 1], [4, 1], [-4, -1]])];
-        let points = vec![
-            IntPoint::new(0, 3),
-            IntPoint::new(4, 3),
-        ];
+        let points = vec![IntPoint::new(0, 3), IntPoint::new(4, 3)];
         let shape_area = shape.area_two();
         let group = vec![shape.clone()].group_by_shapes(&points);
 
@@ -1358,10 +1346,7 @@ mod tests {
             let path = random(8, 5);
             let shape = vec![path];
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1379,10 +1364,7 @@ mod tests {
             let path = random(10, 6);
             let shape = vec![path];
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1400,10 +1382,7 @@ mod tests {
             let path = random(10, 12);
             let shape = vec![path];
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1421,10 +1400,7 @@ mod tests {
             let path = random(20, 20);
             let shape = vec![path];
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1442,10 +1418,7 @@ mod tests {
             let path = random(30, 50);
             let shape = vec![path];
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1467,10 +1440,7 @@ mod tests {
             }
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -1514,10 +1484,7 @@ mod tests {
             let shape = random(10, 4);
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shapes = vec![first.clone()];
@@ -1538,10 +1505,7 @@ mod tests {
             let shape = random(10, 4);
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shapes = vec![first.clone()];
@@ -1562,10 +1526,7 @@ mod tests {
             let shape = random(10, 8);
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shapes = vec![first.clone()];
@@ -1589,10 +1550,7 @@ mod tests {
             }
             let points = random_points(20, 8);
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
