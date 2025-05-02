@@ -1,0 +1,8 @@
+[package]
+name = "i_triangle_performance"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+#i_triangle = "0.31.0"
+i_triangle = { path = "../../iTriangle" }

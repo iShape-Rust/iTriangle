@@ -5,5 +5,5 @@ pub mod custom;
 pub mod delaunay;
 pub mod convex;
 pub mod builder;
-mod circumcenter;
-mod centroid_net;
+pub mod circumcenter;
+pub mod centroid_net;
