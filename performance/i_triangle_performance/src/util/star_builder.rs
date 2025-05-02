@@ -9,15 +9,18 @@ impl StarBuilder {
         start_angle: f64,
         points_per_corner: usize,
         corners_count: usize,
+        direction: bool,
         points: &mut Vec<[f64; 2]>,
     ) {
+        points.clear();
         Self::fill_star_contour(
+            [0.0, 0.0],
             radius,
             radius_scale,
             start_angle,
             points_per_corner,
             corners_count,
-            true,
+            direction,
             points,
         );
     }
@@ -30,7 +33,10 @@ impl StarBuilder {
         corners_count: usize,
         contours: &mut Vec<Vec<[f64; 2]>>,
     ) {
+        contours[0].clear();
+        contours[1].clear();
         Self::fill_star_contour(
+            [0.0, 0.0],
             radius,
             radius_scale,
             start_angle,
@@ -40,6 +46,7 @@ impl StarBuilder {
             &mut contours[0],
         );
         Self::fill_star_contour(
+            [0.0, 0.0],
             0.5 * radius,
             radius_scale,
             start_angle,
@@ -50,7 +57,8 @@ impl StarBuilder {
         );
     }
 
-    fn fill_star_contour(
+    pub(crate) fn fill_star_contour(
+        center: [f64; 2],
         radius: f64,
         radius_scale: f64,
         start_angle: f64,
@@ -65,13 +73,11 @@ impl StarBuilder {
         let w = corners_count as f64;
         let mut a = 0.0f64;
 
-        points.clear();
-
         for _ in 0..points_count {
             let r = radius * (1.0 + radius_scale * (w * a).cos());
             let (sn, cs) = (a + start_angle).sin_cos();
-            let x = r * cs;
-            let y = r * sn;
+            let x = r * cs + center[0];
+            let y = r * sn + center[1];
 
             a += da;
 

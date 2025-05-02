@@ -1,5 +1,6 @@
 use crate::test::test_0_star::SimpleStarTest;
 use crate::test::test_1_star_with_hole::StarWithHoleTest;
+use crate::test::test_2_rect_star_holes::RectStarHolesTest;
 use crate::util::args::EnvArgs;
 
 mod test;
@@ -24,6 +25,7 @@ fn release_run(args: &EnvArgs) {
     match test {
         0 => star(&args),
         1 => star_with_hole(&args),
+        2 => rect_with_star_holes(&args),
         _ => {
             panic!("No test found")
         }
@@ -32,10 +34,26 @@ fn release_run(args: &EnvArgs) {
 
 #[cfg(debug_assertions)]
 fn debug_run(_args: &EnvArgs) {
-    SimpleStarTest::run_raw(4);
+    SimpleStarTest {
+        radius: 100.0,
+        angle_steps_count: 100,
+        points_per_corner: 10,
+        radius_steps_count: 100,
+        min_radius_scale: 0.0,
+        max_radius_scale: 1.0,
+    }.run_raw(4);
 }
 
 fn star(args: &EnvArgs) {
+    let test = SimpleStarTest {
+        radius: 100.0,
+        angle_steps_count: 100,
+        points_per_corner: 10,
+        radius_steps_count: 100,
+        min_radius_scale: 0.0,
+        max_radius_scale: 1.0,
+    };
+
     let complex = args.get_bool("complex");
 
     if complex {
@@ -43,7 +61,7 @@ fn star(args: &EnvArgs) {
         let mut s0 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s0 += SimpleStarTest::run_unchecked(count);
+            s0 += test.run_unchecked(count);
         }
         println!();
 
@@ -51,7 +69,7 @@ fn star(args: &EnvArgs) {
         let mut s1 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s1 += SimpleStarTest::run_raw(count);
+            s1 += test.run_raw(count);
         }
         println!();
 
@@ -59,7 +77,7 @@ fn star(args: &EnvArgs) {
         let mut s2 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s2 += SimpleStarTest::run_delaunay(count);
+            s2 += test.run_delaunay(count);
         }
         println!();
 
@@ -68,15 +86,15 @@ fn star(args: &EnvArgs) {
         let count = args.get_usize("count");
 
         println!("unchecked: ");
-        let s0 = SimpleStarTest::run_unchecked(count);
+        let s0 = test.run_unchecked(count);
         println!();
 
         println!("raw: ");
-        let s1 = SimpleStarTest::run_raw(count);
+        let s1 = test.run_raw(count);
         println!();
 
         println!("delaunay: ");
-        let s2 = SimpleStarTest::run_delaunay(count);
+        let s2 = test.run_delaunay(count);
         println!();
 
         println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
@@ -86,12 +104,21 @@ fn star(args: &EnvArgs) {
 fn star_with_hole(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
+    let test = StarWithHoleTest {
+        radius: 100.0,
+        angle_steps_count: 100,
+        points_per_corner: 10,
+        radius_steps_count: 100,
+        min_radius_scale: 0.1, // must be > 0 to prevent intersection!
+        max_radius_scale: 1.0,
+    };
+
     if complex {
         println!("unchecked: ");
         let mut s0 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s0 += StarWithHoleTest::run_unchecked(count);
+            s0 += test.run_unchecked(count);
         }
         println!();
 
@@ -99,7 +126,7 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s1 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s1 += StarWithHoleTest::run_raw(count);
+            s1 += test.run_raw(count);
         }
         println!();
 
@@ -107,7 +134,7 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s2 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s2 += StarWithHoleTest::run_delaunay(count);
+            s2 += test.run_delaunay(count);
         }
         println!();
 
@@ -116,15 +143,74 @@ fn star_with_hole(args: &EnvArgs) {
         let count = args.get_usize("count");
 
         println!("unchecked: ");
-        let s0 = StarWithHoleTest::run_unchecked(count);
+        let s0 = test.run_unchecked(count);
         println!();
 
         println!("raw: ");
-        let s1 = StarWithHoleTest::run_raw(count);
+        let s1 = test.run_raw(count);
         println!();
 
         println!("delaunay: ");
-        let s2 = StarWithHoleTest::run_delaunay(count);
+        let s2 = test.run_delaunay(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+    }
+}
+
+
+fn rect_with_star_holes(args: &EnvArgs) {
+    let complex = args.get_bool("complex");
+
+    let test = RectStarHolesTest{
+        radius: 100.0,
+        angle_steps_count: 5,
+        corners_count: 5,
+        points_per_corner: 10,
+        radius_steps_count: 5,
+        min_radius_scale: 0.0,
+        max_radius_scale: 1.0,
+    };
+
+    if complex {
+        println!("unchecked: ");
+        let mut s0 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s0 += test.run_unchecked(count);
+        }
+        println!();
+
+        println!("raw: ");
+        let mut s1 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s1 += test.run_raw(count);
+        }
+        println!();
+
+        println!("delaunay: ");
+        let mut s2 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s2 += test.run_delaunay(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+    } else {
+        let count = args.get_usize("count");
+
+        println!("unchecked: ");
+        let s0 = test.run_unchecked(count);
+        println!();
+
+        println!("raw: ");
+        let s1 = test.run_raw(count);
+        println!();
+
+        println!("delaunay: ");
+        let s2 = test.run_delaunay(count);
         println!();
 
         println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);

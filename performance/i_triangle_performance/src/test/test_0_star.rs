@@ -1,9 +1,7 @@
 use crate::util::star_builder::StarBuilder;
-use i_triangle::float::triangulatable::Triangulatable;
-use i_triangle::float::unchecked::UncheckedTriangulatable;
 use std::f64::consts::PI;
 use std::time::Instant;
-
+use crate::test::experiment::{DelaunayExperiment, Experiment, RawExperiment, UncheckedExperiment};
 /*
 unchecked:
 4 - 0.047844
@@ -15,7 +13,7 @@ unchecked:
 256 - 4.481360
 512 - 9.372721
 
-raw: 
+raw:
 4 - 0.074298
 8 - 0.165002
 16 - 0.369625
@@ -25,7 +23,7 @@ raw:
 256 - 16.652639
 512 - 46.585559
 
-delaunay: 
+delaunay:
 4 - 0.139643
 8 - 0.284868
 16 - 0.591876
@@ -36,47 +34,58 @@ delaunay:
 512 - 50.478053
 */
 
-
-pub(crate) struct SimpleStarTest {}
+pub(crate) struct SimpleStarTest {
+    pub(crate) radius: f64,
+    pub(crate) angle_steps_count: usize,
+    pub(crate) points_per_corner: usize,
+    pub(crate) radius_steps_count: usize,
+    pub(crate) min_radius_scale: f64,
+    pub(crate) max_radius_scale: f64,
+}
 
 impl SimpleStarTest {
-    pub(crate) fn run_unchecked(count: usize) -> usize {
-        Self::run::<UncheckedStarTest>(count)
+    pub(crate) fn run_unchecked(&self, count: usize) -> usize {
+        self.run::<UncheckedExperiment>(count)
     }
 
-    pub(crate) fn run_raw(count: usize) -> usize {
-        Self::run::<RawStarTest>(count)
+    pub(crate) fn run_raw(&self, count: usize) -> usize {
+        self.run::<RawExperiment>(count)
     }
 
-    pub(crate) fn run_delaunay(count: usize) -> usize {
-        Self::run::<DelaunayStarTest>(count)
+    pub(crate) fn run_delaunay(&self, count: usize) -> usize {
+        self.run::<DelaunayExperiment>(count)
     }
 
-    fn run<E: Experimentation>(count: usize) -> usize {
-        let mut points = Vec::with_capacity(2 * count);
-
-        let angle_step_count = 100;
-        let angle_step = 2.0 * PI / angle_step_count as f64;
-
-        let radius = 100.0;
-        let radius_step = 0.01;
-        let points_per_corner = 10;
-
-        let start = Instant::now();
-
+    fn run<E: Experiment>(&self, count: usize) -> usize {
+        let count_per_star = self.points_per_corner * count;
+        let mut points = Vec::with_capacity(count_per_star);
         let mut sum = 0;
 
-        let mut radius_scaler = 0.0;
-        while radius_scaler < 1.0 {
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
+
+        let mut radius_scale = self.min_radius_scale;
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
+
+        let start = Instant::now();
+        for _ in 0..self.radius_steps_count {
             // grow star
             let mut start_angle = 0.0;
-            for _ in 0..angle_step_count {
+            for _ in 0..self.angle_steps_count {
                 // rotate star
-                StarBuilder::fill_star(radius, radius_scaler, start_angle, points_per_corner, count, &mut points);
-                sum += E::run(&points);
+                StarBuilder::fill_star(
+                    self.radius,
+                    radius_scale,
+                    start_angle,
+                    self.points_per_corner,
+                    count,
+                    true,
+                    &mut points,
+                );
+                sum += E::run_contour(&points);
                 start_angle += angle_step;
             }
-            radius_scaler += radius_step;
+            radius_scale += radius_step;
         }
 
         let duration = start.elapsed();
@@ -84,40 +93,5 @@ impl SimpleStarTest {
 
         println!("{} - {:.6}", count, time);
         sum
-    }
-}
-
-trait Experimentation {
-    fn run(points: &Vec<[f64; 2]>) -> usize;
-}
-
-struct UncheckedStarTest {}
-
-impl Experimentation for UncheckedStarTest {
-    #[inline]
-    fn run(points: &Vec<[f64; 2]>) -> usize {
-        points.unchecked_triangulate().triangle_indices().len()
-    }
-}
-
-struct RawStarTest {}
-
-impl Experimentation for RawStarTest {
-    #[inline]
-    fn run(points: &Vec<[f64; 2]>) -> usize {
-        points.triangulate().triangle_indices().len()
-    }
-}
-
-struct DelaunayStarTest {}
-
-impl Experimentation for DelaunayStarTest {
-    #[inline]
-    fn run(points: &Vec<[f64; 2]>) -> usize {
-        points
-            .triangulate()
-            .into_delaunay()
-            .triangle_indices()
-            .len()
     }
 }

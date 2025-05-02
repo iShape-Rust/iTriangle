@@ -1,11 +1,9 @@
+use crate::test::experiment::{DelaunayExperiment, Experiment, RawExperiment, UncheckedExperiment};
 use crate::util::star_builder::StarBuilder;
-use i_triangle::float::triangulatable::Triangulatable;
-use i_triangle::float::unchecked::UncheckedTriangulatable;
 use std::f64::consts::PI;
 use std::time::Instant;
-
 /*
-unchecked: 
+unchecked:
 4 - 0.110370
 8 - 0.229584
 16 - 0.480577
@@ -14,7 +12,7 @@ unchecked:
 128 - 4.708570
 256 - 9.891213
 
-raw: 
+raw:
 4 - 0.268433
 8 - 0.593994
 16 - 1.344304
@@ -23,7 +21,7 @@ raw:
 128 - 24.225092
 256 - 67.140800
 
-delaunay: 
+delaunay:
 4 - 0.369640
 8 - 0.781789
 16 - 1.689566
@@ -33,54 +31,61 @@ delaunay:
 256 - 71.023947
 */
 
-
-pub(crate) struct StarWithHoleTest {}
+pub(crate) struct StarWithHoleTest {
+    pub(crate) angle_steps_count: usize,
+    pub(crate) radius: f64,
+    pub(crate) points_per_corner: usize,
+    pub(crate) radius_steps_count: usize,
+    pub(crate) min_radius_scale: f64,
+    pub(crate) max_radius_scale: f64,
+}
 
 impl StarWithHoleTest {
-    pub(crate) fn run_unchecked(count: usize) -> usize {
-        Self::run::<UncheckedStarWithHoleTest>(count)
+    pub(crate) fn run_unchecked(&self, count: usize) -> usize {
+        self.run::<UncheckedExperiment>(count)
     }
 
-    pub(crate) fn run_raw(count: usize) -> usize {
-        Self::run::<RawStarWithHoleTest>(count)
+    pub(crate) fn run_raw(&self, count: usize) -> usize {
+        self.run::<RawExperiment>(count)
     }
 
-    pub(crate) fn run_delaunay(count: usize) -> usize {
-        Self::run::<DelaunayStarWithHoleTest>(count)
+    pub(crate) fn run_delaunay(&self, count: usize) -> usize {
+        self.run::<DelaunayExperiment>(count)
     }
 
-    fn run<E: Experimentation>(count: usize) -> usize {
+    fn run<E: Experiment>(&self, count: usize) -> usize {
+        let count_per_star = self.points_per_corner * count;
         let mut shape = vec![
-            Vec::with_capacity(2 * count),
-            Vec::with_capacity(2 * count)
+            Vec::with_capacity(count_per_star),
+            Vec::with_capacity(count_per_star),
         ];
+        let mut sum = 0;
 
-        let angle_step_count = 100;
-        let angle_step = 2.0 * PI / angle_step_count as f64;
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
 
-        let radius = 100.0;
-        let points_per_corner = 10;
+        let mut radius_scale = self.min_radius_scale;
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
 
         let start = Instant::now();
 
-        let mut sum = 0;
-
-        let min_radius_scaler = 0.1; // to prevent self intersection we will not start from 0
-        let max_radius_scaler = 1.0; 
-        
-        let mut radius_scaler = min_radius_scaler;
-        let radius_step = (max_radius_scaler - min_radius_scaler) / 100.0;
-        
-        while radius_scaler < max_radius_scaler {
+        for _ in 0..self.radius_steps_count {
             // grow star
             let mut start_angle = 0.0;
-            for _ in 0..angle_step_count {
+            for _ in 0..self.angle_steps_count {
                 // rotate star
-                StarBuilder::fill_star_with_hole(radius, radius_scaler, start_angle, points_per_corner, count, &mut shape);
-                sum += E::run(&shape);
+                StarBuilder::fill_star_with_hole(
+                    self.radius,
+                    radius_scale,
+                    start_angle,
+                    self.points_per_corner,
+                    count,
+                    &mut shape,
+                );
+                sum += E::run_shape(&shape);
                 start_angle += angle_step;
             }
-            radius_scaler += radius_step;
+            radius_scale += radius_step;
         }
 
         let duration = start.elapsed();
@@ -88,40 +93,5 @@ impl StarWithHoleTest {
 
         println!("{} - {:.6}", count, time);
         sum
-    }
-}
-
-trait Experimentation {
-    fn run(shape: &Vec<Vec<[f64; 2]>>) -> usize;
-}
-
-struct UncheckedStarWithHoleTest {}
-
-impl Experimentation for UncheckedStarWithHoleTest {
-    #[inline]
-    fn run(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape.unchecked_triangulate().triangle_indices().len()
-    }
-}
-
-struct RawStarWithHoleTest {}
-
-impl Experimentation for RawStarWithHoleTest {
-    #[inline]
-    fn run(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape.triangulate().triangle_indices().len()
-    }
-}
-
-struct DelaunayStarWithHoleTest {}
-
-impl Experimentation for DelaunayStarWithHoleTest {
-    #[inline]
-    fn run(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape
-            .triangulate()
-            .into_delaunay()
-            .triangle_indices()
-            .len()
     }
 }
