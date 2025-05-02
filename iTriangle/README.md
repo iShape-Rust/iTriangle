@@ -41,6 +41,7 @@ A fast, stable, and robust triangulation library for 2D integer geometry — tes
 - **Convex Decomposition** - Convert triangulation into convex polygons.
 - **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
 - **Steiner Points**: Add custom inner points to influence triangulation.
+- **GPU-Friendly Layout**: Triangles and vertices are naturally ordered by X due to the sweep-line algorithm, improving cache locality for rendering.
 
 ## Reliability
 
