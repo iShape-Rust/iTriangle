@@ -37,9 +37,9 @@ delaunay:
 */
 
 
-pub(crate) struct StarTest {}
+pub(crate) struct SimpleStarTest {}
 
-impl StarTest {
+impl SimpleStarTest {
     pub(crate) fn run_unchecked(count: usize) -> usize {
         Self::run::<UncheckedStarTest>(count)
     }
