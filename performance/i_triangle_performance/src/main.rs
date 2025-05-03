@@ -82,6 +82,16 @@ fn star(args: &EnvArgs) {
         println!();
 
         println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+
+        println!("earcutr: ");
+        let mut s3 = 0;
+        for i in 0..8 {
+            let count = 4 << i;
+            s3 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
     } else {
         let count = args.get_usize("count");
 
@@ -138,7 +148,15 @@ fn star_with_hole(args: &EnvArgs) {
         }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+        println!("earcutr: ");
+        let mut s3 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s3 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
     } else {
         let count = args.get_usize("count");
 
@@ -154,7 +172,11 @@ fn star_with_hole(args: &EnvArgs) {
         let s2 = test.run_delaunay(count);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+        println!("earcutr: ");
+        let s3 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
     }
 }
 
@@ -197,7 +219,15 @@ fn rect_with_star_holes(args: &EnvArgs) {
         }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+        println!("earcutr: ");
+        let mut s3 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s3 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
     } else {
         let count = args.get_usize("count");
 
@@ -213,6 +243,10 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let s2 = test.run_delaunay(count);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+        println!("earcutr: ");
+        let s3 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
     }
 }

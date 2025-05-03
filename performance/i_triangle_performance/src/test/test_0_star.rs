@@ -1,5 +1,6 @@
 use crate::util::star_builder::StarBuilder;
 use std::f64::consts::PI;
+use std::hint::black_box;
 use std::time::Instant;
 use crate::test::experiment::{DelaunayExperiment, Experiment, RawExperiment, UncheckedExperiment};
 /*
@@ -32,6 +33,17 @@ delaunay:
 128 - 7.073528
 256 - 18.894593
 512 - 50.478053
+
+earcutr: 
+4 - 0.057268
+8 - 0.127877
+16 - 0.290149
+32 - 0.693053
+64 - 1.699206
+128 - 4.253521
+256 - 11.460828
+512 - 40.623172
+
 */
 
 pub(crate) struct SimpleStarTest {
@@ -82,7 +94,7 @@ impl SimpleStarTest {
                     true,
                     &mut points,
                 );
-                sum += E::run_contour(&points);
+                sum += black_box(E::run_contour(&points));
                 start_angle += angle_step;
             }
             radius_scale += radius_step;
@@ -94,4 +106,51 @@ impl SimpleStarTest {
         println!("{} - {:.6}", count, time);
         sum
     }
+}
+
+// earcutr
+impl SimpleStarTest {
+    pub(crate) fn run_earcutr(&self, count: usize) -> usize {
+        let count_per_star = self.points_per_corner * count;
+        let mut points = Vec::with_capacity(2 * count_per_star);
+        let mut sum = 0;
+
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
+
+        let mut radius_scale = self.min_radius_scale;
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
+
+        let start = Instant::now();
+        for _ in 0..self.radius_steps_count {
+            // grow star
+            let mut start_angle = 0.0;
+            for _ in 0..self.angle_steps_count {
+                // rotate star
+                StarBuilder::fill_star_flat(
+                    self.radius,
+                    radius_scale,
+                    start_angle,
+                    self.points_per_corner,
+                    count,
+                    true,
+                    &mut points,
+                );
+                sum += black_box(Self::ear_cut(&points));
+                start_angle += angle_step;
+            }
+            radius_scale += radius_step;
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64();
+
+        println!("{} - {:.6}", count, time);
+        sum
+    }
+
+    #[inline]
+    fn ear_cut(points: &[f64]) -> usize {
+        earcutr::earcut(points,&[],2).unwrap().len()
+    }    
 }
