@@ -187,11 +187,11 @@ fn rect_with_star_holes(args: &EnvArgs) {
     let test = RectStarHolesTest{
         radius: 100.0,
         angle_steps_count: 5,
-        corners_count: 5,
         points_per_corner: 10,
         radius_steps_count: 5,
         min_radius_scale: 0.0,
         max_radius_scale: 1.0,
+        corners_count: 5,
     };
 
     if complex {
