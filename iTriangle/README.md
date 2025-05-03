@@ -7,6 +7,8 @@
 
 A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
 
+*For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
+
 ## Delaunay
 <p align="center">
  <img src="readme/star_triangle.svg" width="500"/>
