@@ -1,11 +1,11 @@
-use crate::test::experiment::{DelaunayExperiment, Experiment, RawExperiment, UncheckedExperiment};
+use crate::test::experiment::{DelaunayExperiment, Experiment, RawExperiment, UncheckedDelaunayExperiment, UncheckedRawExperiment};
 use crate::util::star_builder::StarBuilder;
 use std::f64::consts::PI;
 use std::hint::black_box;
 use std::time::Instant;
 
 /*
-unchecked:
+unchecked raw:
 4 - 0.003435
 8 - 0.013662
 16 - 0.062749
@@ -13,6 +13,15 @@ unchecked:
 64 - 1.343702
 128 - 5.680361
 256 - 25.201445
+
+unchecked delaunay:
+4 - 0.009057
+8 - 0.030481
+16 - 0.130746
+32 - 0.586956
+64 - 3.520728
+128 - 19.395140
+256 - 182.099675
 
 raw:
 4 - 0.009029
@@ -52,8 +61,12 @@ pub(crate) struct RectStarHolesTest {
 }
 
 impl RectStarHolesTest {
-    pub(crate) fn run_unchecked(&self, count: usize) -> usize {
-        self.run::<UncheckedExperiment>(count)
+    pub(crate) fn run_unchecked_raw(&self, count: usize) -> usize {
+        self.run::<UncheckedRawExperiment>(count)
+    }
+
+    pub(crate) fn run_unchecked_delaunay(&self, count: usize) -> usize {
+        self.run::<UncheckedDelaunayExperiment>(count)
     }
 
     pub(crate) fn run_raw(&self, count: usize) -> usize {

@@ -57,57 +57,71 @@ fn star(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
     if complex {
-        println!("unchecked: ");
+        println!("unchecked raw: ");
         let mut s0 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s0 += test.run_unchecked(count);
+            s0 += test.run_unchecked_raw(count);
         }
         println!();
 
-        println!("raw: ");
+        println!("unchecked delaunay: ");
         let mut s1 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s1 += test.run_raw(count);
+            s1 += test.run_unchecked_delaunay(count);
         }
         println!();
-
-        println!("delaunay: ");
+        
+        println!("raw: ");
         let mut s2 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s2 += test.run_delaunay(count);
+            s2 += test.run_raw(count);
         }
-        println!();
-
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
-
-        println!("earcutr: ");
-        let mut s3 = 0;
-        for i in 0..8 {
-            let count = 4 << i;
-            s3 += test.run_earcutr(count);
-        }
-        println!();
-
-        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
-    } else {
-        let count = args.get_usize("count");
-
-        println!("unchecked: ");
-        let s0 = test.run_unchecked(count);
-        println!();
-
-        println!("raw: ");
-        let s1 = test.run_raw(count);
         println!();
 
         println!("delaunay: ");
-        let s2 = test.run_delaunay(count);
+        let mut s3 = 0;
+        for i in 0..8 {
+            let count = 4 << i;
+            s3 += test.run_delaunay(count);
+        }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}", s0, s1, s2);
+        println!("earcutr: ");
+        let mut s4 = 0;
+        for i in 0..8 {
+            let count = 4 << i;
+            s4 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+    } else {
+        let count = args.get_usize("count");
+
+        println!("unchecked raw: ");
+        let s0 = test.run_unchecked_raw(count);
+        println!();
+
+        println!("unchecked delaunay: ");
+        let s1 = test.run_unchecked_delaunay(count);
+        println!();
+        
+        println!("raw: ");
+        let s2 = test.run_raw(count);
+        println!();
+
+        println!("delaunay: ");
+        let s3 = test.run_delaunay(count);
+        println!();
+
+        println!("earcutr: ");
+        let s4 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     }
 }
 
@@ -124,59 +138,71 @@ fn star_with_hole(args: &EnvArgs) {
     };
 
     if complex {
-        println!("unchecked: ");
+        println!("unchecked raw: ");
         let mut s0 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s0 += test.run_unchecked(count);
+            s0 += test.run_unchecked_raw(count);
         }
         println!();
 
-        println!("raw: ");
+        println!("unchecked delaunay: ");
         let mut s1 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s1 += test.run_raw(count);
+            s1 += test.run_unchecked_delaunay(count);
         }
-        println!();
-
-        println!("delaunay: ");
-        let mut s2 = 0;
-        for i in 0..7 {
-            let count = 4 << i;
-            s2 += test.run_delaunay(count);
-        }
-        println!();
-
-        println!("earcutr: ");
-        let mut s3 = 0;
-        for i in 0..7 {
-            let count = 4 << i;
-            s3 += test.run_earcutr(count);
-        }
-        println!();
-
-        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
-    } else {
-        let count = args.get_usize("count");
-
-        println!("unchecked: ");
-        let s0 = test.run_unchecked(count);
         println!();
 
         println!("raw: ");
-        let s1 = test.run_raw(count);
+        let mut s2 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s2 += test.run_raw(count);
+        }
         println!();
 
         println!("delaunay: ");
-        let s2 = test.run_delaunay(count);
+        let mut s3 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s3 += test.run_delaunay(count);
+        }
         println!();
 
         println!("earcutr: ");
-        let s3 = test.run_earcutr(count);
+        let mut s4 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s4 += test.run_earcutr(count);
+        }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+    } else {
+        let count = args.get_usize("count");
+
+        println!("unchecked raw: ");
+        let s0 = test.run_unchecked_raw(count);
+        println!();
+
+        println!("unchecked delaunay: ");
+        let s1 = test.run_unchecked_delaunay(count);
+        println!();
+
+        println!("raw: ");
+        let s2 = test.run_raw(count);
+        println!();
+
+        println!("delaunay: ");
+        let s3 = test.run_delaunay(count);
+        println!();
+
+        println!("earcutr: ");
+        let s4 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     }
 }
 
@@ -195,58 +221,70 @@ fn rect_with_star_holes(args: &EnvArgs) {
     };
 
     if complex {
-        println!("unchecked: ");
+        println!("unchecked raw: ");
         let mut s0 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s0 += test.run_unchecked(count);
+            s0 += test.run_unchecked_raw(count);
         }
         println!();
 
-        println!("raw: ");
+        println!("unchecked delaunay: ");
         let mut s1 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s1 += test.run_raw(count);
+            s1 += test.run_unchecked_delaunay(count);
         }
-        println!();
-
-        println!("delaunay: ");
-        let mut s2 = 0;
-        for i in 0..7 {
-            let count = 4 << i;
-            s2 += test.run_delaunay(count);
-        }
-        println!();
-
-        println!("earcutr: ");
-        let mut s3 = 0;
-        for i in 0..7 {
-            let count = 4 << i;
-            s3 += test.run_earcutr(count);
-        }
-        println!();
-
-        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
-    } else {
-        let count = args.get_usize("count");
-
-        println!("unchecked: ");
-        let s0 = test.run_unchecked(count);
         println!();
 
         println!("raw: ");
-        let s1 = test.run_raw(count);
+        let mut s2 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s2 += test.run_raw(count);
+        }
         println!();
 
         println!("delaunay: ");
-        let s2 = test.run_delaunay(count);
+        let mut s3 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s3 += test.run_delaunay(count);
+        }
         println!();
 
         println!("earcutr: ");
-        let s3 = test.run_earcutr(count);
+        let mut s4 = 0;
+        for i in 0..7 {
+            let count = 4 << i;
+            s4 += test.run_earcutr(count);
+        }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}", s0, s1, s2, s3);
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+    } else {
+        let count = args.get_usize("count");
+
+        println!("unchecked raw: ");
+        let s0 = test.run_unchecked_raw(count);
+        println!();
+
+        println!("unchecked raw: ");
+        let s1 = test.run_unchecked_delaunay(count);
+        println!();
+
+        println!("raw: ");
+        let s2 = test.run_raw(count);
+        println!();
+
+        println!("delaunay: ");
+        let s3 = test.run_delaunay(count);
+        println!();
+
+        println!("earcutr: ");
+        let s4 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     }
 }
