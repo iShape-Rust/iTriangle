@@ -35,12 +35,19 @@ void star(const EnvArgs& args) {
     if (complex) {
         std::cout << "earcut: " << std::endl;
         size_t s0 = 0;
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 8; ++i) {
             size_t count = 4 << i;
             s0 += test.run_earcut(count);
         }
 
-        std::cout << "s0: " << s0 << std::endl;
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = 0;
+        for (int i = 0; i < 8; ++i) {
+            size_t count = 4 << i;
+            s1 += test.run_triangle(count);
+        }
+
+        std::cout << "s0: " << s0 << " s1: " << s1 << std::endl;
     } else {
         size_t count = args.get_usize("count");
 
@@ -48,7 +55,11 @@ void star(const EnvArgs& args) {
         size_t s0 = test.run_earcut(count);
         std::cout << std::endl;
 
-        std::cout << "s0: " << s0 << std::endl;
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = test.run_earcut(count);
+        std::cout << std::endl;
+
+        std::cout << "s0: " << s0 << "s1: " << s1 << std::endl;
     }
 }
 
@@ -72,7 +83,14 @@ void star_with_hole(const EnvArgs& args) {
             s0 += test.run_earcut(count);
         }
 
-        std::cout << "s0: " << s0 << std::endl;
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = 0;
+        for (int i = 0; i < 7; ++i) {
+            size_t count = 4 << i;
+            s1 += test.run_triangle(count);
+        }
+
+        std::cout << "s0: " << s0 << "s1: " << s1 << std::endl;
     } else {
         size_t count = args.get_usize("count");
 
@@ -81,6 +99,12 @@ void star_with_hole(const EnvArgs& args) {
         std::cout << std::endl;
 
         std::cout << "s0: " << s0 << std::endl;
+
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = test.run_triangle(count);
+        std::cout << std::endl;
+
+        std::cout << "s0: " << s0 << "s1: " << s1 << std::endl;
     }
 }
 
@@ -100,12 +124,19 @@ void rect_with_star_holes(const EnvArgs& args) {
     if (complex) {
         std::cout << "earcut: " << std::endl;
         size_t s0 = 0;
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < 4; ++i) {
             size_t count = 4 << i;
             s0 += test.run_earcut(count);
         }
 
-        std::cout << "s0: " << s0 << std::endl;
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = 0;
+        for (int i = 0; i < 7; ++i) {
+            size_t count = 4 << i;
+            s1 += test.run_triangle(count);
+        }
+
+        std::cout << "s0: " << s0 << "s1: " << s1 << std::endl;
     } else {
         size_t count = args.get_usize("count");
 
@@ -113,6 +144,10 @@ void rect_with_star_holes(const EnvArgs& args) {
         size_t s0 = test.run_earcut(count);
         std::cout << std::endl;
 
-        std::cout << "s0: " << s0 << std::endl;
+        std::cout << "triangle: " << std::endl;
+        size_t s1 = test.run_triangle(count);
+        std::cout << std::endl;
+
+        std::cout << "s0: " << s0 << "s1: " << s1 << std::endl;
     }
 }
