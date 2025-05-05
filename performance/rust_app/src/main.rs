@@ -41,7 +41,7 @@ fn debug_run(_args: &EnvArgs) {
         radius_steps_count: 100,
         min_radius_scale: 0.0,
         max_radius_scale: 1.0,
-    }.run_raw(4);
+    }.run_raw(32);
 }
 
 fn star(args: &EnvArgs) {

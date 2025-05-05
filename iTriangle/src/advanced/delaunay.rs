@@ -40,7 +40,7 @@ impl RawIntTriangulation {
 
 impl IntDelaunay {
     pub(crate) fn build(&mut self) {
-        let mut unchecked = HashSet::with_capacity(self.triangles.len());
+        let mut unchecked = HashSet::with_capacity(self.triangles.len() / 4);
 
         for abc_index in 0..self.triangles.len() {
             self.fix_triangle(abc_index, &mut unchecked);

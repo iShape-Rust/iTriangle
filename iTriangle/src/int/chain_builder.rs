@@ -1,145 +1,9 @@
+use crate::int::chain_builder_bin::ChainVerticesBinBuilder;
+use crate::int::chain_builder_direct::ChainVerticesDirectBuilder;
+use crate::int::chain_vertex::ChainVertex;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
-use crate::geom::point::IndexPoint;
-
-#[derive(Debug, Clone, Copy)]
-pub(super) enum VertexType {
-    Start,
-    End,
-    Merge,
-    Split,
-    Join,
-    Steiner,
-}
-
-#[derive(Debug, Clone)]
-pub(super) struct ChainVertex {
-    pub(super) index: usize,
-    pub(super) this: IntPoint,
-    pub(super) next: IntPoint,
-    pub(super) prev: IntPoint,
-}
-
-
-impl ChainVertex {
-    #[inline]
-    pub(super) fn new(this: IntPoint, next: IntPoint, prev: IntPoint) -> Self {
-        Self {
-            index: 0,
-            this,
-            next,
-            prev,
-        }
-    }
-
-    #[inline]
-    pub(super) fn implant(this: IntPoint) -> Self {
-        Self {
-            index: 0,
-            this,
-            next: IntPoint::EMPTY,
-            prev: IntPoint::EMPTY,
-        }
-    }
-
-    #[inline]
-    pub(super) fn get_type(&self) -> VertexType {
-        let clock_wise = Triangle::is_clockwise_point(self.prev, self.this, self.next);
-        if self.prev == IntPoint::EMPTY && self.next == IntPoint::EMPTY {
-            VertexType::Steiner
-        } else if self.prev < self.this && self.next < self.this {
-            if clock_wise {
-                VertexType::Merge
-            } else {
-                VertexType::End
-            }
-        } else if self.this < self.next && self.this < self.prev {
-            if clock_wise {
-                VertexType::Split
-            } else {
-                VertexType::Start
-            }
-        } else {
-            VertexType::Join
-        }
-    }
-
-    #[inline]
-    pub(super) fn index_point(&self) -> IndexPoint {
-        IndexPoint::new(self.index, self.this)
-    }
-}
-
-struct ChainVerticesBuilder {
-    vertices: Vec<ChainVertex>,
-}
-
-impl ChainVerticesBuilder {
-    #[inline]
-    fn with_capacity(capacity: usize) -> Self {
-        Self {
-            vertices: Vec::with_capacity(capacity),
-        }
-    }
-
-    #[inline]
-    fn add_path(&mut self, path: &[IntPoint]) {
-        let n = path.len();
-        if n < 3 {
-            return;
-        }
-
-        let mut prev = path[n - 2];
-        let mut this = path[n - 1];
-
-        for &next in path.iter() {
-            self.vertices.push(ChainVertex::new(this, next, prev));
-            prev = this;
-            this = next;
-        }
-    }
-
-    #[inline]
-    fn add_steiner_points(&mut self, points: &[IntPoint]) {
-        for &this in points {
-            self.vertices.push(ChainVertex::implant(this));
-        }
-    }
-
-    fn into_chain_vertices(self) -> Vec<ChainVertex> {
-        let mut vertices = self.vertices;
-        vertices.sort_unstable_by(|a, b| a.this.cmp(&b.this));
-
-        debug_assert_eq!(vertices[0].index, 0); // must be 0 as default value
-        let mut index = 0;
-        let mut p = vertices[0].this;
-        let mut i = 0;
-        while i < vertices.len() {
-            let mut j = i + 1;
-            while j < vertices.len() {
-                let vj = &mut vertices[j];
-                if vj.this != p {
-                    index += 1;
-                    vj.index = index;
-                    p = vj.this;
-                    break;
-                }
-
-                vj.index = index;
-                j += 1;
-            }
-
-            if i + 1 < j {
-                sort_in_clockwise_order(&mut vertices[i..j]);
-            }
-
-            i = j;
-        }
-
-        vertices
-    }
-}
 
 pub(super) trait ToChainVertices {
     fn to_chain_vertices(&self) -> Vec<ChainVertex>;
@@ -148,64 +12,111 @@ pub(super) trait ToChainVertices {
 
 impl ToChainVertices for IntShape {
     fn to_chain_vertices(&self) -> Vec<ChainVertex> {
-        let capacity = self.iter().fold(0, |s, path| s + path.len());
-        let mut builder = ChainVerticesBuilder::with_capacity(capacity);
+        if let Some(mut builder) = ChainVerticesBinBuilder::with_shape(self, 0) {
+            for contour in self.iter() {
+                builder.reserve_space_for_contour(contour);
+            }
 
-        for path in self.iter() {
-            builder.add_path(path);
+            builder.prepare_space();
+
+            let mut vertices = vec![ChainVertex::EMPTY; builder.count];
+
+            for contour in self.iter() {
+                builder.add_contour_to_vertices(contour, &mut vertices);
+            }
+
+            builder.sort_chain_vertices(&mut vertices);
+
+            vertices
+        } else {
+            let capacity = self.iter().fold(0, |s, path| s + path.len());
+            let mut builder = ChainVerticesDirectBuilder::with_capacity(capacity);
+
+            for path in self.iter() {
+                builder.add_path(path);
+            }
+
+            builder.into_chain_vertices()
         }
-
-        builder.into_chain_vertices()
     }
 
     fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex> {
-        let capacity = self.iter().fold(0, |s, path| s + path.len()) + points.len();
-        let mut builder = ChainVerticesBuilder::with_capacity(capacity);
+        if let Some(mut builder) = ChainVerticesBinBuilder::with_shape(self, points.len()) {
+            for contour in self.iter() {
+                builder.reserve_space_for_contour(contour);
+            }
 
-        for path in self.iter() {
-            builder.add_path(path);
+            builder.reserve_space_for_points(points);
+
+            builder.prepare_space();
+
+            let mut vertices = vec![ChainVertex::EMPTY; builder.count];
+
+            for contour in self.iter() {
+                builder.add_contour_to_vertices(contour, &mut vertices);
+            }
+
+            builder.add_steiner_points_to_vertices(points, &mut vertices);
+
+            builder.sort_chain_vertices(&mut vertices);
+
+            vertices
+        } else {
+            let capacity = self.iter().fold(0, |s, path| s + path.len()) + points.len();
+            let mut builder = ChainVerticesDirectBuilder::with_capacity(capacity);
+
+            for path in self.iter() {
+                builder.add_path(path);
+            }
+
+            builder.add_steiner_points(points);
+
+            builder.into_chain_vertices()
         }
-
-        builder.add_steiner_points(points);
-
-        builder.into_chain_vertices()
     }
 }
 impl ToChainVertices for IntContour {
     fn to_chain_vertices(&self) -> Vec<ChainVertex> {
-        let mut builder = ChainVerticesBuilder::with_capacity(self.len());
-        builder.add_path(self);
-        builder.into_chain_vertices()
+        if let Some(mut builder) = ChainVerticesBinBuilder::with_contour(self, 0) {
+            builder.reserve_space_for_contour(self);
+            builder.prepare_space();
+
+            let mut vertices = vec![ChainVertex::EMPTY; builder.count];
+
+            builder.add_contour_to_vertices(self, &mut vertices);
+
+            builder.sort_chain_vertices(&mut vertices);
+
+            vertices
+        } else {
+            let mut builder = ChainVerticesDirectBuilder::with_capacity(self.len());
+            builder.add_path(self);
+            builder.into_chain_vertices()
+        }
     }
 
     fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex> {
-        let mut builder = ChainVerticesBuilder::with_capacity(self.len() + points.len());
-        builder.add_path(self);
-        builder.add_steiner_points(points);
-        builder.into_chain_vertices()
-    }
-}
+        if let Some(mut builder) = ChainVerticesBinBuilder::with_contour(self, points.len()) {
+            builder.reserve_space_for_contour(self);
+            builder.reserve_space_for_points(points);
+            builder.prepare_space();
 
-pub(super) trait IntoPoints {
-    fn into_points(self) -> Vec<IntPoint>;
-}
+            let mut vertices = vec![ChainVertex::EMPTY; builder.count];
 
-impl IntoPoints for Vec<ChainVertex> {
+            builder.add_contour_to_vertices(self, &mut vertices);
+            builder.add_steiner_points_to_vertices(points, &mut vertices);
 
-    #[inline]
-    fn into_points(self) -> Vec<IntPoint> {
-        let mut points = Vec::with_capacity(self.len());
-        let mut index = usize::MAX;
-        for v in self.iter() {
-            if v.index != index {
-                index = v.index;
-                points.push(v.this);
-            }
+            builder.sort_chain_vertices(&mut vertices);
+
+            vertices
+        } else {
+            let mut builder = ChainVerticesDirectBuilder::with_capacity(self.len() + points.len());
+            builder.add_path(self);
+            builder.add_steiner_points(points);
+            builder.into_chain_vertices()
         }
-        points
     }
 }
-
 
 #[derive(Debug, PartialEq)]
 enum DirectionType {
@@ -218,7 +129,7 @@ struct Direction {
     kind: DirectionType,
 }
 
-fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
+pub(super) fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
     let mut dirs = Vec::with_capacity(2 * vertices.len());
     for v in vertices.iter() {
         dirs.push(Direction {
@@ -297,7 +208,9 @@ fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
 
 #[cfg(test)]
 mod tests {
-    use crate::int::vertex::{sort_in_clockwise_order, ChainVertex, ToChainVertices};
+
+    use crate::int::chain_builder::{sort_in_clockwise_order, ToChainVertices};
+    use crate::int::chain_vertex::ChainVertex;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::shape::IntShape;
 
@@ -502,5 +415,17 @@ mod tests {
         assert_eq!(vv1[0].prev, IntPoint::new(5, -5));
         assert_eq!(vv1[1].next, IntPoint::new(4, 4));
         assert_eq!(vv1[1].prev, IntPoint::new(2, 0));
+    }
+
+    #[test]
+    fn test_8() {
+        let shape: IntShape = vec![vec![
+            IntPoint::new(3, 1),
+            IntPoint::new(-2, 2),
+            IntPoint::new(0, -4),
+        ]];
+        let vertices = shape.to_chain_vertices();
+
+        assert_eq!(vertices.len(), 3);
     }
 }

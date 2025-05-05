@@ -2,12 +2,13 @@ use crate::geom::point::IndexPoint;
 use crate::geom::triangle::IntTriangle;
 use crate::int::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::int::v_segment::VSegment;
-use crate::int::vertex::{ChainVertex, VertexType};
+use crate::int::chain_vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
 use std::mem::swap;
+use i_tree::set::list::SetList;
 
 #[derive(Copy, Clone)]
 struct PhantomHandler {
@@ -94,19 +95,30 @@ impl TriangleMeshBuilder {
 
     #[inline]
     pub(super) fn build(&mut self, vertices: &[ChainVertex]) {
-        let mut tree: SetTree<VSegment, Section> = SetTree::new(8);
+        let n = vertices.len();
+        let capacity = if n < 128 { 4 } else { n.ilog2() as usize };
+        if capacity <= 12 {
+            self.build_with_store(SetList::new(capacity), vertices)
+        } else {
+            self.build_with_store(SetTree::new(capacity), vertices)
+        }
+    }
 
+
+    #[inline]
+    pub(super) fn build_with_store<S: SetCollection<VSegment, Section>>(&mut self, mut store: S, vertices: &[ChainVertex]) {
         for v in vertices.iter() {
             match v.get_type() {
-                VertexType::Start => self.start(v, &mut tree),
-                VertexType::End => self.end(v, &mut tree),
-                VertexType::Merge => self.merge(v, &mut tree),
-                VertexType::Split => self.split(v, &mut tree),
-                VertexType::Join => self.join(v, &mut tree),
-                VertexType::Steiner => self.steiner(v, &mut tree),
+                VertexType::Start => self.start(v, &mut store),
+                VertexType::End => self.end(v, &mut store),
+                VertexType::Merge => self.merge(v, &mut store),
+                VertexType::Split => self.split(v, &mut store),
+                VertexType::Join => self.join(v, &mut store),
+                VertexType::Steiner => self.steiner(v, &mut store),
             }
         }
     }
+
 }
 
 impl TriangleMeshBuilder {
@@ -162,7 +174,7 @@ impl TriangleMeshBuilder {
         new_index
     }
 
-    fn join(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn join<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
         if section.sort.b == v.this {
@@ -172,7 +184,7 @@ impl TriangleMeshBuilder {
         }
     }
 
-    fn start(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn start<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let section = Section {
             sort: VSegment {
                 a: v.this,
@@ -183,21 +195,21 @@ impl TriangleMeshBuilder {
         tree.insert(section);
     }
 
-    fn end(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn end<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
         section.add_as_last(v, self);
         tree.delete_by_index(index);
     }
 
-    fn split(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn split<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
         let new_section = section.add_to_middle(v, self);
         tree.insert(new_section);
     }
 
-    fn merge(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn merge<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let prev_index = tree.find_section(v);
         let next_index = tree.index_before(prev_index);
         let next = tree.value_by_index_mut(next_index);
@@ -224,7 +236,7 @@ impl TriangleMeshBuilder {
         tree.delete_by_index(next_index);
     }
 
-    fn steiner(&mut self, v: &ChainVertex, tree: &mut SetTree<VSegment, Section>) {
+    fn steiner<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
         section.add_steiner(v.index_point(), self);
@@ -737,7 +749,27 @@ trait FindSection {
     fn find_section(&self, v: &ChainVertex) -> u32;
 }
 
-impl FindSection for SetTree<VSegment, Section> {
+// impl FindSection for SetTree<VSegment, Section> {
+//     #[inline]
+//     fn find_section(&self, v: &ChainVertex) -> u32 {
+//         self.first_index_less_by(|s| {
+//             let point_search = s.is_under_point_order(v.this);
+//             match point_search {
+//                 Ordering::Equal => {
+//                     if v.prev == s.a {
+//                         Ordering::Equal
+//                     } else {
+//                         Triangle::clock_order_point(s.a, v.next, s.b)
+//                     }
+//                 }
+//                 _ => point_search,
+//             }
+//         })
+//     }
+// }
+
+
+impl<C> FindSection for C where C: SetCollection<VSegment, Section> {
     #[inline]
     fn find_section(&self, v: &ChainVertex) -> u32 {
         self.first_index_less_by(|s| {
@@ -759,8 +791,7 @@ impl FindSection for SetTree<VSegment, Section> {
 #[cfg(test)]
 mod tests {
     use crate::int::binder::SteinerInference;
-    use crate::int::builder::TriangleMeshBuilder;
-    use crate::int::vertex::ToChainVertices;
+    use crate::int::mesh_builder::TriangleMeshBuilder;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
@@ -770,6 +801,7 @@ mod tests {
     use i_overlay::i_shape::int::shape::IntShape;
     use rand::Rng;
     use std::collections::HashSet;
+    use crate::int::chain_builder::ToChainVertices;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
