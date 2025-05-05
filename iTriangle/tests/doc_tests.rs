@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use i_triangle::float::triangulatable::Triangulatable;
+    use i_triangle::float::triangulation::Triangulation;
 
     #[test]
     fn test_0() {
@@ -39,12 +40,12 @@ mod tests {
             ],
         ];
 
-        let triangulation = shape.triangulate().to_triangulation();
+        let triangulation = shape.triangulate().to_triangulation::<u16>();
 
         println!("points: {:?}", triangulation.points);
         println!("indices: {:?}", triangulation.indices);
 
-        let delaunay_triangulation = shape.triangulate()
+        let delaunay_triangulation: Triangulation<[f64; 2], u16> = shape.triangulate()
             .into_delaunay()
             .to_triangulation();
 
@@ -57,7 +58,7 @@ mod tests {
 
         println!("convex polygons: {:?}", convex_polygons);
 
-        let tessellation = shape.triangulate()
+        let tessellation: Triangulation<[f64; 2], u16> = shape.triangulate()
             .into_delaunay()
             .refine_with_circumcenters_by_obtuse_angle(0.0)
             .to_triangulation();

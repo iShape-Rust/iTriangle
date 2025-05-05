@@ -3,7 +3,7 @@ use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
 use serde::Serialize;
-use crate::int::triangulation::RawIntTriangulation;
+use crate::int::triangulation::{IndexType, RawIntTriangulation};
 
 /// A triangulation result based on integer computation, with float mapping.
 ///
@@ -21,10 +21,10 @@ pub struct RawTriangulation<P: FloatPointCompatible<T>, T: FloatNumber> {
 /// A flat triangulation result consisting of float points and triangle indices.
 ///
 /// Useful for rendering, exporting, or post-processing the mesh in float space.
-#[derive(Debug, Serialize)]
-pub struct Triangulation<P> {
+#[derive(Debug, Clone, Serialize)]
+pub struct Triangulation<P, I> {
     pub points: Vec<P>,
-    pub indices: Vec<usize>,
+    pub indices: Vec<I>,
 }
 
 impl<P: FloatPointCompatible<T>, T: FloatNumber> RawTriangulation<P, T> {
@@ -38,13 +38,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> RawTriangulation<P, T> {
 
     /// Returns the triangle indices for the mesh, ordered counter-clockwise.
     #[inline]
-    pub fn triangle_indices(&self) -> Vec<usize> {
+    pub fn triangle_indices<I: IndexType>(&self) -> Vec<I> {
         self.raw.triangle_indices()
     }
 
     /// Converts this raw triangulation into a flat [`Triangulation`] (points + indices).
     #[inline]
-    pub fn to_triangulation(&self) -> Triangulation<P> {
+    pub fn to_triangulation<I: IndexType>(&self) -> Triangulation<P, I> {
         Triangulation {
             indices: self.triangle_indices(),
             points: self.points(),

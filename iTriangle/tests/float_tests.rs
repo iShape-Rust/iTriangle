@@ -16,7 +16,7 @@ mod tests {
             ].to_vec(),
         ].to_vec();
 
-        let triangulation = shape.triangulate().to_triangulation();
+        let triangulation = shape.triangulate().to_triangulation::<u8>();
 
         assert_eq!(triangulation.points.len(), 6);
         assert_eq!(triangulation.indices.len(), 12);

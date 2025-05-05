@@ -4,6 +4,7 @@ use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
 use crate::float::triangulation::{RawTriangulation, Triangulation};
+use crate::int::triangulation::IndexType;
 
 /// A Delaunay-refined triangle mesh with float-mapped geometry.
 ///
@@ -33,13 +34,13 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> Delaunay<P, T> {
 
     /// Returns indices forming counter-clockwise triangles.
     #[inline]
-    pub fn triangle_indices(&self) -> Vec<usize> {
+    pub fn triangle_indices<I: IndexType>(&self) -> Vec<I> {
         self.delaunay.triangle_indices()
     }
 
     /// Converts this refined mesh into a flat float [`Triangulation`].
     #[inline]
-    pub fn to_triangulation(&self) -> Triangulation<P> {
+    pub fn to_triangulation<I: IndexType>(&self) -> Triangulation<P, I> {
         Triangulation {
             indices: self.triangle_indices(),
             points: self.points(),
