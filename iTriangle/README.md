@@ -74,6 +74,9 @@ After that, represent your polygon as an array of vertices. Here's an example of
 </p>
 
 ```rust
+use i_triangle::float::triangulatable::Triangulatable;
+use i_triangle::float::triangulation::Triangulation;
+
 let shape = vec![
     vec![
         // body
@@ -108,37 +111,35 @@ let shape = vec![
         [-2.0, -2.0], // 7
     ],
 ];
-
-let triangulation = shape.triangulate().to_triangulation();
+let triangulation = shape.triangulate().to_triangulation::<u16>();
 
 println!("points: {:?}", triangulation.points);
 println!("indices: {:?}", triangulation.indices);
 
-let delaunay_triangulation = shape.triangulate()
-    .into_delaunay()
-    .to_triangulation();
+let delaunay_triangulation: Triangulation<[f64; 2], u16> =
+shape.triangulate().into_delaunay().to_triangulation();
 
 println!("points: {:?}", delaunay_triangulation.points);
 println!("indices: {:?}", delaunay_triangulation.indices);
 
-let convex_polygons = shape.triangulate()
-    .into_delaunay()
-    .to_convex_polygons();
+let convex_polygons = shape.triangulate().into_delaunay().to_convex_polygons();
 
 println!("convex polygons: {:?}", convex_polygons);
 
-let tessellation = shape.triangulate()
-    .into_delaunay()
-    .refine_with_circumcenters_by_obtuse_angle(0.0)
-    .to_triangulation();
+let tessellation: Triangulation<[f64; 2], u16> = shape
+.triangulate()
+.into_delaunay()
+.refine_with_circumcenters_by_obtuse_angle(0.0)
+.to_triangulation();
 
 println!("points: {:?}", tessellation.points);
 println!("indices: {:?}", tessellation.indices);
 
-let centroids = shape.triangulate()
-    .into_delaunay()
-    .refine_with_circumcenters_by_obtuse_angle(0.0)
-    .to_centroid_net(0.0);
+let centroids = shape
+.triangulate()
+.into_delaunay()
+.refine_with_circumcenters_by_obtuse_angle(0.0)
+.to_centroid_net(0.0);
 
 println!("centroids: {:?}", centroids);
 ```
