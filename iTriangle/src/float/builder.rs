@@ -13,7 +13,7 @@ impl<P, I: IndexType> TriangulationBuilder<P, I> {
     /// based on the current number of points in the builder.
     pub fn append(&mut self, triangulation: Triangulation<P, I>) -> &mut Self {
         let points_count = self.points.len() + triangulation.points.len();
-        if points_count < I::MAX {
+        if points_count > I::MAX {
             panic!(
                 "Index type `{}` cannot hold {} points",
                 std::any::type_name::<I>(),
