@@ -5,16 +5,16 @@ use crate::app::triangle::workspace::WorkspaceState;
 use crate::data::triangle::TriangleResource;
 use crate::geom::camera::Camera;
 use crate::path_editor::widget::PathEditorUpdateEvent;
-use i_mesh::i_triangle::i_overlay::core::fill_rule::FillRule;
-use i_mesh::i_triangle::i_overlay::core::overlay::IntOverlayOptions;
-use i_mesh::i_triangle::i_overlay::core::simplify::Simplify;
-use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
-use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
 use iced::widget::scrollable;
 use iced::widget::{Button, Column, Container, Row, Space, Text};
 use iced::{Alignment, Length, Padding, Size, Vector};
 use std::collections::HashMap;
-use i_mesh::i_triangle::int::triangulatable::IntTriangulatable;
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_triangle::i_overlay::core::overlay::IntOverlayOptions;
+use i_triangle::i_overlay::core::simplify::Simplify;
+use i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_triangle::int::triangulatable::IntTriangulatable;
 
 pub(crate) struct TriangleState {
     pub(crate) test: usize,

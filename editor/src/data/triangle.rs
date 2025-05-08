@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_triangle::i_overlay::i_shape::int::path::IntPath;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]

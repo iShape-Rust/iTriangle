@@ -1,6 +1,6 @@
-use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
-use i_mesh::i_triangle::i_overlay::i_shape::int::shape::IntContour;
-use i_mesh::i_triangle::int::triangulation::IntTriangulation;
+use i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_triangle::i_overlay::i_shape::int::shape::IntContour;
+use i_triangle::int::triangulation::IntTriangulation;
 use crate::geom::camera::Camera;
 use crate::sheet::widget::SheetWidget;
 use crate::app::triangle::content::TriangleMessage;
@@ -17,7 +17,7 @@ use crate::path_editor::widget::{PathEditorUpdateEvent, PathEditorWidget};
 pub(crate) struct WorkspaceState {
     pub(crate) camera: Camera,
     pub(crate) paths: Vec<IntPath>,
-    pub(crate) triangulations: Vec<IntTriangulation>,
+    pub(crate) triangulations: Vec<IntTriangulation<usize>>,
     pub(crate) polygons: Vec<IntContour>,
 }
 

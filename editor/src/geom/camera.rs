@@ -1,5 +1,5 @@
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_mesh::i_triangle::i_overlay::i_float::int::rect::IntRect;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_float::int::rect::IntRect;
 use iced::{Size, Vector};
 
 #[derive(Debug, Clone, Copy)]

@@ -1,4 +1,4 @@
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use iced::{Point, Vector};
 
 pub(crate) trait VectorExt {

@@ -1,4 +1,4 @@
-use i_mesh::i_triangle::int::triangulation::IntTriangulation;
+use i_triangle::int::triangulation::IntTriangulation;
 use crate::compat::convert::Convert;
 use crate::geom::camera::Camera;
 use crate::mesh::path_builder::PathBuilder;
@@ -8,14 +8,14 @@ use iced::{Element, Length, Rectangle, Renderer, Size, Theme, Vector, mouse};
 use crate::mesh_viewer::color::MeshViewerColorSchema;
 
 pub(crate) struct MeshViewerWidget<'a> {
-    pub(super) triangulation: &'a IntTriangulation,
+    pub(super) triangulation: &'a IntTriangulation<usize>,
     pub(super) camera: Camera,
     pub(super) schema: MeshViewerColorSchema,
 }
 
 impl<'a> MeshViewerWidget<'a> {
     pub(crate) fn new(
-        triangulation: &'a IntTriangulation,
+        triangulation: &'a IntTriangulation<usize>,
         camera: Camera,
     ) -> Self {
         Self {

@@ -1,5 +1,5 @@
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_mesh::i_triangle::i_overlay::i_shape::int::path::IntPath;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_shape::int::path::IntPath;
 use crate::compat::convert::Convert;
 use crate::geom::camera::Camera;
 use crate::mesh::path_builder::PathBuilder;

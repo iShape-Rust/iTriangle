@@ -1,8 +1,8 @@
-use i_mesh::i_triangle::float::builder::TriangulationBuilder;
-use i_mesh::i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
+use i_triangle::float::builder::TriangulationBuilder;
+use i_triangle::i_overlay::i_float::float::point::FloatPoint;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use iced::{Color, Rectangle, Transformation};
 use iced::advanced::graphics::color::pack;
 use iced::advanced::graphics::Mesh;
@@ -13,7 +13,7 @@ use crate::geom::camera::Camera;
 pub(crate) struct PathBuilder {
     camera: Camera,
     offset: FloatPoint<f32>,
-    builder: TriangulationBuilder<FloatPoint<f32>>,
+    builder: TriangulationBuilder<FloatPoint<f32>, usize>,
 }
 
 impl PathBuilder {

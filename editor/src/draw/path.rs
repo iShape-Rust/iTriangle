@@ -1,10 +1,10 @@
-use i_mesh::i_triangle::float::builder::TriangulationBuilder;
-use i_mesh::i_triangle::float::triangulation::Triangulation;
-use i_mesh::i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
-use i_mesh::i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
+use i_triangle::float::builder::TriangulationBuilder;
+use i_triangle::float::triangulation::Triangulation;
+use i_triangle::i_overlay::i_float::float::point::FloatPoint;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_shape::int::path::{IntPath, IntPaths};
 use iced::advanced::layout::{self, Layout};
 use iced::advanced::{Clipboard, renderer, Shell};
 use iced::advanced::widget::{Tree, Widget};
@@ -53,7 +53,7 @@ impl PathWidget {
         Self::stroke_mesh_for_triangulation(triangulation, offset, color)
     }
 
-    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
+    fn stroke_mesh_for_triangulation(triangulation: Triangulation<FloatPoint<f32>, usize>, offset: Vector<f32>, color: Color) -> Option<Mesh> {
         if triangulation.indices.is_empty() {
             return None;
         }
@@ -87,7 +87,7 @@ impl PathWidget {
         camera.int_world_to_view(IntPoint::new(min_x, max_y))
     }
 
-    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
+    fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>, usize>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
         let screen_path: Vec<_> = path.iter().map(|&p| {
             let v = camera.int_world_to_view(p);

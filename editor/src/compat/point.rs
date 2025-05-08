@@ -1,5 +1,5 @@
-use i_mesh::i_triangle::i_overlay::i_float::float::point::FloatPoint;
-use i_mesh::i_triangle::i_overlay::i_float::int::point::IntPoint;
+use i_triangle::i_overlay::i_float::float::point::FloatPoint;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use iced::Vector;
 use crate::compat::convert::Convert;
 
