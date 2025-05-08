@@ -5,7 +5,7 @@
 ![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
 [![docs.rs docs](https://docs.rs/i_triangle/badge.svg)](https://docs.rs/i_triangle)
 
-A fast, stable, and robust triangulation library for 2D integer geometry — tested on over **10⁹ randomized inputs**.
+A fast, stable, and robust 2d triangulation library for rust — tested on over **10⁹ randomized inputs**.
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
 
