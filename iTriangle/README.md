@@ -61,9 +61,7 @@ i_triangle = "^0.30.0"
 
 After that, represent your polygon as an array of vertices. Here's an example of a cheese polygon:
 
-<p align="center">
- <img src="readme/cheese_example.svg" width="600"/>
-</p>
+<img src="readme/cheese_example.svg" width="500"/>
 
 ```rust
 use i_triangle::float::triangulatable::Triangulatable;
