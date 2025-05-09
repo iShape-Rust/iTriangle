@@ -9,30 +9,22 @@ A fast, stable, and robust 2d triangulation library for rust — tested on over 
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
 
+<img src="readme/triangulation_process.gif" width="512"/>
+
 ## Delaunay
-<p align="center">
- <img src="readme/star_triangle.svg" width="500"/>
-</p>
+<img src="readme/star_triangle.svg" width="250"/>
 
 ## Convex polygons
-<p align="center">
- <img src="readme/star_polygon.svg" width="500"/>
-</p>
+<img src="readme/star_polygon.svg" width="250"/>
 
 ## Steiner points
-<p align="center">
- <img src="readme/eagle_triangles_extra_points.svg" width="500"/>
-</p>
+<img src="readme/eagle_triangles_extra_points.svg" width="250"/>
 
 ## Tessellation
-<p align="center">
- <img src="readme/eagle_tessellation.svg" width="500"/>
-</p>
+<img src="readme/eagle_tessellation.svg" width="250"/>
 
 ## Centroid net
-<p align="center">
- <img src="readme/eagle_centroid.svg" width="500"/>
-</p>
+<img src="readme/eagle_centroid.svg" width="250"/>
 
 ## Features
 
