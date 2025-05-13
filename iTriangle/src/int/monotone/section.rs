@@ -1,6 +1,6 @@
-use i_tree::set::sort::KeyValue;
 use crate::geom::point::IndexPoint;
 use crate::int::monotone::v_segment::VSegment;
+use i_tree::set::sort::KeyValue;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EdgeType {
@@ -17,7 +17,7 @@ pub(super) struct TriangleEdge {
 #[derive(Debug, Clone)]
 pub(super) enum Content {
     Point(IndexPoint),
-    Edges(Vec<TriangleEdge>)
+    Edges(Vec<TriangleEdge>),
 }
 
 #[derive(Debug, Clone)]
@@ -43,16 +43,44 @@ impl KeyValue<VSegment> for Section {
     }
 }
 
+impl TriangleEdge {
+    #[inline]
+    pub(super) fn border(a: IndexPoint, b: IndexPoint) -> Self {
+        Self {
+            a,
+            b,
+            kind: EdgeType::Regular(usize::MAX),
+        }
+    }
+
+    #[inline]
+    pub(super) fn phantom(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
+        Self {
+            a,
+            b,
+            kind: EdgeType::Phantom(index),
+        }
+    }
+
+    #[inline]
+    pub(super) fn regular(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
+        Self {
+            a,
+            b,
+            kind: EdgeType::Regular(index),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
+    use crate::geom::point::IndexPoint;
     use crate::int::monotone::section::{Content, Section, VSegment};
     use i_overlay::i_float::int::point::IntPoint;
-    use i_tree::EMPTY_REF;
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;
-    use crate::geom::point::IndexPoint;
+    use i_tree::EMPTY_REF;
+    use std::cmp::Ordering;
 
     impl Section {
         fn with_sort(sort: VSegment) -> Section {
@@ -65,7 +93,10 @@ mod tests {
 
     #[test]
     fn test_0() {
-        let vs = VSegment { a: IntPoint::new(0, 10), b: IntPoint::new(10, 10 )};
+        let vs = VSegment {
+            a: IntPoint::new(0, 10),
+            b: IntPoint::new(10, 10),
+        };
 
         let ord0 = vs.is_under_point_order(IntPoint::new(0, 20));
         let ord1 = vs.is_under_point_order(IntPoint::new(5, 20));
@@ -94,10 +125,22 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let vs0 = VSegment { a: IntPoint::new(0, 9), b: IntPoint::new(10, 9 )};
-        let vs1 = VSegment { a: IntPoint::new(0, 6), b: IntPoint::new(10, 6 )};
-        let vs2 = VSegment { a: IntPoint::new(0, 3), b: IntPoint::new(10, 3 )};
-        let vs3 = VSegment { a: IntPoint::new(0, 1), b: IntPoint::new(10, 1 )};
+        let vs0 = VSegment {
+            a: IntPoint::new(0, 9),
+            b: IntPoint::new(10, 9),
+        };
+        let vs1 = VSegment {
+            a: IntPoint::new(0, 6),
+            b: IntPoint::new(10, 6),
+        };
+        let vs2 = VSegment {
+            a: IntPoint::new(0, 3),
+            b: IntPoint::new(10, 3),
+        };
+        let vs3 = VSegment {
+            a: IntPoint::new(0, 1),
+            b: IntPoint::new(10, 1),
+        };
 
         let mut sections = SetTree::new(8);
         sections.insert(Section::with_sort(vs0));

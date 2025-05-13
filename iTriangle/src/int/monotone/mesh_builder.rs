@@ -1,14 +1,14 @@
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::IntTriangle;
+use crate::int::monotone::chain_vertex::{ChainVertex, VertexType};
 use crate::int::monotone::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::int::monotone::v_segment::VSegment;
-use crate::int::monotone::chain_vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
+use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
 use std::mem::swap;
-use i_tree::set::list::SetList;
 
 #[derive(Copy, Clone)]
 struct PhantomHandler {
@@ -105,7 +105,11 @@ impl TriangleMeshBuilder {
     }
 
     #[inline]
-    pub(super) fn build_with_store<S: SetCollection<VSegment, Section>>(&mut self, mut store: S, vertices: &[ChainVertex]) {
+    pub(super) fn build_with_store<S: SetCollection<VSegment, Section>>(
+        &mut self,
+        mut store: S,
+        vertices: &[ChainVertex],
+    ) {
         for v in vertices.iter() {
             match v.get_type() {
                 VertexType::Start => self.start(v, &mut store),
@@ -144,16 +148,16 @@ impl TriangleMeshBuilder {
                     self.triangles.push(new_triangle);
                     return new_index;
                 }
-                new_triangle.neighbors[vertex] = triangle_index;
+                new_triangle.set_neighbor(vertex, triangle_index);
                 let other = &mut self.triangles[triangle_index];
                 let vi = other.other_vertex(edge.a.index, edge.b.index);
-                other.neighbors[vi] = new_index;
+                other.set_neighbor(vi, new_index);
             }
             EdgeType::Phantom(edge_index) => {
                 if let Some(handler) = self.phantom_store.get(edge_index) {
                     // if exist update neighbor
-                    self.triangles[handler.triangle].neighbors[handler.vertex] = new_index;
-                    new_triangle.neighbors[vertex] = handler.triangle;
+                    self.triangles[handler.triangle].set_neighbor(handler.vertex, new_index);
+                    new_triangle.set_neighbor(vertex, handler.triangle);
                     self.phantom_store.free_phantom_index(edge_index);
                 } else {
                     // create a phantom edge
@@ -258,8 +262,8 @@ impl Section {
         // Iterate all but last edge
         for ei in edges.iter().take(edges.len().saturating_sub(1)) {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = net_builder.next_triangle_index() + 1;
-            triangle.neighbors[2] = prev_index;
+            triangle.set_neighbor(1, net_builder.next_triangle_index() + 1);
+            triangle.set_neighbor(2, prev_index);
 
             prev_index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
         }
@@ -267,7 +271,7 @@ impl Section {
         // Final triangle links only to previous
         if let Some(last_edge) = edges.last() {
             let mut triangle = IntTriangle::abc(vp, last_edge.a, last_edge.b);
-            triangle.neighbors[2] = prev_index;
+            triangle.set_neighbor(2, prev_index);
             net_builder.insert_triangle_with_neighbor_link(last_edge, 0, triangle);
         }
     }
@@ -292,17 +296,8 @@ impl Section {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
                 let vp = v.index_point();
-                let top_edge = TriangleEdge {
-                    a: *point,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: *point,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(*point, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, *point, phantom_index);
 
                 self.content = Content::Edges(vec![top_edge]);
 
@@ -350,22 +345,13 @@ impl Section {
 
             return if index == edges.len() {
                 let eb = edges[i - 1].b;
-                let top_edge = TriangleEdge {
-                    a: eb,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(eb, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, eb, phantom_index);
                 edges.push(top_edge);
-
-                let bottom_edges = vec![TriangleEdge {
-                    a: vp,
-                    b: eb,
-                    kind: EdgeType::Phantom(phantom_index),
-                }];
 
                 let bottom_section = Section {
                     sort: self.sort,
-                    content: Content::Edges(bottom_edges),
+                    content: Content::Edges(vec![bottom_edge]),
                 };
 
                 self.sort = VSegment {
@@ -378,20 +364,10 @@ impl Section {
                 let ea = edges[index].a;
                 let mut bottom_edges = edges.split_off(index);
 
-                let top_edge = TriangleEdge {
-                    a: ea,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: ea,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(ea, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, ea, phantom_index);
 
                 edges.push(top_edge);
-
                 bottom_edges.insert(0, bottom_edge);
 
                 // bottom section
@@ -411,14 +387,10 @@ impl Section {
         let e0 = &edges[i];
 
         let mut t0 = IntTriangle::abc(vp, e0.a, e0.b);
-        t0.neighbors[1] = net_builder.triangles.len() + 1;
+        t0.set_neighbor(1, net_builder.triangles.len() + 1);
         let mut index = net_builder.insert_triangle_with_neighbor_link(e0, 0, t0);
 
-        let top_edge = TriangleEdge {
-            a: e0.a,
-            b: vp,
-            kind: EdgeType::Regular(index),
-        };
+        let top_edge = TriangleEdge::regular(e0.a, vp, index);
 
         let mut top_edges = edges.split_off(i);
         swap(&mut top_edges, edges);
@@ -440,20 +412,16 @@ impl Section {
                 break;
             }
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = next_index;
-            triangle.neighbors[2] = index;
+            triangle.set_neighbor(1, next_index);
+            triangle.set_neighbor(2, index);
             index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
             next_index = index + 2;
 
             i += 1;
         }
-        net_builder.triangles[index].neighbors[1] = usize::MAX;
+        net_builder.triangles[index].remove_neighbor(1);
 
-        let bottom_edge = TriangleEdge {
-            a: vp,
-            b: edges[i - 1].b,
-            kind: EdgeType::Regular(index),
-        };
+        let bottom_edge = TriangleEdge::regular(vp, edges[i - 1].b, index);
 
         *edges = edges.split_off(i);
         edges.insert(0, bottom_edge);
@@ -466,28 +434,19 @@ impl Section {
 
         let edges = match &mut self.content {
             Content::Point(point) => {
-                let edges = vec![TriangleEdge {
-                    a: vp,
-                    b: *point,
-                    kind: EdgeType::Regular(usize::MAX),
-                }];
+                let edges = vec![TriangleEdge::border(vp, *point)];
                 self.content = Content::Edges(edges);
                 return;
             }
             Content::Edges(edges) => edges,
         };
 
-        let e0 = edges.first().unwrap();
+        debug_assert!(!edges.is_empty());
+
+        let e0 = unsafe { edges.get_unchecked(0) };
 
         if Triangle::is_cw_or_line_point(v.this, e0.a.point, e0.b.point) {
-            edges.insert(
-                0,
-                TriangleEdge {
-                    a: vp,
-                    b: e0.a,
-                    kind: EdgeType::Regular(usize::MAX),
-                },
-            );
+            edges.insert(0, TriangleEdge::border(vp, e0.a));
             return;
         }
 
@@ -503,11 +462,11 @@ impl Section {
             eb = ei.b;
             n += 1;
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[2] = index;
+            triangle.set_neighbor(2, index);
             let prev_index = index;
             index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
 
-            net_builder.triangles[prev_index].neighbors[1] = index;
+            net_builder.triangles[prev_index].set_neighbor(1, index);
         }
 
         if edges.len() == n {
@@ -530,12 +489,7 @@ impl Section {
         let vp = v.index_point();
         let edges = match &mut self.content {
             Content::Point(point) => {
-                let edges = vec![TriangleEdge {
-                    a: *point,
-                    b: vp,
-                    kind: EdgeType::Regular(usize::MAX),
-                }];
-                self.content = Content::Edges(edges);
+                self.content = Content::Edges(vec![TriangleEdge::border(*point, vp)]);
                 return;
             }
             Content::Edges(edges) => edges,
@@ -544,11 +498,7 @@ impl Section {
         let el = edges.last().unwrap();
 
         if Triangle::is_cw_or_line_point(v.this, el.a.point, el.b.point) {
-            edges.push(TriangleEdge {
-                a: el.b,
-                b: vp,
-                kind: EdgeType::Regular(usize::MAX),
-            });
+            edges.push(TriangleEdge::border(el.b, vp));
             return;
         }
 
@@ -563,19 +513,15 @@ impl Section {
             ea = ei.a;
             n += 1;
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = index;
+            triangle.set_neighbor(1, index);
             let prev_index = index;
             index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
 
-            net_builder.triangles[prev_index].neighbors[2] = index;
+            net_builder.triangles[prev_index].set_neighbor(2, index);
         }
         edges.truncate(edges.len() - n);
 
-        edges.push(TriangleEdge {
-            a: ea,
-            b: vp,
-            kind: EdgeType::Regular(index),
-        });
+        edges.push(TriangleEdge::regular(ea, vp, index));
     }
 
     #[inline]
@@ -583,17 +529,8 @@ impl Section {
         let edges = match &mut self.content {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
-                let top_edge = TriangleEdge {
-                    a: *point,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: *point,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(*point, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, *point, phantom_index);
 
                 self.content = Content::Edges(vec![top_edge, bottom_edge]);
 
@@ -627,32 +564,15 @@ impl Section {
 
             let phantom_index = net_builder.get_unique_phantom_edge_index();
             if index == edges.len() {
-                let top_edge = TriangleEdge {
-                    a: last,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: last,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(last, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, last, phantom_index);
 
                 edges.push(top_edge);
                 edges.push(bottom_edge);
             } else {
                 let ea = edges[index].a;
-                let top_edge = TriangleEdge {
-                    a: ea,
-                    b: vp,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
-
-                let bottom_edge = TriangleEdge {
-                    a: vp,
-                    b: ea,
-                    kind: EdgeType::Phantom(phantom_index),
-                };
+                let top_edge = TriangleEdge::phantom(ea, vp, phantom_index);
+                let bottom_edge = TriangleEdge::phantom(vp, ea, phantom_index);
 
                 edges.insert(index, top_edge);
                 edges.insert(index + 1, bottom_edge);
@@ -662,14 +582,10 @@ impl Section {
         let e0 = &edges[i];
 
         let mut t0 = IntTriangle::abc(vp, e0.a, e0.b);
-        t0.neighbors[1] = net_builder.triangles.len() + 1;
+        t0.set_neighbor(1, net_builder.triangles.len() + 1);
         let mut index = net_builder.insert_triangle_with_neighbor_link(e0, 0, t0);
 
-        let top_edge = TriangleEdge {
-            a: e0.a,
-            b: vp,
-            kind: EdgeType::Regular(index),
-        };
+        let top_edge = TriangleEdge::regular(e0.a, vp, index);
 
         let mut new_edges = edges.split_off(i);
         swap(&mut new_edges, edges);
@@ -683,20 +599,16 @@ impl Section {
                 break;
             }
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
-            triangle.neighbors[1] = next_index;
-            triangle.neighbors[2] = index;
+            triangle.set_neighbor(1, next_index);
+            triangle.set_neighbor(2, index);
             index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
             next_index = index + 2;
 
             i += 1;
         }
-        net_builder.triangles[index].neighbors[1] = usize::MAX;
+        net_builder.triangles[index].remove_neighbor(1);
 
-        let bottom_edge = TriangleEdge {
-            a: vp,
-            b: edges[i - 1].b,
-            kind: EdgeType::Regular(index),
-        };
+        let bottom_edge = TriangleEdge::regular(vp, edges[i - 1].b, index);
 
         let mut tail = edges.split_off(i);
 
@@ -751,7 +663,10 @@ trait FindSection {
     fn find_section(&self, v: &ChainVertex) -> u32;
 }
 
-impl<C> FindSection for C where C: SetCollection<VSegment, Section> {
+impl<C> FindSection for C
+where
+    C: SetCollection<VSegment, Section>,
+{
     #[inline]
     fn find_section(&self, v: &ChainVertex) -> u32 {
         self.first_index_less_by(|s| {
@@ -773,6 +688,7 @@ impl<C> FindSection for C where C: SetCollection<VSegment, Section> {
 #[cfg(test)]
 mod tests {
     use crate::int::binder::SteinerInference;
+    use crate::int::monotone::chain_builder::ToChainVertices;
     use crate::int::monotone::mesh_builder::TriangleMeshBuilder;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
@@ -783,7 +699,6 @@ mod tests {
     use i_overlay::i_shape::int::shape::IntShape;
     use rand::Rng;
     use std::collections::HashSet;
-    use crate::int::monotone::chain_builder::ToChainVertices;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()

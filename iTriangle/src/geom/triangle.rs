@@ -30,6 +30,22 @@ impl IntTriangle {
     }
 
     #[inline]
+    pub fn set_neighbor(&mut self, order: usize, neighbor: usize) {
+        debug_assert!(order < 3);
+        unsafe {
+            *self.neighbors.get_unchecked_mut(order) = neighbor;
+        }
+    }
+
+    #[inline]
+    pub fn remove_neighbor(&mut self, order: usize) {
+        debug_assert!(order < 3);
+        unsafe {
+            *self.neighbors.get_unchecked_mut(order) = usize::MAX;
+        }
+    }
+
+    #[inline]
     pub fn other_vertex(&self, a: usize, b: usize) -> usize {
         if self.vertices[0].index != a && self.vertices[0].index != b {
             0
