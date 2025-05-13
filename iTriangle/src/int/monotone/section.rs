@@ -1,6 +1,6 @@
 use i_tree::set::sort::KeyValue;
 use crate::geom::point::IndexPoint;
-use crate::int::v_segment::VSegment;
+use crate::int::monotone::v_segment::VSegment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EdgeType {
@@ -47,7 +47,7 @@ impl KeyValue<VSegment> for Section {
 #[cfg(test)]
 mod tests {
     use std::cmp::Ordering;
-    use crate::int::section::{Content, Section, VSegment};
+    use crate::int::monotone::section::{Content, Section, VSegment};
     use i_overlay::i_float::int::point::IntPoint;
     use i_tree::EMPTY_REF;
     use i_tree::set::sort::SetCollection;
@@ -62,7 +62,6 @@ mod tests {
             }
         }
     }
-
 
     #[test]
     fn test_0() {

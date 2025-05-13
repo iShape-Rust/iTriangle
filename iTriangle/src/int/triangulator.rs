@@ -1,14 +1,14 @@
+use crate::int::monotone::mesh_builder::TriangleMeshBuilder;
 use crate::int::binder::SteinerInference;
-use crate::int::mesh_builder::TriangleMeshBuilder;
 use crate::int::triangulation::RawIntTriangulation;
-use crate::int::chain_vertex::IntoPoints;
+use crate::int::monotone::chain_vertex::IntoPoints;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::IntOverlayOptions;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::count::PointsCount;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use crate::int::chain_builder::ToChainVertices;
+use crate::int::monotone::chain_builder::ToChainVertices;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Validation {

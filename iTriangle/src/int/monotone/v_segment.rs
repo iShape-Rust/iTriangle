@@ -53,7 +53,7 @@ impl Default for VSegment {
 mod tests {
     use std::cmp::Ordering;
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::int::v_segment::VSegment;
+    use crate::int::monotone::v_segment::VSegment;
 
     #[test]
     fn test_0() {

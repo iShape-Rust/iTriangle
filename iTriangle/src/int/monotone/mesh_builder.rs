@@ -1,8 +1,8 @@
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::IntTriangle;
-use crate::int::section::{Content, EdgeType, Section, TriangleEdge};
-use crate::int::v_segment::VSegment;
-use crate::int::chain_vertex::{ChainVertex, VertexType};
+use crate::int::monotone::section::{Content, EdgeType, Section, TriangleEdge};
+use crate::int::monotone::v_segment::VSegment;
+use crate::int::monotone::chain_vertex::{ChainVertex, VertexType};
 use i_overlay::i_float::triangle::Triangle;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
@@ -28,7 +28,7 @@ impl PhantomEdgePool {
     };
 
     fn new(capacity: usize) -> Self {
-        let capacity = capacity.max(8);
+        let capacity = capacity.max(4);
         let mut store = Self {
             buffer: Vec::with_capacity(capacity),
             unused: Vec::with_capacity(capacity),
@@ -41,11 +41,10 @@ impl PhantomEdgePool {
     fn reserve(&mut self, length: usize) {
         debug_assert!(length > 0);
         let n = self.buffer.len();
-        let l = length;
         self.buffer.reserve(length);
         self.buffer.resize(self.buffer.len() + length, Self::EMPTY);
         self.unused.reserve(length);
-        self.unused.extend((n..n + l).rev());
+        self.unused.extend((n..n + length).rev());
     }
 
     #[inline]
@@ -79,22 +78,23 @@ impl PhantomEdgePool {
     }
 }
 
-pub(super) struct TriangleMeshBuilder {
-    pub(super) triangles: Vec<IntTriangle>,
+pub(crate) struct TriangleMeshBuilder {
+    pub(crate) triangles: Vec<IntTriangle>,
     phantom_store: PhantomEdgePool,
 }
 
 impl TriangleMeshBuilder {
     #[inline]
-    pub(super) fn with_triangles_count(triangles_count: usize) -> Self {
+    pub(crate) fn with_triangles_count(triangles_count: usize) -> Self {
+        let phantom_capacity = triangles_count >> 4;
         Self {
             triangles: Vec::with_capacity(triangles_count),
-            phantom_store: PhantomEdgePool::new(16),
+            phantom_store: PhantomEdgePool::new(phantom_capacity),
         }
     }
 
     #[inline]
-    pub(super) fn build(&mut self, vertices: &[ChainVertex]) {
+    pub(crate) fn build(&mut self, vertices: &[ChainVertex]) {
         let n = vertices.len();
         let capacity = if n < 128 { 4 } else { n.ilog2() as usize };
         if capacity <= 12 {
@@ -103,7 +103,6 @@ impl TriangleMeshBuilder {
             self.build_with_store(SetTree::new(capacity), vertices)
         }
     }
-
 
     #[inline]
     pub(super) fn build_with_store<S: SetCollection<VSegment, Section>>(&mut self, mut store: S, vertices: &[ChainVertex]) {
@@ -118,7 +117,6 @@ impl TriangleMeshBuilder {
             }
         }
     }
-
 }
 
 impl TriangleMeshBuilder {
@@ -174,6 +172,7 @@ impl TriangleMeshBuilder {
         new_index
     }
 
+    #[inline]
     fn join<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
@@ -184,6 +183,7 @@ impl TriangleMeshBuilder {
         }
     }
 
+    #[inline]
     fn start<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let section = Section {
             sort: VSegment {
@@ -195,6 +195,7 @@ impl TriangleMeshBuilder {
         tree.insert(section);
     }
 
+    #[inline]
     fn end<S: SetCollection<VSegment, Section>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
@@ -247,15 +248,15 @@ impl Section {
     #[inline]
     fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
         let edges = match &mut self.content {
-            Content::Point(_) => {
-                panic!("not implemented case")
-            }
             Content::Edges(edges) => edges,
+            Content::Point(_) => unreachable!("Section with less then 3 points not possible"),
         };
 
         let vp = v.index_point();
         let mut prev_index = usize::MAX;
-        for ei in edges.iter().take(edges.len() - 1) {
+
+        // Iterate all but last edge
+        for ei in edges.iter().take(edges.len().saturating_sub(1)) {
             let mut triangle = IntTriangle::abc(vp, ei.a, ei.b);
             triangle.neighbors[1] = net_builder.next_triangle_index() + 1;
             triangle.neighbors[2] = prev_index;
@@ -263,11 +264,12 @@ impl Section {
             prev_index = net_builder.insert_triangle_with_neighbor_link(ei, 0, triangle);
         }
 
-        let el = edges.last().unwrap();
-        let mut triangle = IntTriangle::abc(vp, el.a, el.b);
-        triangle.neighbors[2] = prev_index;
-
-        net_builder.insert_triangle_with_neighbor_link(el, 0, triangle);
+        // Final triangle links only to previous
+        if let Some(last_edge) = edges.last() {
+            let mut triangle = IntTriangle::abc(vp, last_edge.a, last_edge.b);
+            triangle.neighbors[2] = prev_index;
+            net_builder.insert_triangle_with_neighbor_link(last_edge, 0, triangle);
+        }
     }
 
     #[inline]
@@ -749,26 +751,6 @@ trait FindSection {
     fn find_section(&self, v: &ChainVertex) -> u32;
 }
 
-// impl FindSection for SetTree<VSegment, Section> {
-//     #[inline]
-//     fn find_section(&self, v: &ChainVertex) -> u32 {
-//         self.first_index_less_by(|s| {
-//             let point_search = s.is_under_point_order(v.this);
-//             match point_search {
-//                 Ordering::Equal => {
-//                     if v.prev == s.a {
-//                         Ordering::Equal
-//                     } else {
-//                         Triangle::clock_order_point(s.a, v.next, s.b)
-//                     }
-//                 }
-//                 _ => point_search,
-//             }
-//         })
-//     }
-// }
-
-
 impl<C> FindSection for C where C: SetCollection<VSegment, Section> {
     #[inline]
     fn find_section(&self, v: &ChainVertex) -> u32 {
@@ -791,7 +773,7 @@ impl<C> FindSection for C where C: SetCollection<VSegment, Section> {
 #[cfg(test)]
 mod tests {
     use crate::int::binder::SteinerInference;
-    use crate::int::mesh_builder::TriangleMeshBuilder;
+    use crate::int::monotone::mesh_builder::TriangleMeshBuilder;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
@@ -801,7 +783,7 @@ mod tests {
     use i_overlay::i_shape::int::shape::IntShape;
     use rand::Rng;
     use std::collections::HashSet;
-    use crate::int::chain_builder::ToChainVertices;
+    use crate::int::monotone::chain_builder::ToChainVertices;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()

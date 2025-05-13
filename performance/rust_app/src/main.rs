@@ -7,20 +7,21 @@ mod test;
 mod util;
 
 fn main() {
-    let args = EnvArgs::new();
     #[cfg(debug_assertions)]
     {
-        debug_run(&args);
+        debug_run();
     }
 
     #[cfg(not(debug_assertions))]
     {
-        release_run(&args);
+
+        release_run();
     }
 }
 
 #[cfg(not(debug_assertions))]
-fn release_run(args: &EnvArgs) {
+fn release_run() {
+    let args = EnvArgs::new();
     let test = args.get_usize("test");
     match test {
         0 => star(&args),
@@ -33,15 +34,22 @@ fn release_run(args: &EnvArgs) {
 }
 
 #[cfg(debug_assertions)]
-fn debug_run(_args: &EnvArgs) {
-    SimpleStarTest {
+fn debug_run() {
+    // let mut args = EnvArgs::new();
+    // args.set_bool("complex", false);
+    // args.set_usize("count", 4);
+    // args.set_bool("complex", true);
+    // star(&args);
+    let test = SimpleStarTest {
         radius: 100.0,
         angle_steps_count: 100,
         points_per_corner: 10,
         radius_steps_count: 100,
         min_radius_scale: 0.0,
         max_radius_scale: 1.0,
-    }.run_raw(32);
+    };
+    let s0 = test.run_unchecked_raw(4, 16);
+    println!("s0: {}", s0);
 }
 
 fn star(args: &EnvArgs) {
@@ -61,7 +69,8 @@ fn star(args: &EnvArgs) {
         let mut s0 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s0 += test.run_unchecked_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s0 += test.run_unchecked_raw(count, repeat_count);
         }
         println!();
 
@@ -69,7 +78,8 @@ fn star(args: &EnvArgs) {
         let mut s1 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s1 += test.run_unchecked_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s1 += test.run_unchecked_delaunay(count, repeat_count);
         }
         println!();
         
@@ -77,7 +87,8 @@ fn star(args: &EnvArgs) {
         let mut s2 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s2 += test.run_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s2 += test.run_raw(count, repeat_count);
         }
         println!();
 
@@ -85,7 +96,8 @@ fn star(args: &EnvArgs) {
         let mut s3 = 0;
         for i in 0..8 {
             let count = 4 << i;
-            s3 += test.run_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
@@ -100,21 +112,22 @@ fn star(args: &EnvArgs) {
         println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     } else {
         let count = args.get_usize("count");
+        let repeat_count = (256 / count).max(1);
 
         println!("unchecked raw: ");
-        let s0 = test.run_unchecked_raw(count);
+        let s0 = test.run_unchecked_raw(count, repeat_count);
         println!();
 
         println!("unchecked delaunay: ");
-        let s1 = test.run_unchecked_delaunay(count);
+        let s1 = test.run_unchecked_delaunay(count, repeat_count);
         println!();
         
         println!("raw: ");
-        let s2 = test.run_raw(count);
+        let s2 = test.run_raw(count, repeat_count);
         println!();
 
         println!("delaunay: ");
-        let s3 = test.run_delaunay(count);
+        let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
         println!("earcutr: ");
@@ -142,7 +155,8 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s0 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s0 += test.run_unchecked_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s0 += test.run_unchecked_raw(count, repeat_count);
         }
         println!();
 
@@ -150,7 +164,8 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s1 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s1 += test.run_unchecked_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s1 += test.run_unchecked_delaunay(count, repeat_count);
         }
         println!();
 
@@ -158,7 +173,8 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s2 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s2 += test.run_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s2 += test.run_raw(count, repeat_count);
         }
         println!();
 
@@ -166,7 +182,8 @@ fn star_with_hole(args: &EnvArgs) {
         let mut s3 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s3 += test.run_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
@@ -181,21 +198,22 @@ fn star_with_hole(args: &EnvArgs) {
         println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     } else {
         let count = args.get_usize("count");
-
+        let repeat_count = (256 / count).max(1);
+        
         println!("unchecked raw: ");
-        let s0 = test.run_unchecked_raw(count);
+        let s0 = test.run_unchecked_raw(count, repeat_count);
         println!();
 
         println!("unchecked delaunay: ");
-        let s1 = test.run_unchecked_delaunay(count);
+        let s1 = test.run_unchecked_delaunay(count, repeat_count);
         println!();
 
         println!("raw: ");
-        let s2 = test.run_raw(count);
+        let s2 = test.run_raw(count, repeat_count);
         println!();
 
         println!("delaunay: ");
-        let s3 = test.run_delaunay(count);
+        let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
         println!("earcutr: ");
@@ -225,7 +243,8 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let mut s0 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s0 += test.run_unchecked_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s0 += test.run_unchecked_raw(count, repeat_count);
         }
         println!();
 
@@ -233,7 +252,8 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let mut s1 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s1 += test.run_unchecked_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s1 += test.run_unchecked_delaunay(count, repeat_count);
         }
         println!();
 
@@ -241,7 +261,8 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let mut s2 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s2 += test.run_raw(count);
+            let repeat_count = (256 / count).max(1);
+            s2 += test.run_raw(count, repeat_count);
         }
         println!();
 
@@ -249,7 +270,8 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let mut s3 = 0;
         for i in 0..7 {
             let count = 4 << i;
-            s3 += test.run_delaunay(count);
+            let repeat_count = (256 / count).max(1);
+            s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
@@ -264,21 +286,22 @@ fn rect_with_star_holes(args: &EnvArgs) {
         println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
     } else {
         let count = args.get_usize("count");
-
+        let repeat_count = (256 / count).max(1);
+        
         println!("unchecked raw: ");
-        let s0 = test.run_unchecked_raw(count);
+        let s0 = test.run_unchecked_raw(count, repeat_count);
         println!();
 
         println!("unchecked raw: ");
-        let s1 = test.run_unchecked_delaunay(count);
+        let s1 = test.run_unchecked_delaunay(count, repeat_count);
         println!();
 
         println!("raw: ");
-        let s2 = test.run_raw(count);
+        let s2 = test.run_raw(count, repeat_count);
         println!();
 
         println!("delaunay: ");
-        let s3 = test.run_delaunay(count);
+        let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
         println!("earcutr: ");

@@ -1,11 +1,11 @@
-use crate::int::chain_builder_bin::ChainVerticesBinBuilder;
-use crate::int::chain_builder_direct::ChainVerticesDirectBuilder;
-use crate::int::chain_vertex::ChainVertex;
+use crate::int::monotone::chain_builder_bin::ChainVerticesBinBuilder;
+use crate::int::monotone::chain_builder_direct::ChainVerticesDirectBuilder;
+use crate::int::monotone::chain_vertex::ChainVertex;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
 
-pub(super) trait ToChainVertices {
+pub(crate) trait ToChainVertices {
     fn to_chain_vertices(&self) -> Vec<ChainVertex>;
     fn to_chain_vertices_with_steiner_points(&self, points: &[IntPoint]) -> Vec<ChainVertex>;
 }
@@ -77,7 +77,11 @@ impl ToChainVertices for IntShape {
 }
 impl ToChainVertices for IntContour {
     fn to_chain_vertices(&self) -> Vec<ChainVertex> {
-        if let Some(mut builder) = ChainVerticesBinBuilder::with_contour(self, 0) {
+        if self.len() < 32 {
+            let mut builder = ChainVerticesDirectBuilder::with_capacity(self.len());
+            builder.add_path(self);
+            builder.into_chain_vertices()
+        } else if let Some(mut builder) = ChainVerticesBinBuilder::with_contour(self, 0) {
             builder.reserve_space_for_contour(self);
             builder.prepare_space();
 
@@ -209,8 +213,8 @@ pub(super) fn sort_in_clockwise_order(vertices: &mut [ChainVertex]) {
 #[cfg(test)]
 mod tests {
 
-    use crate::int::chain_builder::{sort_in_clockwise_order, ToChainVertices};
-    use crate::int::chain_vertex::ChainVertex;
+    use crate::int::monotone::chain_builder::{sort_in_clockwise_order, ToChainVertices};
+    use crate::int::monotone::chain_vertex::ChainVertex;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::shape::IntShape;
 

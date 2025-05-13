@@ -14,12 +14,12 @@ pub(super) struct DelaunayExperiment {}
 impl Experiment for UncheckedRawExperiment {
     #[inline]
     fn run_contour(contour: &Vec<[f64; 2]>) -> usize {
-        contour.unchecked_triangulate().triangle_indices().len()
+        contour.unchecked_triangulate().triangle_indices::<u32>().len()
     }
 
     #[inline]
     fn run_shape(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape.unchecked_triangulate().triangle_indices().len()
+        shape.unchecked_triangulate().triangle_indices::<u32>().len()
     }
 }
 
@@ -29,7 +29,7 @@ impl Experiment for UncheckedDelaunayExperiment {
         contour
             .unchecked_triangulate()
             .into_delaunay()
-            .triangle_indices()
+            .triangle_indices::<u32>()
             .len()
     }
 
@@ -38,7 +38,7 @@ impl Experiment for UncheckedDelaunayExperiment {
         shape
             .unchecked_triangulate()
             .into_delaunay()
-            .triangle_indices()
+            .triangle_indices::<u32>()
             .len()
     }
 }
@@ -46,12 +46,12 @@ impl Experiment for UncheckedDelaunayExperiment {
 impl Experiment for RawExperiment {
     #[inline]
     fn run_contour(contour: &Vec<[f64; 2]>) -> usize {
-        contour.triangulate().triangle_indices().len()
+        contour.triangulate().triangle_indices::<u32>().len()
     }
 
     #[inline]
     fn run_shape(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape.triangulate().triangle_indices().len()
+        shape.triangulate().triangle_indices::<u32>().len()
     }
 }
 
@@ -61,12 +61,12 @@ impl Experiment for DelaunayExperiment {
         contour
             .triangulate()
             .into_delaunay()
-            .triangle_indices()
+            .triangle_indices::<u32>()
             .len()
     }
 
     #[inline]
     fn run_shape(shape: &Vec<Vec<[f64; 2]>>) -> usize {
-        shape.triangulate().into_delaunay().triangle_indices().len()
+        shape.triangulate().into_delaunay().triangle_indices::<u32>().len()
     }
 }

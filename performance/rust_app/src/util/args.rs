@@ -40,4 +40,12 @@ impl EnvArgs {
             .parse()
             .expect(&format!("Unable to {} as a boolean", name))
     }
+
+    pub(crate) fn set_bool(&mut self, name: &str, value: bool) {
+        self.map.insert(name.to_string(), value.to_string());
+    }
+
+    pub(crate) fn set_usize(&mut self, name: &str, value: usize) {
+        self.map.insert(name.to_string(), value.to_string());
+    }
 }

@@ -1,6 +1,6 @@
 use i_overlay::i_float::int::point::IntPoint;
-use crate::int::chain_builder::sort_in_clockwise_order;
-use crate::int::chain_vertex::ChainVertex;
+use crate::int::monotone::chain_builder::sort_in_clockwise_order;
+use crate::int::monotone::chain_vertex::ChainVertex;
 
 pub(super) struct ChainVerticesDirectBuilder {
     vertices: Vec<ChainVertex>,
@@ -42,8 +42,7 @@ impl ChainVerticesDirectBuilder {
         let mut vertices = self.vertices;
         vertices.sort_unstable_by(|a, b| a.this.cmp(&b.this));
 
-        debug_assert_eq!(vertices[0].index, 0); // must be 0 as default value
-        let mut index = 0;
+        let mut index = vertices[0].index;
         let mut p = vertices[0].this;
         let mut i = 0;
         while i < vertices.len() {
@@ -67,7 +66,6 @@ impl ChainVerticesDirectBuilder {
 
             i = j;
         }
-
         vertices
     }
 }

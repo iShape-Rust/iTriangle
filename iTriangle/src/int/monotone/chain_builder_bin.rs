@@ -1,5 +1,5 @@
-use crate::int::chain_builder::sort_in_clockwise_order;
-use crate::int::chain_vertex::ChainVertex;
+use crate::int::monotone::chain_builder::sort_in_clockwise_order;
+use crate::int::monotone::chain_vertex::ChainVertex;
 use i_key_sort::sort::layout::BinStore;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
@@ -50,7 +50,7 @@ impl ChainVerticesBinBuilder {
     pub(super) fn add_contour_to_vertices(
         &mut self,
         contour: &[IntPoint],
-        vertices: &mut Vec<ChainVertex>,
+        vertices: &mut [ChainVertex],
     ) {
         let n = contour.len();
         if n < 3 {
@@ -81,7 +81,7 @@ impl ChainVerticesBinBuilder {
     pub(super) fn add_steiner_points_to_vertices(
         &mut self,
         points: &[IntPoint],
-        vertices: &mut Vec<ChainVertex>,
+        vertices: &mut [ChainVertex],
     ) {
         for &this in points {
             self.store.feed_vec(vertices, ChainVertex::implant(this));
@@ -98,7 +98,7 @@ impl ChainVerticesBinBuilder {
         self.store.prepare_bins();
     }
 
-    pub(super) fn sort_chain_vertices(&self, vertices: &mut Vec<ChainVertex>) {
+    pub(super) fn sort_chain_vertices(&self, vertices: &mut [ChainVertex]) {
         for bin in self.store.bins.iter() {
             let start = bin.offset;
             let end = bin.data;

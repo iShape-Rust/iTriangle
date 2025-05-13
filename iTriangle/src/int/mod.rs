@@ -1,13 +1,7 @@
 mod binder;
-mod mesh_builder;
 pub mod custom;
-mod section;
 pub mod triangulatable;
 pub mod triangulation;
 pub mod triangulator;
 pub mod unchecked;
-pub mod chain_vertex;
-pub(crate) mod v_segment;
-mod chain_builder_direct;
-mod chain_builder_bin;
-mod chain_builder;
+mod monotone;

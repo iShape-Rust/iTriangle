@@ -68,56 +68,60 @@ pub(crate) struct SimpleStarTest {
 }
 
 impl SimpleStarTest {
-    pub(crate) fn run_unchecked_raw(&self, count: usize) -> usize {
-        self.run::<UncheckedRawExperiment>(count)
+    pub(crate) fn run_unchecked_raw(&self, count: usize, repeat_count: usize) -> usize {
+        self.run::<UncheckedRawExperiment>(count, repeat_count)
     }
 
-    pub(crate) fn run_unchecked_delaunay(&self, count: usize) -> usize {
-        self.run::<UncheckedDelaunayExperiment>(count)
+    pub(crate) fn run_unchecked_delaunay(&self, count: usize, repeat_count: usize) -> usize {
+        self.run::<UncheckedDelaunayExperiment>(count, repeat_count)
     }
 
-    pub(crate) fn run_raw(&self, count: usize) -> usize {
-        self.run::<RawExperiment>(count)
+    pub(crate) fn run_raw(&self, count: usize, repeat_count: usize) -> usize {
+        self.run::<RawExperiment>(count, repeat_count)
     }
 
-    pub(crate) fn run_delaunay(&self, count: usize) -> usize {
-        self.run::<DelaunayExperiment>(count)
+    pub(crate) fn run_delaunay(&self, count: usize, repeat_count: usize) -> usize {
+        self.run::<DelaunayExperiment>(count, repeat_count)
     }
 
-    fn run<E: Experiment>(&self, count: usize) -> usize {
+    fn run<E: Experiment>(&self, count: usize, repeat_count: usize) -> usize {
         let count_per_star = self.points_per_corner * count;
         let mut points = Vec::with_capacity(count_per_star);
         let mut sum = 0;
 
         let angle_step = 2.0 * PI / self.angle_steps_count as f64;
 
-        let mut radius_scale = self.min_radius_scale;
         let radius_step =
             (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
 
         let start = Instant::now();
-        for _ in 0..self.radius_steps_count {
-            // grow star
-            let mut start_angle = 0.0;
-            for _ in 0..self.angle_steps_count {
-                // rotate star
-                StarBuilder::fill_star(
-                    self.radius,
-                    radius_scale,
-                    start_angle,
-                    self.points_per_corner,
-                    count,
-                    true,
-                    &mut points,
-                );
-                sum += black_box(E::run_contour(&points));
-                start_angle += angle_step;
-            }
-            radius_scale += radius_step;
+        for _ in 0..repeat_count {
+
+            let mut radius_scale = self.min_radius_scale;
+
+            for _ in 0..self.radius_steps_count {
+                // grow star
+                let mut start_angle = 0.0;
+                for _ in 0..self.angle_steps_count {
+                    // rotate star
+                    StarBuilder::fill_star(
+                        self.radius,
+                        radius_scale,
+                        start_angle,
+                        self.points_per_corner,
+                        count,
+                        true,
+                        &mut points,
+                    );
+                    sum += black_box(E::run_contour(&points));
+                    start_angle += angle_step;
+                }
+                radius_scale += radius_step;
+            }            
         }
 
         let duration = start.elapsed();
-        let time = duration.as_secs_f64();
+        let time = duration.as_secs_f64() / repeat_count as f64;
 
         println!("{} - {:.6}", count, time);
         sum

@@ -1,8 +1,8 @@
-use i_key_sort::bin_key::index::BinLayout;
+use crate::geom::point::IndexPoint;
 use i_key_sort::bin_key::index::BinKey;
+use i_key_sort::bin_key::index::BinLayout;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
-use crate::geom::point::IndexPoint;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum VertexType {
@@ -15,17 +15,20 @@ pub(super) enum VertexType {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct ChainVertex {
+pub(crate) struct ChainVertex {
     pub(super) index: usize,
     pub(super) this: IntPoint,
     pub(super) next: IntPoint,
     pub(super) prev: IntPoint,
 }
 
-
 impl ChainVertex {
-
-    pub(super) const EMPTY: ChainVertex = ChainVertex {index: 0, this: IntPoint::EMPTY, next: IntPoint::EMPTY, prev: IntPoint::EMPTY};
+    pub(super) const EMPTY: ChainVertex = ChainVertex {
+        index: 0,
+        this: IntPoint::EMPTY,
+        next: IntPoint::EMPTY,
+        prev: IntPoint::EMPTY,
+    };
 
     #[inline]
     pub(super) fn new(this: IntPoint, next: IntPoint, prev: IntPoint) -> Self {
@@ -76,7 +79,6 @@ impl ChainVertex {
 }
 
 impl BinKey<i32> for ChainVertex {
-
     #[inline]
     fn bin_key(&self) -> i32 {
         self.this.x
@@ -88,13 +90,11 @@ impl BinKey<i32> for ChainVertex {
     }
 }
 
-
-pub(super) trait IntoPoints {
+pub(crate) trait IntoPoints {
     fn into_points(self) -> Vec<IntPoint>;
 }
 
 impl IntoPoints for Vec<ChainVertex> {
-
     #[inline]
     fn into_points(self) -> Vec<IntPoint> {
         let mut points = Vec::with_capacity(self.len());
