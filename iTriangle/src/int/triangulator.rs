@@ -98,14 +98,14 @@ impl Triangulator {
 
         let mut iter = shapes.iter();
         if let Some(first) = iter.next() {
-            let mut first_raw = self.triangulate_shape(first);
+            let mut first_raw = self.unchecked_triangulate_shape(first);
             triangles.append(&mut first_raw.triangles);
             points.append(&mut first_raw.points);
 
             for shape in iter {
                 let points_offset = points.len();
                 let triangle_offset = triangles.len();
-                let mut raw = self.triangulate_shape(shape);
+                let mut raw = self.unchecked_triangulate_shape(shape);
                 raw.shift(points_offset, triangle_offset);
 
                 triangles.append(&mut raw.triangles);
