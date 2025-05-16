@@ -16,10 +16,10 @@ glam = ["i_overlay/glam"]
 serde = { version = "^1.0", features = ["derive"] }
 #i_overlay = { path = "../../iOverlay/iOverlay" }
 #i_tree = { path = "../../iTree" }
-#i_key_sort = { path = "../../iKeySort" }
+i_key_sort = { path = "../../iKeySort" }
 
 i_tree = "~0.15.0"
-i_key_sort = "~0.5.0"
+#i_key_sort = "~0.5.0"
 i_overlay = "~3.4.0"
 
 

@@ -1,7 +1,10 @@
-mod binder;
 pub mod custom;
 pub mod triangulatable;
 pub mod triangulation;
-pub mod triangulator;
 pub mod unchecked;
+pub mod validation;
+pub mod buffer;
+mod binder;
 mod monotone;
+mod solver;
+mod meta;

@@ -1,5 +1,4 @@
 use crate::int::custom::IntCustomTriangulatable;
-use crate::int::triangulator::Validation;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
@@ -9,6 +8,7 @@ use i_overlay::i_shape::float::adapter::{PathToInt, ShapeToInt, ShapesToInt};
 use i_overlay::i_shape::float::rect::RectInit;
 use crate::float::triangulation::RawTriangulation;
 use crate::int::triangulation::RawIntTriangulation;
+use crate::int::validation::Validation;
 
 /// A trait for triangulating float geometry with user-defined validation rules.
 ///

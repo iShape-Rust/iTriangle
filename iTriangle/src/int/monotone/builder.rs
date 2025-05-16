@@ -1,116 +1,127 @@
+use crate::int::meta::TrianglesCount;
+use crate::int::triangulation::RawIntTriangulation;
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::IntTriangle;
-use crate::int::monotone::chain_vertex::{ChainVertex, VertexType};
+use crate::int::monotone::chain::builder::ChainBuilder;
+use crate::int::monotone::chain::vertex::{ChainVertex, IntoPoints};
+use crate::int::monotone::chain::vertex::VertexType;
+use crate::int::monotone::phantom::PhantomEdgePool;
+use crate::int::monotone::phantom::PhantomHandler;
 use crate::int::monotone::section::{Content, EdgeType, Section, TriangleEdge};
 use crate::int::monotone::v_segment::VSegment;
+use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
+use i_overlay::i_shape::int::shape::{IntContour, IntShape};
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use std::cmp::Ordering;
 use std::mem::swap;
+use crate::int::meta::MeshMetaProvider;
 
-#[derive(Copy, Clone)]
-struct PhantomHandler {
-    vertex: usize,
-    triangle: usize,
-}
-
-struct PhantomEdgePool {
-    buffer: Vec<PhantomHandler>,
-    unused: Vec<usize>,
-}
-
-impl PhantomEdgePool {
-    const EMPTY: PhantomHandler = PhantomHandler {
-        vertex: usize::MAX,
-        triangle: usize::MAX,
-    };
-
-    fn new(capacity: usize) -> Self {
-        let capacity = capacity.max(4);
-        let mut store = Self {
-            buffer: Vec::with_capacity(capacity),
-            unused: Vec::with_capacity(capacity),
-        };
-        store.reserve(capacity);
-        store
-    }
-
-    #[inline]
-    fn reserve(&mut self, length: usize) {
-        debug_assert!(length > 0);
-        let n = self.buffer.len();
-        self.buffer.reserve(length);
-        self.buffer.resize(self.buffer.len() + length, Self::EMPTY);
-        self.unused.reserve(length);
-        self.unused.extend((n..n + length).rev());
-    }
-
-    #[inline]
-    fn get(&self, index: usize) -> Option<PhantomHandler> {
-        let item = self.buffer[index];
-        if item.triangle == usize::MAX {
-            None
-        } else {
-            Some(item)
-        }
-    }
-
-    #[inline]
-    fn register_phantom_link(&mut self, index: usize, handler: PhantomHandler) {
-        debug_assert!(self.buffer[index].triangle == usize::MAX);
-        self.buffer[index] = handler;
-    }
-
-    #[inline]
-    fn alloc_phantom_index(&mut self) -> usize {
-        if self.unused.is_empty() {
-            self.reserve(self.unused.capacity());
-        }
-        self.unused.pop().unwrap()
-    }
-
-    #[inline]
-    fn free_phantom_index(&mut self, index: usize) {
-        self.buffer[index] = Self::EMPTY;
-        self.unused.push(index)
-    }
-}
-
-pub(crate) struct TriangleMeshBuilder {
-    pub(crate) triangles: Vec<IntTriangle>,
+pub(crate) struct TrianglesBuilder {
+    triangles: Vec<IntTriangle>,
+    chain_builder: ChainBuilder,
     phantom_store: PhantomEdgePool,
 }
 
-impl TriangleMeshBuilder {
+impl TrianglesBuilder {
+
     #[inline]
-    pub(crate) fn with_triangles_count(triangles_count: usize) -> Self {
-        let phantom_capacity = triangles_count >> 4;
+    pub(crate) fn shape_triangulation(shape: &IntShape, points: Option<&[IntPoint]>) -> RawIntTriangulation {
+        if shape.len() <= 1 {
+            return if let Some(contour) = shape.first() {
+                Self::contour_triangulation(contour, points)
+            } else {
+                RawIntTriangulation::empty()
+            };
+        }
+
+        let points_count = points.map(|points| points.len()).unwrap_or(0);
+        let meta = shape.meta(points_count);
+        let mut builder = Self::with_capacity(meta.triangles_count, meta.vertices_count);
+
+        builder.chain_builder.shape_to_vertices(shape, points);
+        builder.build();
+        builder.into_raw_triangulation()
+    }
+
+    #[inline]
+    pub(crate) fn contour_triangulation(contour: &IntContour, points: Option<&[IntPoint]>) -> RawIntTriangulation {
+        let points_count = points.map(|points| points.len()).unwrap_or(0);
+        let meta = contour.meta(points_count);
+        let mut builder = Self::with_capacity(meta.triangles_count, meta.vertices_count);
+
+        builder.chain_builder.contour_to_vertices(contour, points);
+        builder.build();
+        builder.into_raw_triangulation()
+    }
+
+
+    #[inline]
+    pub(crate) fn build_shape(&mut self, shape: &IntShape, points: Option<&[IntPoint]>) {
+        if shape.len() <= 1 {
+            if let Some(contour) = shape.first() {
+                self.build_contour(contour, points);
+            };
+            return;
+        }
+
+        self.chain_builder.shape_to_vertices(shape, points);
+        let points_count = points.map(|points| points.len()).unwrap_or(0);
+        self.reserve_and_clear_triangles(shape.triangles_count(points_count));
+
+        self.build();
+    }
+
+    #[inline]
+    pub(crate) fn build_contour(&mut self, contour: &IntContour, points: Option<&[IntPoint]>) {
+        self.chain_builder.contour_to_vertices(contour, points);
+        let points_count = points.map(|points| points.len()).unwrap_or(0);
+        self.reserve_and_clear_triangles(contour.triangles_count(points_count));
+        self.build();
+    }
+
+    #[inline]
+    pub(crate) fn with_capacity(triangles_capacity: usize, vertices_capacity: usize) -> Self {
         Self {
-            triangles: Vec::with_capacity(triangles_count),
-            phantom_store: PhantomEdgePool::new(phantom_capacity),
+            triangles: Vec::with_capacity(triangles_capacity),
+            chain_builder: ChainBuilder::with_capacity(vertices_capacity),
+            phantom_store: PhantomEdgePool::new(),
         }
     }
 
     #[inline]
-    pub(crate) fn build(&mut self, vertices: &[ChainVertex]) {
-        let n = vertices.len();
+    pub(crate) fn build(&mut self) {
+        let n = self.chain_builder.vertices.len();
         let capacity = if n < 128 { 4 } else { n.ilog2() as usize };
         if capacity <= 12 {
-            self.build_with_store(SetList::new(capacity), vertices)
+            self.build_with_store(SetList::new(capacity))
         } else {
-            self.build_with_store(SetTree::new(capacity), vertices)
+            self.build_with_store(SetTree::new(capacity))
         }
     }
 
     #[inline]
-    pub(super) fn build_with_store<S: SetCollection<VSegment, Section>>(
-        &mut self,
-        mut store: S,
-        vertices: &[ChainVertex],
-    ) {
-        for v in vertices.iter() {
+    pub(crate) fn into_raw_triangulation(self) -> RawIntTriangulation {
+        RawIntTriangulation {
+            triangles: self.triangles,
+            points: self.chain_builder.vertices.into_points(),
+        }
+    }
+}
+
+impl TrianglesBuilder {
+
+    #[inline]
+    fn build_with_store<S: SetCollection<VSegment, Section>>(&mut self, mut store: S) {
+        let vertices_ptr = self.chain_builder.vertices.as_ptr();
+        let len = self.chain_builder.vertices.len();
+
+        for i in 0..len {
+            // SAFETY: `vertices` is not modified.
+            let v = unsafe { &*vertices_ptr.add(i) };
+
             match v.get_type() {
                 VertexType::Start => self.start(v, &mut store),
                 VertexType::End => self.end(v, &mut store),
@@ -121,9 +132,15 @@ impl TriangleMeshBuilder {
             }
         }
     }
-}
 
-impl TriangleMeshBuilder {
+    #[inline]
+    fn reserve_and_clear_triangles(&mut self, count: usize) {
+        self.triangles.clear();
+        if self.triangles.capacity() < count {
+            self.triangles.reserve(count - self.triangles.capacity());
+        }
+    }
+
     #[inline]
     fn next_triangle_index(&self) -> usize {
         self.triangles.len()
@@ -250,7 +267,7 @@ impl TriangleMeshBuilder {
 
 impl Section {
     #[inline]
-    fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
+    fn add_as_last(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) {
         let edges = match &mut self.content {
             Content::Edges(edges) => edges,
             Content::Point(_) => unreachable!("Section with less then 3 points not possible"),
@@ -277,12 +294,12 @@ impl Section {
     }
 
     #[inline]
-    fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
+    fn add_to_top(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) {
         self.add_from_start(v, net_builder);
     }
 
     #[inline]
-    fn add_to_bottom(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
+    fn add_to_bottom(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) {
         self.sort = VSegment {
             a: v.this,
             b: v.next,
@@ -291,7 +308,7 @@ impl Section {
     }
 
     #[inline]
-    fn add_to_middle(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) -> Section {
+    fn add_to_middle(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) -> Section {
         let edges = match &mut self.content {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
@@ -429,7 +446,7 @@ impl Section {
         top_section
     }
 
-    fn add_from_start(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
+    fn add_from_start(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) {
         let vp = v.index_point();
 
         let edges = match &mut self.content {
@@ -485,7 +502,7 @@ impl Section {
         );
     }
 
-    fn add_from_end(&mut self, v: &ChainVertex, net_builder: &mut TriangleMeshBuilder) {
+    fn add_from_end(&mut self, v: &ChainVertex, net_builder: &mut TrianglesBuilder) {
         let vp = v.index_point();
         let edges = match &mut self.content {
             Content::Point(point) => {
@@ -525,7 +542,7 @@ impl Section {
     }
 
     #[inline]
-    fn add_steiner(&mut self, vp: IndexPoint, net_builder: &mut TriangleMeshBuilder) {
+    fn add_steiner(&mut self, vp: IndexPoint, net_builder: &mut TrianglesBuilder) {
         let edges = match &mut self.content {
             Content::Point(point) => {
                 let phantom_index = net_builder.get_unique_phantom_edge_index();
@@ -620,7 +637,7 @@ impl Section {
 }
 
 #[cfg(test)]
-impl TriangleMeshBuilder {
+impl RawIntTriangulation {
     pub fn validate(&self) {
         for (i, t) in self.triangles.iter().enumerate() {
             let a = t.vertices[0].point;
@@ -688,36 +705,18 @@ where
 #[cfg(test)]
 mod tests {
     use crate::int::binder::SteinerInference;
-    use crate::int::monotone::chain_builder::ToChainVertices;
-    use crate::int::monotone::mesh_builder::TriangleMeshBuilder;
+    use crate::int::monotone::builder::TrianglesBuilder;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
-    use i_overlay::i_shape::int::shape::IntShape;
     use rand::Rng;
     use std::collections::HashSet;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
-    }
-
-    fn shape_to_builder(shape: &IntShape) -> TriangleMeshBuilder {
-        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2);
-
-        let mut net = TriangleMeshBuilder::with_triangles_count(triangles_count);
-        net.build(&shape.to_chain_vertices());
-        net
-    }
-
-    fn shape_to_builder_with_points(shape: &IntShape, points: &[IntPoint]) -> TriangleMeshBuilder {
-        let triangles_count = shape.iter().fold(0, |s, path| s + path.len() - 2) + 2 * points.len();
-
-        let mut net = TriangleMeshBuilder::with_triangles_count(triangles_count);
-        net.build(&shape.to_chain_vertices_with_steiner_points(points));
-        net
     }
 
     #[test]
@@ -730,12 +729,12 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
 
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -748,12 +747,12 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
 
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -766,11 +765,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -783,11 +782,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -800,11 +799,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -819,11 +818,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -839,11 +838,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 5);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 5);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -857,11 +856,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 3);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 3);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -878,11 +877,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 6);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 6);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -901,11 +900,11 @@ mod tests {
         ]];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 8);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 8);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -919,11 +918,11 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 16);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 16);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -938,11 +937,11 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 24);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 24);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -971,11 +970,11 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 16);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 16);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -992,11 +991,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 6);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 6);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1006,11 +1005,11 @@ mod tests {
 
         let shape_area = s.area_two();
 
-        let net = shape_to_builder(&s);
-        assert_eq!(net.triangles.len(), 3);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&s, None);
+        assert_eq!(raw.triangles.len(), 3);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1018,11 +1017,11 @@ mod tests {
         let shape = vec![path(&[[0, 2], [2, 0], [5, 0], [4, 6]])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1030,11 +1029,11 @@ mod tests {
         let shape = vec![path(&[[0, 4], [-4, -3], [-2, -2], [1, -2], [0, -1]])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 3);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 3);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1051,11 +1050,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 6);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 6);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1071,11 +1070,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 5);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 5);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1090,11 +1089,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1110,11 +1109,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 5);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 5);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1131,11 +1130,11 @@ mod tests {
         ])];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder(&shape);
-        assert_eq!(net.triangles.len(), 6);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, None);
+        assert_eq!(raw.triangles.len(), 6);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1144,11 +1143,11 @@ mod tests {
         let points = vec![IntPoint::new(0, 0)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 3);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 3);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1157,11 +1156,11 @@ mod tests {
         let points = vec![IntPoint::new(0, 0)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1178,11 +1177,11 @@ mod tests {
         let points = vec![IntPoint::new(5, 0)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 7);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 7);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1195,11 +1194,11 @@ mod tests {
         ];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 8);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 8);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1208,11 +1207,11 @@ mod tests {
         let points = vec![IntPoint::new(1, 3)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1221,11 +1220,11 @@ mod tests {
         let points = vec![IntPoint::new(2, -2)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1234,11 +1233,11 @@ mod tests {
         let points = vec![IntPoint::new(2, -2)];
         let shape_area = shape.area_two();
 
-        let net = shape_to_builder_with_points(&shape, &points);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1248,11 +1247,11 @@ mod tests {
         let shape_area = shape.area_two();
         let group = vec![shape.clone()].group_by_shapes(&points);
 
-        let net = shape_to_builder_with_points(&shape, &group[0]);
-        assert_eq!(net.triangles.len(), 4);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&group[0]));
+        assert_eq!(raw.triangles.len(), 4);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1262,11 +1261,11 @@ mod tests {
         let shape_area = shape.area_two();
         let group = vec![shape.clone()].group_by_shapes(&points);
 
-        let net = shape_to_builder_with_points(&shape, &group[0]);
-        assert_eq!(net.triangles.len(), 2);
-        net.validate();
+        let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&group[0]));
+        assert_eq!(raw.triangles.len(), 2);
+        raw.validate();
 
-        assert_eq!(net.area(), shape_area);
+        assert_eq!(raw.area(), shape_area);
     }
 
     #[test]
@@ -1280,9 +1279,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1298,9 +1297,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1316,9 +1315,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1334,9 +1333,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1352,9 +1351,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1374,9 +1373,9 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let net = shape_to_builder(first);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, None);
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1387,9 +1386,9 @@ mod tests {
         let shape_area = shape.area_two();
         for _ in 0..100_000 {
             let points = random_points(5, 10);
-            let net = shape_to_builder_with_points(&shape, &points);
-            net.validate();
-            assert_eq!(net.area(), shape_area);
+            let raw = TrianglesBuilder::shape_triangulation(&shape, Some(&points));
+            raw.validate();
+            assert_eq!(raw.area(), shape_area);
         }
     }
 
@@ -1400,9 +1399,9 @@ mod tests {
         for _ in 0..100_000 {
             let points = random_points(8, 2);
             let group = shapes.group_by_shapes(&points);
-            let net = shape_to_builder_with_points(&shapes[0], &group[0]);
-            net.validate();
-            assert_eq!(net.area(), shape_area);
+            let raw = TrianglesBuilder::shape_triangulation(&shapes[0], Some(&group[0]));
+            raw.validate();
+            assert_eq!(raw.area(), shape_area);
         }
     }
 
@@ -1420,9 +1419,9 @@ mod tests {
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
-                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&shapes[0], Some(&group[0]));
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1441,9 +1440,9 @@ mod tests {
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
-                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&shapes[0], Some(&group[0]));
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1462,9 +1461,9 @@ mod tests {
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
-                let net = shape_to_builder_with_points(&shapes[0], &group[0]);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&shapes[0], Some(&group[0]));
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }
@@ -1485,9 +1484,9 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let group = vec![first.clone()].group_by_shapes(&points);
-                let net = shape_to_builder_with_points(&first, &group[0]);
-                net.validate();
-                assert_eq!(net.area(), shape_area);
+                let raw = TrianglesBuilder::shape_triangulation(&first, Some(&group[0]));
+                raw.validate();
+                assert_eq!(raw.area(), shape_area);
             };
         }
     }

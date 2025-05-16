@@ -5,7 +5,7 @@ use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 
 #[derive(Debug, Clone, Copy)]
-pub(super) enum VertexType {
+pub(crate) enum VertexType {
     Start,
     End,
     Merge,
@@ -16,10 +16,10 @@ pub(super) enum VertexType {
 
 #[derive(Debug, Clone)]
 pub(crate) struct ChainVertex {
-    pub(super) index: usize,
-    pub(super) this: IntPoint,
-    pub(super) next: IntPoint,
-    pub(super) prev: IntPoint,
+    pub(crate) index: usize,
+    pub(crate) this: IntPoint,
+    pub(crate) next: IntPoint,
+    pub(crate) prev: IntPoint,
 }
 
 impl ChainVertex {
@@ -41,7 +41,7 @@ impl ChainVertex {
     }
 
     #[inline]
-    pub(super) fn implant(this: IntPoint) -> Self {
+    pub(crate) fn implant(this: IntPoint) -> Self {
         Self {
             index: 0,
             this,
@@ -51,7 +51,7 @@ impl ChainVertex {
     }
 
     #[inline]
-    pub(super) fn get_type(&self) -> VertexType {
+    pub(crate) fn get_type(&self) -> VertexType {
         let clock_wise = Triangle::is_clockwise_point(self.prev, self.this, self.next);
         if self.prev == IntPoint::EMPTY && self.next == IntPoint::EMPTY {
             VertexType::Steiner
@@ -73,7 +73,7 @@ impl ChainVertex {
     }
 
     #[inline]
-    pub(super) fn index_point(&self) -> IndexPoint {
+    pub(crate) fn index_point(&self) -> IndexPoint {
         IndexPoint::new(self.index, self.this)
     }
 }

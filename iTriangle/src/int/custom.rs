@@ -1,5 +1,7 @@
+use crate::int::solver::ShapesSolver;
+use crate::int::solver::{ContourSolver, ShapeSolver};
 use crate::int::triangulation::RawIntTriangulation;
-use crate::int::triangulator::{Triangulator, Validation};
+use crate::int::validation::Validation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
@@ -27,7 +29,7 @@ pub trait IntCustomTriangulatable {
 impl IntCustomTriangulatable for IntContour {
     #[inline]
     fn custom_triangulate(&self, validation: Validation) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_contour(self)
+        ContourSolver::triangulate(validation, self)
     }
 
     #[inline]
@@ -36,14 +38,14 @@ impl IntCustomTriangulatable for IntContour {
         points: &[IntPoint],
         validation: Validation,
     ) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_contour_with_steiner_points(self, points)
+        ContourSolver::triangulate_with_steiner_points(validation, self, points)
     }
 }
 
 impl IntCustomTriangulatable for IntShape {
     #[inline]
     fn custom_triangulate(&self, validation: Validation) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_shape(self)
+        ShapeSolver::triangulate(validation, self)
     }
 
     #[inline]
@@ -52,14 +54,14 @@ impl IntCustomTriangulatable for IntShape {
         points: &[IntPoint],
         validation: Validation,
     ) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_shape_with_steiner_points(self, points)
+        ShapeSolver::triangulate_with_steiner_points(validation, self, points)
     }
 }
 
 impl IntCustomTriangulatable for IntShapes {
     #[inline]
     fn custom_triangulate(&self, validation: Validation) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_shapes(self)
+        ShapesSolver::triangulate(validation, self)
     }
 
     #[inline]
@@ -68,6 +70,6 @@ impl IntCustomTriangulatable for IntShapes {
         points: &[IntPoint],
         validation: Validation,
     ) -> RawIntTriangulation {
-        Triangulator { validation }.triangulate_shapes_with_steiner_points(self, points)
+        ShapesSolver::triangulate_with_steiner_points(validation, self, points)
     }
 }
