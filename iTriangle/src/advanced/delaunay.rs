@@ -32,17 +32,27 @@ impl RawIntTriangulation {
             points: self.points,
         };
 
-        delaunay.build();
+        delaunay.triangles.build();
 
         delaunay
     }
 }
 
-impl IntDelaunay {
-    pub(crate) fn build(&mut self) {
-        let mut unchecked = HashSet::with_capacity(self.triangles.len() / 4);
+pub trait DelaunayRefine {
+    fn build(&mut self);
+    fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>);
+    fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut HashSet<usize>);
+    fn update_neighbor(&mut self, neighbor_index: usize, old_index: usize, new_index: usize);
+    fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool;
+}
 
-        for abc_index in 0..self.triangles.len() {
+impl DelaunayRefine for [IntTriangle] {
+
+    #[inline]
+    fn build(&mut self) {
+        let mut unchecked = HashSet::with_capacity(self.len() / 4);
+
+        for abc_index in 0..self.len() {
             self.fix_triangle(abc_index, &mut unchecked);
         }
 
@@ -53,7 +63,8 @@ impl IntDelaunay {
         }
     }
 
-    pub fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>) {
+    #[inline]
+    fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>) {
         debug_assert!(unchecked.is_empty());
         while !buffer.is_empty() {
             for &abc_index in buffer.iter() {
@@ -64,15 +75,16 @@ impl IntDelaunay {
         }
     }
 
+    #[inline]
     fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut HashSet<usize>) {
         // loop by same triangle increase cache locality
         let mut skip = usize::MAX;
         let mut perfect= false;
         while !perfect {
             perfect = true;
-            let neighbors = unsafe { self.triangles.get_unchecked(abc_index) }.neighbors;
+            let neighbors = unsafe { self.get_unchecked(abc_index) }.neighbors;
             for &pbc_index in neighbors.iter() {
-                if pbc_index >= self.triangles.len() || pbc_index == skip {
+                if pbc_index >= self.len() || pbc_index == skip {
                     continue;
                 }
 
@@ -88,13 +100,21 @@ impl IntDelaunay {
     }
 
     #[inline]
-    pub fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
+    fn update_neighbor(&mut self, neighbor_index: usize, old_index: usize, new_index: usize) {
+        if neighbor_index >= self.len() {
+            return;
+        }
+        self[neighbor_index].update_neighbor(old_index, new_index);
+    }
+
+    #[inline]
+    fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool {
         // abc_index & pcb_index can not be more self.triangles.len()
-        let t_abc = unsafe { self.triangles.get_unchecked(abc_index) };
-        let t_pcb = unsafe { self.triangles.get_unchecked(pcb_index) };
+        let t_abc = unsafe { self.get_unchecked(abc_index) };
+        let t_pcb = unsafe { self.get_unchecked(pcb_index) };
         let abc = t_abc.abc_by_neighbor(pcb_index);
         let pcb = t_pcb.abc_by_neighbor(abc_index);
-        if Self::is_flip_not_required(
+        if DelaunayCondition::is_flip_not_required(
             pcb.v0.vertex.point, // p
             abc.v0.vertex.point, // a
             abc.v1.vertex.point, // b
@@ -111,13 +131,13 @@ impl IntDelaunay {
         self.update_neighbor(abc.v1.neighbor, abc_index, pcb_index);
         self.update_neighbor(pcb.v1.neighbor, pcb_index, abc_index);
 
-        let abp = &mut self.triangles[abc_index];
+        let abp = &mut self[abc_index];
         abp.neighbors[abc.v0.position] = pcb.v1.neighbor;
         abp.neighbors[abc.v1.position] = pcb_index;
         abp.neighbors[abc.v2.position] = abc.v2.neighbor;
         abp.vertices[abc.v2.position] = pcb.v0.vertex;
 
-        let pca = &mut self.triangles[pcb_index];
+        let pca = &mut self[pcb_index];
         pca.neighbors[pcb.v0.position] = abc.v1.neighbor;
         pca.neighbors[pcb.v1.position] = abc_index;
         pca.neighbors[pcb.v2.position] = pcb.v2.neighbor;
@@ -125,15 +145,11 @@ impl IntDelaunay {
 
         true
     }
+}
 
-    #[inline]
-    pub(crate) fn update_neighbor(&mut self, neighbor_index: usize, old_index: usize, new_index: usize) {
-        if neighbor_index >= self.triangles.len() {
-            return;
-        }
-        self.triangles[neighbor_index].update_neighbor(old_index, new_index);
-    }
+struct DelaunayCondition;
 
+impl DelaunayCondition {
     // if p is inside circumscribe circle of a, b, c return false
     // if p is inside circumscribe A + B > 180
     // return true if triangle satisfied condition and do not need flip triangles
@@ -247,6 +263,8 @@ impl IntDelaunay {
 
 #[cfg(test)]
 mod tests {
+    use crate::advanced::delaunay::DelaunayCondition;
+use crate::advanced::delaunay::DelaunayRefine;
     use crate::advanced::delaunay::IntDelaunay;
     use crate::geom::point::IndexPoint;
     use crate::geom::triangle::IntTriangle;
@@ -270,7 +288,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -4);
 
-        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, true);
     }
 
@@ -282,7 +300,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -2);
 
-        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, true);
     }
 
@@ -293,7 +311,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -1);
 
-        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, false);
     }
 
@@ -304,7 +322,7 @@ mod tests {
         let c = IntPoint::new(2, 0);
         let p = IntPoint::new(0, -1);
 
-        let is_flip_not_required = IntDelaunay::is_flip_not_required(p, a, b, c);
+        let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
         assert_eq!(is_flip_not_required, false);
     }
 
@@ -375,7 +393,7 @@ mod tests {
             points,
         };
 
-        let is_swapped = delaunay.swap_triangles(0, 1);
+        let is_swapped = delaunay.triangles.swap_triangles(0, 1);
         assert!(is_swapped);
     }
 

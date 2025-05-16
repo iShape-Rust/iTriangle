@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use crate::advanced::delaunay::IntDelaunay;
+use crate::advanced::delaunay::{DelaunayRefine, IntDelaunay};
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::{Abc, IntTriangle};
 use i_overlay::i_float::int::point::IntPoint;
@@ -45,7 +45,7 @@ impl IntDelaunay {
                 let abc = &self.triangles[abc_index];
                 if let Some(t) = self.select_edge_for_refinement::<S>(two_area, abc) {
                     self.split_triangle(abc_index, t, &mut buffer);
-                    self.fix_triangles(&mut buffer, &mut unchecked);
+                    self.triangles.fix_triangles(&mut buffer, &mut unchecked);
                     debug_assert!(buffer.is_empty());
                     split_counter += 1;
                 }
@@ -125,11 +125,11 @@ impl IntDelaunay {
             neighbors: [amc_index, pmb_index, pcb.v2.neighbor],
         };
 
-        self.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
-        self.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
+        self.triangles.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
+        self.triangles.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
 
-        self.update_neighbor(pcb.v1.neighbor, pcb_index, pmb_index);
-        self.update_neighbor(pcb.v2.neighbor, pcb_index, pcm_index);
+        self.triangles.update_neighbor(pcb.v1.neighbor, pcb_index, pmb_index);
+        self.triangles.update_neighbor(pcb.v2.neighbor, pcb_index, pcm_index);
 
         self.triangles[abm_index] = abm;
         self.triangles[pcm_index] = pcm;
@@ -162,8 +162,8 @@ impl IntDelaunay {
             neighbors: [usize::MAX, abc.v1.neighbor, abm_index],
         };
 
-        self.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
-        self.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
+        self.triangles.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
+        self.triangles.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
 
         self.triangles[abm_index] = abm;
         self.triangles.push(amc);

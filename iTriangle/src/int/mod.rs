@@ -3,7 +3,7 @@ pub mod triangulatable;
 pub mod triangulation;
 pub mod unchecked;
 pub mod validation;
-pub mod buffer;
+pub mod triangulator;
 mod binder;
 mod monotone;
 mod solver;
