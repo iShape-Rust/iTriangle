@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 #[derive(Copy, Clone)]
 pub(super) struct PhantomHandler {
     pub(super) vertex: usize,

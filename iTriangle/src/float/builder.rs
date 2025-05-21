@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::float::triangulation::Triangulation;
 use crate::int::triangulation::IndexType;
 
@@ -16,7 +17,7 @@ impl<P, I: IndexType> TriangulationBuilder<P, I> {
         if points_count > I::MAX {
             panic!(
                 "Index type `{}` cannot hold {} points",
-                std::any::type_name::<I>(),
+                core::any::type_name::<I>(),
                 points_count
             );
         }

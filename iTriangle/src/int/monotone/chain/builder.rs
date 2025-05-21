@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::int::monotone::chain::vertex::ChainVertex;
 use i_key_sort::bin_key::index::BinLayout;
 use i_key_sort::sort::layout::BinStore;
@@ -84,6 +85,28 @@ impl ChainBuilder {
             }
             self.sort_vertices();
         }
+    }
+
+    #[inline]
+    pub(crate) fn feed_with_points(&self, points: &mut Vec<IntPoint>) {
+        if points.capacity() < self.vertices.len() {
+            let additional = self.vertices.len() - points.capacity();
+            points.reserve(additional);
+        }
+        let mut index = usize::MAX;
+        for v in self.vertices.iter() {
+            if v.index != index {
+                index = v.index;
+                points.push(v.this);
+            }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn to_points(&self) -> Vec<IntPoint> {
+        let mut points = Vec::with_capacity(self.vertices.len());
+        self.feed_with_points(&mut points);
+        points
     }
 
     #[inline]

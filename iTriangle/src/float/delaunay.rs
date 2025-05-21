@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;

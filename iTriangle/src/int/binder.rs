@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::int::monotone::v_segment::VSegment;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
@@ -198,6 +200,7 @@ impl VEdge {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use crate::int::binder::SteinerInference;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::path::IntPath;

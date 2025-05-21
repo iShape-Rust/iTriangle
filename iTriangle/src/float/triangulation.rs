@@ -1,8 +1,8 @@
+use alloc::vec::Vec;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
-use serde::Serialize;
 use crate::int::triangulation::{IndexType, RawIntTriangulation};
 
 /// A triangulation result based on integer computation, with float mapping.
@@ -21,7 +21,8 @@ pub struct RawTriangulation<P: FloatPointCompatible<T>, T: FloatNumber> {
 /// A flat triangulation result consisting of float points and triangle indices.
 ///
 /// Useful for rendering, exporting, or post-processing the mesh in float space.
-#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct Triangulation<P, I> {
     pub points: Vec<P>,
     pub indices: Vec<I>,

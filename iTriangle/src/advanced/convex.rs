@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::geom::triangle::IntTriangle;
 use crate::index::Index;

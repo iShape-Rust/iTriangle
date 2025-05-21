@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
 use i_overlay::i_float::int::point::IntPoint;
 
@@ -11,31 +13,41 @@ impl IndexType for u8 {
     const MAX: usize = u8::MAX as usize;
     const ZERO: Self = 0;
     #[inline]
-    fn add(self, other: Self) -> Self { self + other }
+    fn add(self, other: Self) -> Self {
+        self + other
+    }
 }
 impl IndexType for u16 {
     const MAX: usize = u16::MAX as usize;
     const ZERO: Self = 0;
     #[inline]
-    fn add(self, other: Self) -> Self { self + other }
+    fn add(self, other: Self) -> Self {
+        self + other
+    }
 }
 impl IndexType for u32 {
     const MAX: usize = u32::MAX as usize;
     const ZERO: Self = 0;
     #[inline]
-    fn add(self, other: Self) -> Self { self + other }
+    fn add(self, other: Self) -> Self {
+        self + other
+    }
 }
 impl IndexType for u64 {
     const MAX: usize = u64::MAX as usize;
     const ZERO: Self = 0;
     #[inline]
-    fn add(self, other: Self) -> Self { self + other }
+    fn add(self, other: Self) -> Self {
+        self + other
+    }
 }
 impl IndexType for usize {
     const MAX: usize = usize::MAX;
     const ZERO: Self = 0;
     #[inline]
-    fn add(self, other: Self) -> Self { self + other }
+    fn add(self, other: Self) -> Self {
+        self + other
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -91,25 +103,9 @@ impl RawIntTriangulation {
     ///
     #[inline]
     pub fn triangle_indices<I: IndexType>(&self) -> Vec<I> {
-        let points_count = self.points.len();
-        if points_count > I::MAX {
-            panic!(
-                "Index type `{}` cannot hold {} points",
-                std::any::type_name::<I>(),
-                points_count
-            );
-        }
-
-        let mut result = Vec::with_capacity(3 * self.triangles.len());
-        for t in &self.triangles {
-            let v = &t.vertices;
-            let i0 = I::try_from(v[0].index).unwrap_or(I::ZERO);
-            let i1 = I::try_from(v[1].index).unwrap_or(I::ZERO);
-            let i2 = I::try_from(v[2].index).unwrap_or(I::ZERO);
-
-            result.extend_from_slice(&[i0, i1, i2]);
-        }
-        result
+        let mut indices = Vec::new();
+        self.triangles.feed_indices(self.points.len(), &mut indices);
+        indices
     }
 
     /// Converts the int triangulation into a simpler index-based mesh.
@@ -132,6 +128,49 @@ impl RawIntTriangulation {
             t.neighbors[0] = t.neighbors[0].saturating_add(triangle_offset);
             t.neighbors[1] = t.neighbors[1].saturating_add(triangle_offset);
             t.neighbors[2] = t.neighbors[2].saturating_add(triangle_offset);
+        }
+    }
+}
+impl<I: IndexType> IntTriangulation<I> {
+    #[inline]
+    pub(crate) fn join(&mut self, other: &Self) {
+        let points_offset = I::try_from(self.points.len()).unwrap_or(I::ZERO);
+        for &i in other.indices.iter() {
+            self.indices.push(i.add(points_offset));
+        }
+        self.points.extend_from_slice(&other.points)
+    }
+}
+
+pub(crate) trait IndicesBuilder {
+    fn feed_indices<I: IndexType>(&self, max_count: usize, indices: &mut Vec<I>);
+}
+
+impl IndicesBuilder for [IntTriangle] {
+
+    #[inline]
+    fn feed_indices<I: IndexType>(&self, max_count: usize, indices: &mut Vec<I>) {
+        if max_count > I::MAX {
+            panic!(
+                "Index type `{}` cannot hold {} points",
+                core::any::type_name::<I>(),
+                max_count
+            );
+        }
+
+        let count = 3 * self.len();
+        if indices.capacity() < count {
+            indices.reserve(count - indices.capacity());
+        }
+        indices.clear();
+
+        for t in self.iter() {
+            let v = &t.vertices;
+            let i0 = I::try_from(v[0].index).unwrap_or(I::ZERO);
+            let i1 = I::try_from(v[1].index).unwrap_or(I::ZERO);
+            let i2 = I::try_from(v[2].index).unwrap_or(I::ZERO);
+
+            indices.extend_from_slice(&[i0, i1, i2]);
         }
     }
 }

@@ -1,8 +1,10 @@
-use std::collections::HashSet;
+use crate::advanced::buffer::DelaunayBuffer;
+use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
 use crate::int::triangulation::RawIntTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
+use crate::advanced::bitset::IndexBitSet;
 
 /// A 2D integer-based Delaunay triangulation.
 /// Each triangle satisfies the Delaunay condition.
@@ -40,8 +42,9 @@ impl RawIntTriangulation {
 
 pub trait DelaunayRefine {
     fn build(&mut self);
-    fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>);
-    fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut HashSet<usize>);
+    fn build_with_buffer(&mut self, buffer: &mut DelaunayBuffer);
+    fn fix_triangles(&mut self, buffer: &mut Vec<usize>, bitset: &mut IndexBitSet);
+    fn fix_triangle(&mut self, abc_index: usize, bitset: &mut IndexBitSet);
     fn update_neighbor(&mut self, neighbor_index: usize, old_index: usize, new_index: usize);
     fn swap_triangles(&mut self, abc_index: usize, pcb_index: usize) -> bool;
 }
@@ -50,33 +53,42 @@ impl DelaunayRefine for [IntTriangle] {
 
     #[inline]
     fn build(&mut self) {
-        let mut unchecked = HashSet::with_capacity(self.len() / 4);
+        let mut buffer = DelaunayBuffer::new();
+        self.build_with_buffer(&mut buffer);
+    }
 
+    #[inline]
+    fn build_with_buffer(&mut self, buffer: &mut DelaunayBuffer) {
+        let mut bitset = buffer.take_bitset();
+        bitset.clear_and_resize(self.len());
         for abc_index in 0..self.len() {
-            self.fix_triangle(abc_index, &mut unchecked);
+            self.fix_triangle(abc_index, &mut bitset);
         }
 
-        if !unchecked.is_empty() {
-            let mut buffer = Vec::with_capacity(unchecked.len());
-            buffer.extend(unchecked.drain());
-            self.fix_triangles(&mut buffer, &mut unchecked);
+        let mut indices = buffer.take_indices();
+        bitset.read_and_clean(&mut indices);
+
+        if !indices.is_empty() {
+            self.fix_triangles(&mut indices, &mut bitset);
         }
+
+        buffer.set(bitset, indices);
     }
 
     #[inline]
-    fn fix_triangles(&mut self, buffer: &mut Vec<usize>, unchecked: &mut HashSet<usize>) {
-        debug_assert!(unchecked.is_empty());
-        while !buffer.is_empty() {
-            for &abc_index in buffer.iter() {
-                self.fix_triangle(abc_index, unchecked);
+    fn fix_triangles(&mut self, indices: &mut Vec<usize>, bitset: &mut IndexBitSet) {
+        debug_assert!(!indices.is_empty());
+        debug_assert!(bitset.is_empty());
+        while !indices.is_empty() {
+            for &abc_index in indices.iter() {
+                self.fix_triangle(abc_index, bitset);
             }
-            buffer.clear();
-            buffer.extend(unchecked.drain());
+            bitset.read_and_clean(indices);
         }
     }
 
     #[inline]
-    fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut HashSet<usize>) {
+    fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut IndexBitSet) {
         // loop by same triangle increase cache locality
         let mut skip = usize::MAX;
         let mut perfect= false;
@@ -96,7 +108,7 @@ impl DelaunayRefine for [IntTriangle] {
                 }
             }
         }
-        unchecked.remove(&abc_index);
+        unchecked.remove(abc_index);
     }
 
     #[inline]
@@ -263,7 +275,9 @@ impl IntDelaunay {
 
 #[cfg(test)]
 mod tests {
-    use crate::advanced::delaunay::DelaunayCondition;
+    use crate::advanced::delaunay::Vec;
+use alloc::vec;
+use crate::advanced::delaunay::DelaunayCondition;
 use crate::advanced::delaunay::DelaunayRefine;
     use crate::advanced::delaunay::IntDelaunay;
     use crate::geom::point::IndexPoint;

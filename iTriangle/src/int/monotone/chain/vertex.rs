@@ -89,22 +89,3 @@ impl BinKey<i32> for ChainVertex {
         layout.index(self.this.x)
     }
 }
-
-pub(crate) trait IntoPoints {
-    fn into_points(self) -> Vec<IntPoint>;
-}
-
-impl IntoPoints for Vec<ChainVertex> {
-    #[inline]
-    fn into_points(self) -> Vec<IntPoint> {
-        let mut points = Vec::with_capacity(self.len());
-        let mut index = usize::MAX;
-        for v in self.iter() {
-            if v.index != index {
-                index = v.index;
-                points.push(v.this);
-            }
-        }
-        points
-    }
-}

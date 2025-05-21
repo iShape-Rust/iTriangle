@@ -1,3 +1,5 @@
+use alloc::vec;
+use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::geom::triangle::IntTriangle;
 use i_overlay::i_float::int::point::IntPoint;
@@ -144,6 +146,7 @@ fn middle(a: IntPoint, b: IntPoint) -> IntPoint {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use i_overlay::i_float::int::point::IntPoint;
     use crate::int::triangulatable::IntTriangulatable;
 

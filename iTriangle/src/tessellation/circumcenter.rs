@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use alloc::vec::Vec;
 use crate::advanced::delaunay::{DelaunayRefine, IntDelaunay};
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::{Abc, IntTriangle};
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
+use crate::advanced::bitset::IndexBitSet;
 
 impl IntDelaunay {
 
@@ -31,8 +32,9 @@ impl IntDelaunay {
     
     fn refine_with_circumcenters_and_selector<S: EdgeSelector>(&mut self, min_area: u64) {
         let two_area = min_area << 1;
-        let mut unchecked = HashSet::with_capacity(self.triangles.len());
-        let mut buffer = Vec::with_capacity(16);
+
+        let mut bitset = IndexBitSet::with_size(self.triangles.len());
+        let mut buffer = Vec::with_capacity(self.triangles.len().max(16));
 
         let mut iter_counter = 0;
         let mut split_counter = self.triangles.len();
@@ -45,7 +47,7 @@ impl IntDelaunay {
                 let abc = &self.triangles[abc_index];
                 if let Some(t) = self.select_edge_for_refinement::<S>(two_area, abc) {
                     self.split_triangle(abc_index, t, &mut buffer);
-                    self.triangles.fix_triangles(&mut buffer, &mut unchecked);
+                    self.triangles.fix_triangles(&mut buffer, &mut bitset);
                     debug_assert!(buffer.is_empty());
                     split_counter += 1;
                 }

@@ -1,3 +1,6 @@
+#![no_std]
+extern crate alloc;
+
 pub mod advanced;
 pub mod float;
 pub mod tessellation;

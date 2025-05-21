@@ -1,9 +1,12 @@
+use alloc::vec;
+use alloc::vec::Vec;
+use crate::int::triangulation::{IndexType, IndicesBuilder, IntTriangulation};
 use crate::int::meta::TrianglesCount;
 use crate::int::triangulation::RawIntTriangulation;
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::IntTriangle;
 use crate::int::monotone::chain::builder::ChainBuilder;
-use crate::int::monotone::chain::vertex::{ChainVertex, IntoPoints};
+use crate::int::monotone::chain::vertex::ChainVertex;
 use crate::int::monotone::chain::vertex::VertexType;
 use crate::int::monotone::phantom::PhantomEdgePool;
 use crate::int::monotone::phantom::PhantomHandler;
@@ -15,8 +18,9 @@ use i_overlay::i_shape::int::shape::{IntContour, IntShape};
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
-use std::cmp::Ordering;
-use std::mem::swap;
+use core::cmp::Ordering;
+use core::mem::swap;
+use crate::advanced::delaunay::DelaunayRefine;
 use crate::int::meta::MeshMetaProvider;
 
 pub(crate) struct TrianglesBuilder {
@@ -106,8 +110,19 @@ impl TrianglesBuilder {
     pub(crate) fn into_raw_triangulation(self) -> RawIntTriangulation {
         RawIntTriangulation {
             triangles: self.triangles,
-            points: self.chain_builder.vertices.into_points(),
+            points: self.chain_builder.to_points(),
         }
+    }
+
+    #[inline]
+    pub(crate) fn feed_triangulation<I: IndexType>(&self, triangulation: &mut IntTriangulation<I>) {
+        self.chain_builder.feed_with_points(&mut triangulation.points);
+        self.triangles.feed_indices(triangulation.points.len(), &mut triangulation.indices)
+    }
+
+    #[inline]
+    pub(crate) fn delaunay_refine(&mut self) {
+        self.triangles.build()
     }
 }
 
@@ -704,6 +719,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
+
+    use std::collections::HashSet;
+    use crate::int::monotone::builder::Vec;
+    use crate::int::monotone::builder::vec;
     use crate::int::binder::SteinerInference;
     use crate::int::monotone::builder::TrianglesBuilder;
     use i_overlay::core::fill_rule::FillRule;
@@ -713,7 +733,8 @@ mod tests {
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
     use rand::Rng;
-    use std::collections::HashSet;
+
+
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()

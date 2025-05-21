@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use core::cmp::Ordering;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 
@@ -51,7 +51,7 @@ impl Default for VSegment {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
+    use core::cmp::Ordering;
     use i_overlay::i_float::int::point::IntPoint;
     use crate::int::monotone::v_segment::VSegment;
 

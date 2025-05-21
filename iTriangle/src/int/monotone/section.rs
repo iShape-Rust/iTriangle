@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use crate::geom::point::IndexPoint;
 use crate::int::monotone::v_segment::VSegment;
 use i_tree::set::sort::KeyValue;
@@ -80,7 +81,7 @@ mod tests {
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;
     use i_tree::EMPTY_REF;
-    use std::cmp::Ordering;
+    use core::cmp::Ordering;
 
     impl Section {
         fn with_sort(sort: VSegment) -> Section {

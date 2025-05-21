@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
@@ -103,6 +104,7 @@ fn extract(a: IntPoint, b: IntPoint, radius: u64, sqr_radius: u64, contour: &mut
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
     use i_overlay::i_float::int::point::IntPoint;
     use crate::tessellation::split::SliceContour;
 
