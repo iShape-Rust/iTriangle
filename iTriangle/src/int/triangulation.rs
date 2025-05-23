@@ -2,8 +2,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
 use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::i_shape::util::reserve::Reserve;
 
-pub trait IndexType: Copy + Clone + TryFrom<usize> {
+pub trait IndexType: Copy + Clone + TryFrom<usize> + Default {
     const MAX: usize;
     const ZERO: Self;
     fn add(self, other: Self) -> Self;
@@ -50,7 +51,7 @@ impl IndexType for usize {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct IntTriangulation<I> {
     pub points: Vec<IntPoint>,
     pub indices: Vec<I>,
@@ -132,13 +133,30 @@ impl RawIntTriangulation {
     }
 }
 impl<I: IndexType> IntTriangulation<I> {
+
     #[inline]
-    pub(crate) fn join(&mut self, other: &Self) {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            points: Vec::with_capacity(capacity),
+            indices: Vec::with_capacity(3 * capacity)
+        }
+    }
+
+    #[inline]
+    pub fn join(&mut self, other: &Self) {
         let points_offset = I::try_from(self.points.len()).unwrap_or(I::ZERO);
         for &i in other.indices.iter() {
             self.indices.push(i.add(points_offset));
         }
         self.points.extend_from_slice(&other.points)
+    }
+
+    #[inline]
+    pub fn reserve_and_clear(&mut self, new_len: usize) {
+        self.points.reserve_capacity(new_len);
+        self.points.clear();
+        self.indices.reserve_capacity(3 * new_len);
+        self.indices.clear();
     }
 }
 
@@ -159,18 +177,16 @@ impl IndicesBuilder for [IntTriangle] {
         }
 
         let count = 3 * self.len();
-        if indices.capacity() < count {
-            indices.reserve(count - indices.capacity());
-        }
+        indices.reserve_capacity(count);
         indices.clear();
 
         for t in self.iter() {
-            let v = &t.vertices;
-            let i0 = I::try_from(v[0].index).unwrap_or(I::ZERO);
-            let i1 = I::try_from(v[1].index).unwrap_or(I::ZERO);
-            let i2 = I::try_from(v[2].index).unwrap_or(I::ZERO);
-
-            indices.extend_from_slice(&[i0, i1, i2]);
+            let i0 = unsafe { I::try_from(t.vertices[0].index).unwrap_unchecked() };
+            let i1 = unsafe { I::try_from(t.vertices[1].index).unwrap_unchecked() };
+            let i2 = unsafe { I::try_from(t.vertices[2].index).unwrap_unchecked() };
+            indices.push(i0);
+            indices.push(i1);
+            indices.push(i2);
         }
     }
 }

@@ -1,9 +1,10 @@
+use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
 use alloc::vec::Vec;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
-use crate::int::triangulation::{IndexType, RawIntTriangulation};
+use i_overlay::i_shape::util::reserve::Reserve;
 
 /// A triangulation result based on integer computation, with float mapping.
 ///
@@ -49,6 +50,67 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> RawTriangulation<P, T> {
         Triangulation {
             indices: self.triangle_indices(),
             points: self.points(),
+        }
+    }
+}
+
+impl<P, I: IndexType> Triangulation<P, I> {
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            points: Vec::with_capacity(capacity),
+            indices: Vec::with_capacity(3 * capacity)
+        }
+    }
+
+    #[inline]
+    pub fn set_with_int<T>(
+        &mut self,
+        triangulation: &IntTriangulation<I>,
+        adapter: &FloatPointAdapter<P, T>,
+    ) where
+        P: FloatPointCompatible<T>,
+        T: FloatNumber,
+    {
+        self.points.clear();
+        self.points.reserve_capacity(triangulation.points.capacity());
+        self.points.extend(triangulation.points.iter().map(|p|adapter.int_to_float(p)));
+
+        self.indices.clear();
+        self.indices.extend_from_slice(&triangulation.indices);
+    }
+}
+
+impl<I: IndexType> IntTriangulation<I> {
+    #[inline]
+    pub fn into_float<P: FloatPointCompatible<T>, T: FloatNumber>(
+        self,
+        adapter: &FloatPointAdapter<P, T>,
+    ) -> Triangulation<P, I> {
+        let points = self
+            .points
+            .iter()
+            .map(|p| adapter.int_to_float(p))
+            .collect();
+        Triangulation {
+            points,
+            indices: self.indices,
+        }
+    }
+
+    #[inline]
+    pub fn to_float<P: FloatPointCompatible<T>, T: FloatNumber>(
+        &self,
+        adapter: &FloatPointAdapter<P, T>,
+    ) -> Triangulation<P, I> {
+        let points = self
+            .points
+            .iter()
+            .map(|p| adapter.int_to_float(p))
+            .collect();
+        Triangulation {
+            points,
+            indices: self.indices.clone(),
         }
     }
 }

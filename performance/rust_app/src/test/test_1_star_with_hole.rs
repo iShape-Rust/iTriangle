@@ -3,6 +3,9 @@ use crate::util::star_builder::StarBuilder;
 use std::f64::consts::PI;
 use std::hint::black_box;
 use std::time::Instant;
+use i_triangle::float::triangulation::Triangulation;
+use i_triangle::float::triangulator::Triangulator;
+use i_triangle::i_overlay::i_shape::float::count::PointsCount;
 /*
 unchecked raw:
 4 - 0.094518
@@ -168,5 +171,58 @@ impl StarWithHoleTest {
         let points_count = points.len() / 2;
         let hole_index = points_count / 2;
         earcutr::earcut(points,&[hole_index],2).unwrap().len()
+    }
+}
+
+impl StarWithHoleTest {
+    pub(crate) fn run_triangulator(&self, count: usize, repeat_count: usize, delaunay: bool) -> usize {
+        let count_per_star = self.points_per_corner * count;
+        let mut shape = vec![
+            Vec::with_capacity(count_per_star),
+            Vec::with_capacity(count_per_star),
+        ];
+        let mut sum = 0;
+
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
+
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
+
+        let start = Instant::now();
+
+        let max_capacity = shape.points_count();
+        let mut triangulator = Triangulator::<u32>::new(max_capacity, Default::default(), Default::default());
+        let mut triangulation = Triangulation::with_capacity(max_capacity);
+
+        for _ in 0..repeat_count {
+            let mut radius_scale = self.min_radius_scale;
+
+            for _ in 0..self.radius_steps_count {
+                // grow star
+                let mut start_angle = 0.0;
+                for _ in 0..self.angle_steps_count {
+                    // rotate star
+                    StarBuilder::fill_star_with_hole(
+                        self.radius,
+                        radius_scale,
+                        start_angle,
+                        self.points_per_corner,
+                        count,
+                        &mut shape,
+                    );
+
+                    triangulator.triangulate_into(&shape, delaunay, &mut triangulation);
+                    sum += triangulation.points.len();
+                    start_angle += angle_step;
+                }
+                radius_scale += radius_step;
+            }
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64() / repeat_count as f64;
+
+        println!("{} - {:.6}", count, time);
+        sum
     }
 }

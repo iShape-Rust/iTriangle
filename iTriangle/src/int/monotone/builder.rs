@@ -15,6 +15,7 @@ use crate::int::monotone::v_segment::VSegment;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
+use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
@@ -61,6 +62,12 @@ impl TrianglesBuilder {
         builder.into_raw_triangulation()
     }
 
+    #[inline]
+    pub(crate) fn build_flat(&mut self, flat: &FlatContoursBuffer) {
+        self.chain_builder.flat_to_vertices(flat);
+        self.reserve_and_clear_triangles(flat.triangles_count(0));
+        self.build();
+    }
 
     #[inline]
     pub(crate) fn build_shape(&mut self, shape: &IntShape, points: Option<&[IntPoint]>) {
@@ -116,7 +123,7 @@ impl TrianglesBuilder {
 
     #[inline]
     pub(crate) fn feed_triangulation<I: IndexType>(&self, triangulation: &mut IntTriangulation<I>) {
-        self.chain_builder.feed_with_points(&mut triangulation.points);
+        self.chain_builder.feed_points(&mut triangulation.points);
         self.triangles.feed_indices(triangulation.points.len(), &mut triangulation.indices)
     }
 

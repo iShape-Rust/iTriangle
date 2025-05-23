@@ -7,3 +7,4 @@ pub mod convex;
 pub mod builder;
 pub mod circumcenter;
 pub mod centroid_net;
+pub mod triangulator;

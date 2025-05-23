@@ -31,7 +31,7 @@ impl StarBuilder {
         start_angle: f64,
         points_per_corner: usize,
         corners_count: usize,
-        contours: &mut Vec<Vec<[f64; 2]>>,
+        contours: &mut [Vec<[f64; 2]>],
     ) {
         contours[0].clear();
         contours[1].clear();

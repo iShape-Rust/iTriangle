@@ -30,7 +30,7 @@ pub trait Triangulatable<P: FloatPointCompatible<T>, T: FloatNumber> {
     fn triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P, T>;
 }
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> Triangulatable<P, T> for Contour<P> {
+impl<P: FloatPointCompatible<T>, T: FloatNumber> Triangulatable<P, T> for [P] {
     fn triangulate(&self) -> RawTriangulation<P, T> {
         if let Some(rect) = FloatRect::with_path(self) {
             let adapter = FloatPointAdapter::<P, T>::new(rect);

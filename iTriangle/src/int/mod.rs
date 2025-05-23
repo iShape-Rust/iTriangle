@@ -4,7 +4,7 @@ pub mod triangulation;
 pub mod unchecked;
 pub mod validation;
 pub mod triangulator;
+pub(crate) mod monotone;
 mod binder;
-mod monotone;
 mod solver;
 mod meta;

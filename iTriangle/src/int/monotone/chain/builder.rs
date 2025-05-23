@@ -5,6 +5,8 @@ use i_key_sort::sort::layout::BinStore;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
+use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
+use i_overlay::i_shape::util::reserve::Reserve;
 
 
 pub(crate) struct ChainBuilder {
@@ -19,6 +21,30 @@ impl ChainBuilder {
         Self {
             vertices: Vec::with_capacity(capacity),
             bin_store: BinStore::empty(0, 0)
+        }
+    }
+
+    pub(crate) fn flat_to_vertices(&mut self, flat: &FlatContoursBuffer) {
+        if let Some(layout) = self.flat_layout_and_reserve(flat, 0) {
+            self.bin_store.init(layout);
+
+            self.bin_store.reserve_bins_space(flat.points.iter().map(|p|&p.x));
+
+            let count = self.bin_store.prepare_bins();
+            self.vertices.resize(count, ChainVertex::EMPTY);
+
+            for range in flat.ranges.iter() {
+                let contour = &flat.points[range.clone()];
+                self.add_contour_with_bins(contour);
+            }
+            self.sort_vertices_with_bins();
+        } else {
+            self.vertices.clear();
+            for range in flat.ranges.iter() {
+                let contour = &flat.points[range.clone()];
+                self.add_contour(contour);
+            }
+            self.sort_vertices();
         }
     }
 
@@ -88,11 +114,9 @@ impl ChainBuilder {
     }
 
     #[inline]
-    pub(crate) fn feed_with_points(&self, points: &mut Vec<IntPoint>) {
-        if points.capacity() < self.vertices.len() {
-            let additional = self.vertices.len() - points.capacity();
-            points.reserve(additional);
-        }
+    pub(crate) fn feed_points(&self, points: &mut Vec<IntPoint>) {
+        points.reserve_capacity(self.vertices.len());
+        points.clear();
         let mut index = usize::MAX;
         for v in self.vertices.iter() {
             if v.index != index {
@@ -105,7 +129,7 @@ impl ChainBuilder {
     #[inline]
     pub(crate) fn to_points(&self) -> Vec<IntPoint> {
         let mut points = Vec::with_capacity(self.vertices.len());
-        self.feed_with_points(&mut points);
+        self.feed_points(&mut points);
         points
     }
 
@@ -147,6 +171,27 @@ impl ChainBuilder {
                 min = min.min(p.x);
                 max = max.max(p.x);
             }
+        }
+
+        BinLayout::new(min..max, count)
+    }
+
+    #[inline]
+    fn flat_layout_and_reserve(&mut self, flat: &FlatContoursBuffer, extra_count: usize) -> Option<BinLayout<i32>> {
+        let main_count = flat.points.len();
+        let count = main_count + extra_count;
+
+        if count < 64 || count > 1000_000 {
+            // direct approach work better for small and large data
+            return None
+        }
+
+        let mut min = i32::MAX;
+        let mut max = i32::MIN;
+
+        for p in flat.points.iter() {
+            min = min.min(p.x);
+            max = max.max(p.x);
         }
 
         BinLayout::new(min..max, count)

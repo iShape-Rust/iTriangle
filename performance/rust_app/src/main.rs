@@ -48,10 +48,11 @@ fn debug_run() {
         min_radius_scale: 0.0,
         max_radius_scale: 1.0,
     };
-    let s0 = test.run_unchecked_raw(4, 16);
+    let s0 = test.run_triangulator(8, 8, false);
     println!("s0: {}", s0);
 }
 
+#[allow(dead_code)]
 fn star(args: &EnvArgs) {
     let test = SimpleStarTest {
         radius: 100.0,
@@ -65,9 +66,11 @@ fn star(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
     if complex {
+        let n = 7;
+
         println!("unchecked raw: ");
         let mut s0 = 0;
-        for i in 0..8 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s0 += test.run_unchecked_raw(count, repeat_count);
@@ -76,7 +79,7 @@ fn star(args: &EnvArgs) {
 
         println!("unchecked delaunay: ");
         let mut s1 = 0;
-        for i in 0..8 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s1 += test.run_unchecked_delaunay(count, repeat_count);
@@ -85,7 +88,7 @@ fn star(args: &EnvArgs) {
         
         println!("raw: ");
         let mut s2 = 0;
-        for i in 0..8 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s2 += test.run_raw(count, repeat_count);
@@ -94,22 +97,40 @@ fn star(args: &EnvArgs) {
 
         println!("delaunay: ");
         let mut s3 = 0;
-        for i in 0..8 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
-        println!("earcutr: ");
+        println!("triangulator raw: ");
         let mut s4 = 0;
-        for i in 0..8 {
+        for i in 0..n {
             let count = 4 << i;
-            s4 += test.run_earcutr(count);
+            let repeat_count = (256 / count).max(1);
+            s4 += test.run_triangulator(count, repeat_count, false);
         }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let mut s5 = 0;
+        for i in 0..8 {
+            let count = 4 << i;
+            let repeat_count = (256 / count).max(1);
+            s5 += test.run_triangulator(count, repeat_count, true);
+        }
+        println!();
+
+        println!("earcutr: ");
+        let mut s6 = 0;
+        for i in 0..n {
+            let count = 4 << i;
+            s6 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     } else {
         let count = args.get_usize("count");
         let repeat_count = (256 / count).max(1);
@@ -130,14 +151,23 @@ fn star(args: &EnvArgs) {
         let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
-        println!("earcutr: ");
-        let s4 = test.run_earcutr(count);
+        println!("triangulator raw: ");
+        let s4 = test.run_triangulator(count, repeat_count, false);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let s5 = test.run_triangulator(count, repeat_count, true);
+        println!();
+
+        println!("earcutr: ");
+        let s6 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     }
 }
 
+#[allow(dead_code)]
 fn star_with_hole(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
@@ -151,9 +181,11 @@ fn star_with_hole(args: &EnvArgs) {
     };
 
     if complex {
+        let n = 6;
+
         println!("unchecked raw: ");
         let mut s0 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s0 += test.run_unchecked_raw(count, repeat_count);
@@ -162,7 +194,7 @@ fn star_with_hole(args: &EnvArgs) {
 
         println!("unchecked delaunay: ");
         let mut s1 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s1 += test.run_unchecked_delaunay(count, repeat_count);
@@ -171,7 +203,7 @@ fn star_with_hole(args: &EnvArgs) {
 
         println!("raw: ");
         let mut s2 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s2 += test.run_raw(count, repeat_count);
@@ -180,22 +212,40 @@ fn star_with_hole(args: &EnvArgs) {
 
         println!("delaunay: ");
         let mut s3 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
-        println!("earcutr: ");
+        println!("triangulator raw: ");
         let mut s4 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
-            s4 += test.run_earcutr(count);
+            let repeat_count = (256 / count).max(1);
+            s4 += test.run_triangulator(count, repeat_count, false);
         }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let mut s5 = 0;
+        for i in 0..n {
+            let count = 4 << i;
+            let repeat_count = (256 / count).max(1);
+            s5 += test.run_triangulator(count, repeat_count, true);
+        }
+        println!();
+
+        println!("earcutr: ");
+        let mut s6 = 0;
+        for i in 0..n {
+            let count = 4 << i;
+            s6 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     } else {
         let count = args.get_usize("count");
         let repeat_count = (256 / count).max(1);
@@ -216,15 +266,23 @@ fn star_with_hole(args: &EnvArgs) {
         let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
-        println!("earcutr: ");
-        let s4 = test.run_earcutr(count);
+        println!("triangulator raw: ");
+        let s4 = test.run_triangulator(count, repeat_count, false);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let s5 = test.run_triangulator(count, repeat_count, true);
+        println!();
+
+        println!("earcutr: ");
+        let s6 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     }
 }
 
-
+#[allow(dead_code)]
 fn rect_with_star_holes(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
@@ -239,9 +297,10 @@ fn rect_with_star_holes(args: &EnvArgs) {
     };
 
     if complex {
+        let n = 6;
         println!("unchecked raw: ");
         let mut s0 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s0 += test.run_unchecked_raw(count, repeat_count);
@@ -250,7 +309,7 @@ fn rect_with_star_holes(args: &EnvArgs) {
 
         println!("unchecked delaunay: ");
         let mut s1 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s1 += test.run_unchecked_delaunay(count, repeat_count);
@@ -259,7 +318,7 @@ fn rect_with_star_holes(args: &EnvArgs) {
 
         println!("raw: ");
         let mut s2 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s2 += test.run_raw(count, repeat_count);
@@ -268,22 +327,40 @@ fn rect_with_star_holes(args: &EnvArgs) {
 
         println!("delaunay: ");
         let mut s3 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
             let repeat_count = (256 / count).max(1);
             s3 += test.run_delaunay(count, repeat_count);
         }
         println!();
 
-        println!("earcutr: ");
+        println!("triangulator raw: ");
         let mut s4 = 0;
-        for i in 0..7 {
+        for i in 0..n {
             let count = 4 << i;
-            s4 += test.run_earcutr(count);
+            let repeat_count = (256 / count).max(1);
+            s4 += test.run_triangulator(count, repeat_count, false);
         }
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let mut s5 = 0;
+        for i in 0..n {
+            let count = 4 << i;
+            let repeat_count = (256 / count).max(1);
+            s5 += test.run_triangulator(count, repeat_count, true);
+        }
+        println!();
+
+        println!("earcutr: ");
+        let mut s6 = 0;
+        for i in 0..n {
+            let count = 4 << i;
+            s6 += test.run_earcutr(count);
+        }
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     } else {
         let count = args.get_usize("count");
         let repeat_count = (256 / count).max(1);
@@ -304,10 +381,18 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let s3 = test.run_delaunay(count, repeat_count);
         println!();
 
-        println!("earcutr: ");
-        let s4 = test.run_earcutr(count);
+        println!("triangulator raw: ");
+        let s4 = test.run_triangulator(count, repeat_count, false);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}", s0, s1, s2, s3, s4);
+        println!("triangulator delaunay: ");
+        let s5 = test.run_triangulator(count, repeat_count, true);
+        println!();
+
+        println!("earcutr: ");
+        let s6 = test.run_earcutr(count);
+        println!();
+
+        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}", s0, s1, s2, s3, s4, s5, s6);
     }
 }

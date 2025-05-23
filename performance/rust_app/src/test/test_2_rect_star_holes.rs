@@ -3,7 +3,8 @@ use crate::util::star_builder::StarBuilder;
 use std::f64::consts::PI;
 use std::hint::black_box;
 use std::time::Instant;
-
+use i_triangle::float::triangulation::Triangulation;
+use i_triangle::float::triangulator::Triangulator;
 /*
 unchecked raw: 
 4 - 0.002339
@@ -119,7 +120,7 @@ impl RectStarHolesTest {
         radius_scale: f64,
         start_angle: f64,
         count: usize,
-        shape: &mut Vec<Vec<[f64; 2]>>,
+        shape: &mut [Vec<[f64; 2]>],
     ) {
         let dx = 4.0 * self.radius;
         let dy = dx;
@@ -246,5 +247,48 @@ impl RectStarHolesTest {
     #[inline]
     fn ear_cut(&self, indices: &[usize], points: &[f64]) -> usize {
         earcutr::earcut(points, indices, 2).unwrap().len()
+    }
+}
+
+impl RectStarHolesTest {
+    pub(crate) fn run_triangulator(&self, count: usize, repeat_count: usize, delaunay: bool) -> usize {
+        let count_per_star = self.points_per_corner * self.corners_count;
+        let mut shape = vec![Vec::with_capacity(count_per_star); count * count + 1];
+
+        let mut sum = 0;
+
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
+
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
+
+        let start = Instant::now();
+
+        let max_capacity = count_per_star * shape.len();
+        let mut triangulator = Triangulator::<u32>::new(max_capacity, Default::default(), Default::default());
+        let mut triangulation = Triangulation::with_capacity(max_capacity);
+
+        for _ in 0..repeat_count {
+            let mut radius_scale = self.min_radius_scale;
+            while radius_scale < self.max_radius_scale {
+                // grow star
+                let mut start_angle = 0.0;
+                for _ in 0..self.angle_steps_count {
+                    // rotate star
+                    self.fill_rect_shape(radius_scale, start_angle, count, &mut shape);
+                    triangulator.triangulate_into(&shape, delaunay, &mut triangulation);
+                    sum += triangulation.points.len();
+
+                    start_angle += angle_step;
+                }
+                radius_scale += radius_step;
+            }
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64() / repeat_count as f64;
+
+        println!("{} - {:.6}", count, time);
+        sum
     }
 }
