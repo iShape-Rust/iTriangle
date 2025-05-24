@@ -8,6 +8,7 @@ use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::source::resource::ShapeResource;
 
+/// A reusable triangulator that converts float-based shapes into triangle meshes.
 pub struct Triangulator<I> {
     flat_buffer: Option<FlatContoursBuffer>,
     int_buffer: Option<IntTriangulation<I>>,
@@ -15,6 +16,14 @@ pub struct Triangulator<I> {
 }
 
 impl<I: IndexType> Triangulator<I> {
+
+    /// Performs triangulation on the given shape resource and returns a new `Triangulation`.
+    ///
+    /// - `resource`: A shape container implementing `ShapeResource` (e.g., contour, contours, or shapes).
+    /// - `delaunay`: Enables Delaunay-compatible triangulation when set to true.
+    /// - Returns: A new `Triangulation` containing triangle indices and corresponding points.
+    ///
+    /// Uses internal buffers to minimize allocations and speed up repeated calls.
     #[inline]
     pub fn new(max_points_count: usize, validation: Validation, solver: Solver) -> Self {
         Self {
@@ -33,6 +42,17 @@ impl<I: IndexType> Default for Triangulator<I> {
 }
 
 impl<I: IndexType> Triangulator<I> {
+
+    /// Performs triangulation on the provided shape resource and returns a new `Triangulation`.
+    ///
+    /// - `resource`: A `ShapeResource` that define contours.
+    ///   `ShapeResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `delaunay`: if true, applies Delaunay refinement.
+    ///
+    /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
     pub fn triangulate<R, P, T>(&mut self, resource: &R, delaunay: bool) -> Triangulation<P, I>
     where
@@ -56,6 +76,18 @@ impl<I: IndexType> Triangulator<I> {
         triangulation
     }
 
+    /// Triangulates the given shape resource and stores the result into an existing `Triangulation` instance.
+    ///
+    /// Avoids allocating a new `Triangulation` by reusing the provided output buffer.
+    ///
+    /// - `resource`: A `ShapeResource` that define contours.
+    ///   `ShapeResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `delaunay`: if true, applies Delaunay refinement.
+    /// - `triangulation`: Output buffer to store the resulting triangle mesh.
+    /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
     pub fn triangulate_into<R, P, T>(
         &mut self,
@@ -80,6 +112,19 @@ impl<I: IndexType> Triangulator<I> {
         self.int_buffer = Some(int_buffer);
     }
 
+    /// Performs triangulation on the provided shape resource and returns a new `Triangulation`.
+    ///
+    /// Skips input validation (e.g., area checks or self-intersections), offering faster performance
+    /// at the cost of issues.
+    ///
+    /// - `resource`: A `ShapeResource` that define contours.
+    ///   `ShapeResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `delaunay`: if true, applies Delaunay refinement.
+    ///
+    /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
     pub fn uncheck_triangulate<R, P, T>(
         &mut self,
@@ -96,7 +141,7 @@ impl<I: IndexType> Triangulator<I> {
         let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
-            .triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
+            .uncheck_triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
 
         let triangulation = int_buffer.to_float(&adapter);
 
@@ -106,6 +151,22 @@ impl<I: IndexType> Triangulator<I> {
         triangulation
     }
 
+    /// Triangulates the given shape resource and stores the result into an existing `Triangulation` instance.
+    ///
+    /// Skips input validation (e.g., area checks or self-intersections), offering faster performance
+    /// at the cost of issues.
+    /// 
+    /// Avoids allocating a new `Triangulation` by reusing the provided output buffer.
+    ///
+    /// - `resource`: A `ShapeResource` that define contours.
+    ///   `ShapeResource` can be one of the following:
+    ///     - `Contour`: A contour representing a closed path. This path is interpreted as closed, so it doesn’t require the start and endpoint to be the same for processing.
+    ///     - `Contours`: A collection of contours, each representing a closed path.
+    ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
+    /// - `delaunay`: if true, applies Delaunay refinement.
+    /// - `triangulation`: Output buffer to store the resulting triangle mesh.
+    ///
+    /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
     pub fn uncheck_triangulate_into<R, P, T>(
         &mut self,
@@ -122,7 +183,7 @@ impl<I: IndexType> Triangulator<I> {
         let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
-            .triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
+            .uncheck_triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
 
         triangulation.set_with_int(&int_buffer, &adapter);
 

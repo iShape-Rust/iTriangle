@@ -131,10 +131,7 @@ impl<I: IndexType> IntTriangulator<I> {
         contour: &IntContour,
         delaunay: bool,
     ) -> IntTriangulation<I> {
-        let mut triangulation = IntTriangulation {
-            points: Vec::new(),
-            indices: Vec::new(),
-        };
+        let mut triangulation = Default::default();
         self.uncheck_triangulate_contour_into(contour, delaunay, &mut triangulation);
         triangulation
     }
@@ -159,10 +156,7 @@ impl<I: IndexType> IntTriangulator<I> {
         shape: &IntShape,
         delaunay: bool,
     ) -> IntTriangulation<I> {
-        let mut triangulation = IntTriangulation {
-            points: Vec::new(),
-            indices: Vec::new(),
-        };
+        let mut triangulation = Default::default();
         self.uncheck_triangulate_shape_into(shape, delaunay, &mut triangulation);
         triangulation
     }
@@ -187,10 +181,7 @@ impl<I: IndexType> IntTriangulator<I> {
         shapes: &IntShapes,
         delaunay: bool,
     ) -> IntTriangulation<I> {
-        let mut triangulation = IntTriangulation {
-            points: Vec::new(),
-            indices: Vec::new(),
-        };
+        let mut triangulation = Default::default();
         self.uncheck_triangulate_shapes_into(shapes, delaunay, &mut triangulation);
         triangulation
     }
@@ -219,10 +210,7 @@ impl<I: IndexType> IntTriangulator<I> {
         flat_buffer: &FlatContoursBuffer,
         delaunay: bool,
     ) -> IntTriangulation<I> {
-        let mut triangulation = IntTriangulation {
-            points: Vec::new(),
-            indices: Vec::new(),
-        };
+        let mut triangulation = Default::default();
         self.uncheck_triangulate_flat_into(flat_buffer, delaunay, &mut triangulation);
         triangulation
     }

@@ -134,7 +134,7 @@ impl ChainBuilder {
     }
 
     #[inline]
-    fn contour_layout_and_reserve(&mut self, contour: &IntContour, extra_count: usize) -> Option<BinLayout<i32>> {
+    fn contour_layout_and_reserve(&mut self, contour: &[IntPoint], extra_count: usize) -> Option<BinLayout<i32>> {
         let count = contour.len() + extra_count;
 
         if count < 64 || count > 1000_000 {
