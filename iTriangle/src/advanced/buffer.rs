@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use crate::advanced::bitset::IndexBitSet;
 
+#[derive(Default)]
 pub struct DelaunayBuffer {
     bitset: Option<IndexBitSet>,
     indices: Option<Vec<usize>>
@@ -17,7 +18,7 @@ impl DelaunayBuffer {
         if let Some(bitset) = self.bitset.take() {
             bitset
         } else {
-            IndexBitSet::new()
+            IndexBitSet::default()
         }
     }
 

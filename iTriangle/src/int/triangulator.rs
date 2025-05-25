@@ -1,7 +1,6 @@
 use crate::int::monotone::builder::TrianglesBuilder;
 use crate::int::triangulation::{IndexType, IntTriangulation};
 use crate::int::validation::Validation;
-use alloc::vec::Vec;
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::solver::Solver;

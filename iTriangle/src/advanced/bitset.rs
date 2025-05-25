@@ -8,13 +8,6 @@ pub struct IndexBitSet {
 impl IndexBitSet {
 
     #[inline]
-    pub fn new() -> Self {
-        Self {
-            chunks: Vec::new(),
-        }
-    }
-
-    #[inline]
     pub fn with_size(count: usize) -> Self {
         let len = count >> 6;
         Self {
@@ -82,6 +75,14 @@ impl IndexBitSet {
 
 }
 
+impl Default for IndexBitSet {
+    fn default() -> Self {
+        Self {
+            chunks: vec![0; 8],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate std;
@@ -94,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         let mut out = Vec::new();
         set.read_and_clean(&mut out);
         assert!(out.is_empty());
@@ -102,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_single_value() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         set.insert(42);
         let mut out = Vec::new();
         set.read_and_clean(&mut out);
@@ -111,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_duplicates() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         set.insert(10);
         set.insert(10);
         set.insert(10);
@@ -122,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_ordered_values() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         for i in 0..100 {
             set.insert(i);
         }
@@ -135,7 +136,7 @@ mod tests {
     #[test]
     fn test_random_comparison_with_hashset() {
         let mut rng = StdRng::seed_from_u64(12345);
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         let mut hash = HashSet::new();
 
         for _ in 0..10_000 {
@@ -153,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_reuse_and_clean() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         let mut out = Vec::new();
 
         set.insert(1);
@@ -175,7 +176,7 @@ mod tests {
 
     #[test]
     fn test_remove() {
-        let mut set = IndexBitSet::new();
+        let mut set = IndexBitSet::default();
         set.insert(15);
         set.insert(100);
         set.insert(200);

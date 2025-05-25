@@ -21,6 +21,7 @@ use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
 use core::cmp::Ordering;
 use core::mem::swap;
+use crate::advanced::buffer::DelaunayBuffer;
 use crate::advanced::delaunay::DelaunayRefine;
 use crate::int::meta::MeshMetaProvider;
 
@@ -28,6 +29,7 @@ pub(crate) struct TrianglesBuilder {
     triangles: Vec<IntTriangle>,
     chain_builder: ChainBuilder,
     phantom_store: PhantomEdgePool,
+    buffer: Option<DelaunayBuffer>,
 }
 
 impl TrianglesBuilder {
@@ -99,6 +101,7 @@ impl TrianglesBuilder {
             triangles: Vec::with_capacity(triangles_capacity),
             chain_builder: ChainBuilder::with_capacity(vertices_capacity),
             phantom_store: PhantomEdgePool::new(),
+            buffer: None,
         }
     }
 
@@ -129,7 +132,8 @@ impl TrianglesBuilder {
 
     #[inline]
     pub(crate) fn delaunay_refine(&mut self) {
-        self.triangles.build()
+        let mut buffer = self.buffer.take().unwrap_or_default();
+        self.triangles.build_with_buffer(&mut buffer)
     }
 }
 
