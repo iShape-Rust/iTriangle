@@ -73,7 +73,7 @@ impl IndexType for usize {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct IntTriangulation<I> {
+pub struct IntTriangulation<I = u16> {
     pub points: Vec<IntPoint>,
     pub indices: Vec<I>,
 }

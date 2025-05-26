@@ -24,7 +24,7 @@ pub struct RawTriangulation<P: FloatPointCompatible<T>, T: FloatNumber> {
 /// Useful for rendering, exporting, or post-processing the mesh in float space.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
-pub struct Triangulation<P, I> {
+pub struct Triangulation<P, I = u16> {
     pub points: Vec<P>,
     pub indices: Vec<I>,
 }
