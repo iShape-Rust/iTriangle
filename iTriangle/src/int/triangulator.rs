@@ -221,6 +221,10 @@ impl<I: IndexType> IntTriangulator<I> {
         delaunay: bool,
         triangulation: &mut IntTriangulation<I>,
     ) {
+        if flat_buffer.is_empty() {
+            triangulation.reserve_and_clear(0);
+           return;
+        }
         self.builder.build_flat(flat_buffer);
         if delaunay {
             self.builder.delaunay_refine();

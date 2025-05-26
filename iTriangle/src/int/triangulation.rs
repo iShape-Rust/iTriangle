@@ -8,6 +8,7 @@ pub trait IndexType: Copy + Clone + TryFrom<usize> + Default {
     const MAX: usize;
     const ZERO: Self;
     fn add(self, other: Self) -> Self;
+    fn into_usize(self) -> usize;
 }
 
 impl IndexType for u8 {
@@ -17,6 +18,10 @@ impl IndexType for u8 {
     fn add(self, other: Self) -> Self {
         self + other
     }
+    #[inline]
+    fn into_usize(self) -> usize {
+        self as usize
+    }
 }
 impl IndexType for u16 {
     const MAX: usize = u16::MAX as usize;
@@ -24,6 +29,10 @@ impl IndexType for u16 {
     #[inline]
     fn add(self, other: Self) -> Self {
         self + other
+    }
+    #[inline]
+    fn into_usize(self) -> usize {
+        self as usize
     }
 }
 impl IndexType for u32 {
@@ -33,6 +42,10 @@ impl IndexType for u32 {
     fn add(self, other: Self) -> Self {
         self + other
     }
+    #[inline]
+    fn into_usize(self) -> usize {
+        self as usize
+    }
 }
 impl IndexType for u64 {
     const MAX: usize = u64::MAX as usize;
@@ -41,6 +54,10 @@ impl IndexType for u64 {
     fn add(self, other: Self) -> Self {
         self + other
     }
+    #[inline]
+    fn into_usize(self) -> usize {
+        self as usize
+    }
 }
 impl IndexType for usize {
     const MAX: usize = usize::MAX;
@@ -48,6 +65,10 @@ impl IndexType for usize {
     #[inline]
     fn add(self, other: Self) -> Self {
         self + other
+    }
+    #[inline]
+    fn into_usize(self) -> usize {
+        self
     }
 }
 

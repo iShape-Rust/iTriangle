@@ -1,10 +1,10 @@
-pub mod triangulatable;
-pub mod triangulation;
-pub mod unchecked;
+pub mod builder;
+pub mod centroid_net;
+pub mod circumcenter;
+pub mod convex;
 pub mod custom;
 pub mod delaunay;
-pub mod convex;
-pub mod builder;
-pub mod circumcenter;
-pub mod centroid_net;
+pub mod triangulatable;
+pub mod triangulation;
 pub mod triangulator;
+pub mod unchecked;

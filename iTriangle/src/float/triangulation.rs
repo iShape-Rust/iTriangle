@@ -59,7 +59,7 @@ impl<P, I: IndexType> Triangulation<P, I> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             points: Vec::with_capacity(capacity),
-            indices: Vec::with_capacity(3 * capacity)
+            indices: Vec::with_capacity(3 * capacity),
         }
     }
 
@@ -73,8 +73,10 @@ impl<P, I: IndexType> Triangulation<P, I> {
         T: FloatNumber,
     {
         self.points.clear();
-        self.points.reserve_capacity(triangulation.points.capacity());
-        self.points.extend(triangulation.points.iter().map(|p|adapter.int_to_float(p)));
+        self.points
+            .reserve_capacity(triangulation.points.capacity());
+        self.points
+            .extend(triangulation.points.iter().map(|p| adapter.int_to_float(p)));
 
         self.indices.clear();
         self.indices.extend_from_slice(&triangulation.indices);
@@ -112,5 +114,79 @@ impl<I: IndexType> IntTriangulation<I> {
             points,
             indices: self.indices.clone(),
         }
+    }
+}
+
+impl<P, I: IndexType> Triangulation<P, I> {
+
+    pub fn validate<T: FloatNumber>(&self, shape_area: T, epsilon: T)
+    where
+        P: FloatPointCompatible<T>,
+    {
+        let mut s = T::from_float(0.0);
+        let mut i = 0;
+        let neg_eps = -epsilon;
+        while i < self.indices.len() {
+            let ai = self.indices[i];
+            i += 1;
+            let bi = self.indices[i];
+            i += 1;
+            let ci = self.indices[i];
+            i += 1;
+
+            let a = &self.points[ai.into_usize()];
+            let b = &self.points[bi.into_usize()];
+            let c = &self.points[ci.into_usize()];
+
+            let abc = Self::triangle_area_x2(a, b, c);
+
+            // check points direction by its area.
+            // Since it's a float point operation in degenerate case it can be near 0 value
+            assert!(abc > neg_eps);
+
+            s = s + abc;
+        }
+
+        s = T::from_float(0.5) * s;
+
+        let eps = epsilon * T::from_usize(self.indices.len() / 3);
+        let delta = (shape_area - s).abs();
+
+        assert!(delta <= eps);
+    }
+
+    fn triangle_area_x2<T: FloatNumber>(a: &P, b: &P, c: &P) -> T
+    where
+        P: FloatPointCompatible<T>,
+    {
+        let ax = a.x();
+        let ay = a.y();
+        let bx = b.x();
+        let by = b.y();
+        let cx = c.x();
+        let cy = c.y();
+
+        let v0x = ax - bx;
+        let v0y = ay - by;
+        let v1x = ax - cx;
+        let v1y = ay - cy;
+
+        v0x * v1y - v0y * v1x
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::float::triangulator::Triangulator;
+
+    #[test]
+    fn test_0() {
+        let rect = [[0.0, 0.0], [5.0, 0.0], [5.0, 8.0], [0.0, 8.0]];
+
+        let triangulation = Triangulator::<u32>::default().triangulate(&rect, false);
+        assert_eq!(triangulation.points.len(), 4);
+        assert_eq!(triangulation.indices.len(), 6);
+
+        triangulation.validate(40.0, 0.000_0001);
     }
 }
