@@ -40,7 +40,7 @@ impl<I: IndexType> IntTriangulator<I> {
         contour: &IntContour,
         delaunay: bool,
     ) -> IntTriangulation<I> {
-        match self.overlay.simplify_contour(&contour, self.fill_rule) {
+        match self.overlay.simplify_contour(contour, self.fill_rule) {
             None => self.uncheck_triangulate_contour(contour, delaunay),
             Some(shapes) => self.uncheck_triangulate_shapes(&shapes, delaunay),
         }
@@ -142,7 +142,7 @@ impl<I: IndexType> IntTriangulator<I> {
         delaunay: bool,
         triangulation: &mut IntTriangulation<I>,
     ) {
-        self.builder.build_contour(&contour, None);
+        self.builder.build_contour(contour, None);
         if delaunay {
             self.builder.delaunay_refine();
         }
@@ -167,7 +167,7 @@ impl<I: IndexType> IntTriangulator<I> {
         delaunay: bool,
         triangulation: &mut IntTriangulation<I>,
     ) {
-        self.builder.build_shape(&shape, None);
+        self.builder.build_shape(shape, None);
         if delaunay {
             self.builder.delaunay_refine();
         }

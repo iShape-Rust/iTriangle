@@ -87,6 +87,7 @@ impl<I: IndexType> Triangulator<I> {
     ///     - `Shapes`: A collection of shapes, where each shape may consist of multiple contours.
     /// - `delaunay`: if true, applies Delaunay refinement.
     /// - `triangulation`: Output buffer to store the resulting triangle mesh.
+    ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
     pub fn triangulate_into<R, P, T>(
@@ -141,7 +142,7 @@ impl<I: IndexType> Triangulator<I> {
         let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
-            .uncheck_triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
+            .uncheck_triangulate_flat_into(&flat_buffer, delaunay, &mut int_buffer);
 
         let triangulation = int_buffer.to_float(&adapter);
 
@@ -183,7 +184,7 @@ impl<I: IndexType> Triangulator<I> {
         let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
-            .uncheck_triangulate_flat_into(&mut flat_buffer, delaunay, &mut int_buffer);
+            .uncheck_triangulate_flat_into(&flat_buffer, delaunay, &mut int_buffer);
 
         triangulation.set_with_int(&int_buffer, &adapter);
 

@@ -70,7 +70,7 @@ impl IndexBitSet {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.chunks.iter().find(|&&ch|ch != 0).is_none()
+        !self.chunks.iter().any(|&ch|ch != 0)
     }
 
 }

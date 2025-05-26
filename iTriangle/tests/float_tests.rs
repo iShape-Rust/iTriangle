@@ -96,19 +96,107 @@ mod tests {
     #[test]
     fn test_random_0() {
         let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
 
-        let mut t0 = Triangulation::with_capacity(8);
-        let mut t1 = Triangulation::with_capacity(8);
-
-        for _ in 0..100_000 {
+        for _ in 0..20_000 {
             let contour = random(8, 5);
-            triangulator.triangulate_into(&contour, false, &mut t0);
-            triangulator.triangulate_into(&contour, true, &mut t1);
-
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            t0.validate(area, 0.001);
-            t1.validate(area, 0.001);
+            triangulator.triangulate_into(&contour, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&contour, true, &mut t);
+            t.validate(area, 0.001);
+        }
+    }
+
+    #[test]
+    fn test_random_1() {
+        let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
+
+        for _ in 0..20_000 {
+            let contour = random(10, 6);
+            let area = contour.simplify_shape(FillRule::NonZero).area();
+
+            triangulator.triangulate_into(&contour, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&contour, true, &mut t);
+            t.validate(area, 0.001);
+        }
+    }
+
+    #[test]
+    fn test_random_2() {
+        let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
+
+        for _ in 0..20_000 {
+            let contour = random(10, 12);
+            let area = contour.simplify_shape(FillRule::NonZero).area();
+
+            triangulator.triangulate_into(&contour, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&contour, true, &mut t);
+            t.validate(area, 0.001);
+        }
+    }
+
+    #[test]
+    fn test_random_3() {
+        let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
+
+        for _ in 0..10_000 {
+            let contour = random(20, 20);
+            let area = contour.simplify_shape(FillRule::NonZero).area();
+
+            triangulator.triangulate_into(&contour, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&contour, true, &mut t);
+            t.validate(area, 0.001);
+        }
+    }
+
+    #[test]
+    fn test_random_4() {
+        let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
+
+        for _ in 0..1_000 {
+            let contour = random(30, 50);
+            let area = contour.simplify_shape(FillRule::NonZero).area();
+
+            triangulator.triangulate_into(&contour, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&contour, true, &mut t);
+            t.validate(area, 0.001);
+        }
+    }
+
+    #[test]
+    fn test_random_5() {
+        let mut triangulator = Triangulator::<u32>::default();
+        let mut t = Triangulation::with_capacity(8);
+
+        for _ in 0..500 {
+            let main = random(50, 20);
+            let mut shape = vec![main];
+            for _ in 0..10 {
+                shape.push(random(30, 5));
+            }
+
+            let area = shape.simplify_shape(FillRule::NonZero).area();
+
+            triangulator.triangulate_into(&shape, false, &mut t);
+            t.validate(area, 0.001);
+
+            triangulator.triangulate_into(&shape, true, &mut t);
+            t.validate(area, 0.001);
         }
     }
 

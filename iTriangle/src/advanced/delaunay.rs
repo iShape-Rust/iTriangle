@@ -59,20 +59,21 @@ impl DelaunayRefine for [IntTriangle] {
 
     #[inline]
     fn build_with_buffer(&mut self, buffer: &mut DelaunayBuffer) {
-        let mut bitset = buffer.take_bitset();
+        let mut bitset = buffer.bitset.take().unwrap_or_default();
         bitset.clear_and_resize(self.len());
         for abc_index in 0..self.len() {
             self.fix_triangle(abc_index, &mut bitset);
         }
 
-        let mut indices = buffer.take_indices();
+        let mut indices = buffer.indices.take().unwrap_or_default();
         bitset.read_and_clean(&mut indices);
 
         if !indices.is_empty() {
             self.fix_triangles(&mut indices, &mut bitset);
         }
 
-        buffer.set(bitset, indices);
+        buffer.bitset = Some(bitset);
+        buffer.indices = Some(indices);
     }
 
     #[inline]

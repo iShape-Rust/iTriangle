@@ -137,7 +137,7 @@ impl ChainBuilder {
     fn contour_layout_and_reserve(&mut self, contour: &[IntPoint], extra_count: usize) -> Option<BinLayout<i32>> {
         let count = contour.len() + extra_count;
 
-        if count < 64 || count > 1000_000 {
+        if !(64..=1_000_000).contains(&count) {
             // direct approach work better for small and large data
             return None
         }
@@ -158,7 +158,7 @@ impl ChainBuilder {
         let main_count = shape.iter().fold(0, |s, path| s + path.len());
         let count = main_count + extra_count;
 
-        if count < 64 || count > 1000_000 {
+        if !(64..=1_000_000).contains(&count) {
             // direct approach work better for small and large data
             return None
         }
@@ -181,7 +181,7 @@ impl ChainBuilder {
         let main_count = flat.points.len();
         let count = main_count + extra_count;
 
-        if count < 64 || count > 1000_000 {
+        if !(64..=1_000_000).contains(&count){
             // direct approach work better for small and large data
             return None
         }
