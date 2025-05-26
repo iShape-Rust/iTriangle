@@ -1,13 +1,13 @@
-use alloc::vec::Vec;
+use crate::advanced::bitset::IndexBitSet;
 use crate::advanced::delaunay::{DelaunayRefine, IntDelaunay};
 use crate::geom::point::IndexPoint;
 use crate::geom::triangle::{Abc, IntTriangle};
+use alloc::vec::Vec;
+use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
-use crate::advanced::bitset::IndexBitSet;
 
 impl IntDelaunay {
-
     #[inline]
     pub fn refine_with_circumcenters(mut self, min_area: u64) -> Self {
         self.refine_with_circumcenters_mut(min_area);
@@ -29,7 +29,7 @@ impl IntDelaunay {
     pub fn refine_with_circumcenters_by_obtuse_angle_mut(&mut self, min_area: u64) {
         self.refine_with_circumcenters_and_selector::<SelectObtuseAngle>(min_area)
     }
-    
+
     fn refine_with_circumcenters_and_selector<S: EdgeSelector>(&mut self, min_area: u64) {
         let two_area = min_area << 1;
 
@@ -59,7 +59,11 @@ impl IntDelaunay {
     }
 
     #[inline]
-    fn select_edge_for_refinement<S: EdgeSelector>(&self, min_area: u64, abc: &IntTriangle) -> Option<Abc> {
+    fn select_edge_for_refinement<S: EdgeSelector>(
+        &self,
+        min_area: u64,
+        abc: &IntTriangle,
+    ) -> Option<Abc> {
         let a = abc.vertices[0].point;
         let b = abc.vertices[1].point;
         let c = abc.vertices[2].point;
@@ -82,7 +86,12 @@ impl IntDelaunay {
         }
     }
 
-    fn split_triangle_with_neighbor(&mut self, abc_index: usize, abc: Abc, pcb_index: usize) -> [usize; 4] {
+    fn split_triangle_with_neighbor(
+        &mut self,
+        abc_index: usize,
+        abc: Abc,
+        pcb_index: usize,
+    ) -> [usize; 4] {
         let p = abc.circumscribed_center();
         let pcb = &self.triangles[pcb_index].abc_by_neighbor(abc_index);
 
@@ -127,17 +136,20 @@ impl IntDelaunay {
             neighbors: [amc_index, pmb_index, pcb.v2.neighbor],
         };
 
-        self.triangles.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
-        self.triangles.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
+        self.triangles
+            .update_neighbor(abc.v1.neighbor, abc_index, amc_index);
+        self.triangles
+            .update_neighbor(abc.v2.neighbor, abc_index, abm_index);
 
-        self.triangles.update_neighbor(pcb.v1.neighbor, pcb_index, pmb_index);
-        self.triangles.update_neighbor(pcb.v2.neighbor, pcb_index, pcm_index);
+        self.triangles
+            .update_neighbor(pcb.v1.neighbor, pcb_index, pmb_index);
+        self.triangles
+            .update_neighbor(pcb.v2.neighbor, pcb_index, pcm_index);
 
         self.triangles[abm_index] = abm;
         self.triangles[pcm_index] = pcm;
         self.triangles.push(amc);
         self.triangles.push(pmb);
-
 
         [abm_index, pcm_index, amc_index, pmb_index]
     }
@@ -164,8 +176,10 @@ impl IntDelaunay {
             neighbors: [usize::MAX, abc.v1.neighbor, abm_index],
         };
 
-        self.triangles.update_neighbor(abc.v1.neighbor, abc_index, amc_index);
-        self.triangles.update_neighbor(abc.v2.neighbor, abc_index, abm_index);
+        self.triangles
+            .update_neighbor(abc.v1.neighbor, abc_index, amc_index);
+        self.triangles
+            .update_neighbor(abc.v2.neighbor, abc_index, abm_index);
 
         self.triangles[abm_index] = abm;
         self.triangles.push(amc);
@@ -196,8 +210,8 @@ impl Abc {
         let fx = (aa * (by - cy) + bb * (cy - ay) + cc * (ay - by)) * id;
         let fy = (aa * (cx - bx) + bb * (ax - cx) + cc * (bx - ax)) * id;
 
-        let x = fx.round() as i32;
-        let y = fy.round() as i32;
+        let x = fx.to_i32();
+        let y = fy.to_i32();
 
         IntPoint::new(x, y)
     }
@@ -231,7 +245,6 @@ struct SelectBiggerAngle {}
 struct SelectObtuseAngle {}
 
 impl EdgeSelector for SelectObtuseAngle {
-
     #[inline]
     fn select(abc: &IntTriangle) -> Option<Abc> {
         let a = abc.vertices[0].point;
