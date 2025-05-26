@@ -7,6 +7,8 @@ description = "Polygon Triangulation Library: Efficient Delaunay Triangulation f
 license = "MIT"
 repository = "https://github.com/iShape-Rust/iTriangle"
 
+categories = ["no-std", "graphics", "game-development"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
