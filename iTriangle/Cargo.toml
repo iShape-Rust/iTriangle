@@ -11,19 +11,20 @@ repository = "https://github.com/iShape-Rust/iTriangle"
 
 [features]
 glam = ["i_overlay/glam"]
-serde = ["i_overlay/serde"]
+serde = ["dep:serde", "i_overlay/serde"]
 
 [dependencies]
-#serde = { version = "^1.0", features = ["derive"] }
+serde = { version = "^1.0", default-features = false, features = ["derive"], optional = true }
 
-i_overlay = { path = "../../iOverlay/iOverlay" }
-i_tree = { path = "../../iTree" }
-i_key_sort = { path = "../../iKeySort" }
+#i_overlay = { path = "../../iOverlay/iOverlay" }
+#i_tree = { path = "../../iTree" }
+#i_key_sort = { path = "../../iKeySort" }
 
-#i_tree = "~0.15.0"
-#i_key_sort = "~0.5.0"
-#i_overlay = "~3.4.0"
+i_overlay = "~4.0.0"
+i_tree = "~0.16.0"
+i_key_sort = "~0.6.0"
+
 
 
 [dev-dependencies]
-rand = "0.9.1"
+rand = { version = "~0.9", features = ["alloc"] }
