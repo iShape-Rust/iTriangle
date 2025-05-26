@@ -89,7 +89,7 @@ impl PathWidget {
 
     fn append_path(builder: &mut TriangulationBuilder<FloatPoint<f32>, usize>, camera: Camera, path: &IntPath, width: f32, arrows: bool) {
         let stroke_builder = ButtStrokeBuilder::new(StrokeStyle::with_width(width));
-        let screen_path: Vec<_> = path.iter().map(|&p| {
+        let screen_path: Vec<FloatPoint<f32>> = path.iter().map(|&p| {
             let v = camera.int_world_to_view(p);
             FloatPoint::new(v.x, v.y)
         }).collect();

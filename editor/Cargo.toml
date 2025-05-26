@@ -17,4 +17,5 @@ console_log = "^1.0.0"
 console_error_panic_hook = "^0"
 
 i_mesh = { path = "../../iMesh/iMesh" }
-i_triangle = "0.33.0"
+i_triangle = { path = "../iTriangle", default-features = true, features = ["serde"] }
+#i_triangle = "0.33.0"
