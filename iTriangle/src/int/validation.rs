@@ -7,6 +7,15 @@ pub struct Validation {
     pub options: IntOverlayOptions,
 }
 
+impl Validation {
+    pub fn with_fill_rule(fill_rule: FillRule) -> Self {
+        Self {
+            fill_rule,
+            options: IntOverlayOptions::keep_output_points(),
+        }
+    }
+}
+
 impl Default for Validation {
     fn default() -> Self {
         Self {
