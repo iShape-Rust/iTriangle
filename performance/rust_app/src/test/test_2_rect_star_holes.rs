@@ -42,8 +42,6 @@ delaunay:
 128 - 24.878510
 256 - 179.928663
 
-
-
 earcutr:
 4 - 0.037897
 8 - 0.076405
@@ -278,6 +276,49 @@ impl RectStarHolesTest {
                     self.fill_rect_shape(radius_scale, start_angle, count, &mut shape);
                     triangulator.triangulate_into(&shape, delaunay, &mut triangulation);
                     sum += triangulation.points.len();
+
+                    start_angle += angle_step;
+                }
+                radius_scale += radius_step;
+            }
+        }
+
+        let duration = start.elapsed();
+        let time = duration.as_secs_f64() / repeat_count as f64;
+
+        println!("{} - {:.6}", count, time);
+        sum
+    }
+}
+
+impl RectStarHolesTest {
+    pub(crate) fn run_unchecked_triangulator(&self, count: usize, repeat_count: usize, delaunay: bool) -> usize {
+        let count_per_star = self.points_per_corner * self.corners_count;
+        let mut shape = vec![Vec::with_capacity(count_per_star); count * count + 1];
+
+        let mut sum = 0;
+
+        let angle_step = 2.0 * PI / self.angle_steps_count as f64;
+
+        let radius_step =
+            (self.max_radius_scale - self.min_radius_scale) / self.radius_steps_count as f64;
+
+        let start = Instant::now();
+
+        let max_capacity = count_per_star * shape.len();
+        let mut triangulator = Triangulator::<u32>::new(max_capacity, Default::default(), Default::default());
+        let mut triangulation = Triangulation::with_capacity(max_capacity);
+
+        for _ in 0..repeat_count {
+            let mut radius_scale = self.min_radius_scale;
+            while radius_scale < self.max_radius_scale {
+                // grow star
+                let mut start_angle = 0.0;
+                for _ in 0..self.angle_steps_count {
+                    // rotate star
+                    self.fill_rect_shape(radius_scale, start_angle, count, &mut shape);
+                    triangulator.uncheck_triangulate_into(&shape, delaunay, &mut triangulation);
+                    sum += triangulation.indices.len();
 
                     start_angle += angle_step;
                 }
