@@ -3,7 +3,8 @@ use iced::keyboard::Key::Named as NamedBox;
 use iced::event::{self, Event as MainEvent};
 use iced::widget::{Space, vertical_rule};
 use iced::{Alignment, Element, Length};
-use iced::keyboard::Event as KeyboardEvent;
+use iced::advanced::graphics::futures::keyboard;
+use iced::keyboard::{Event as KeyboardEvent, Key};
 use iced::keyboard::key::Named;
 use iced::widget::{Button, Column, Container, Row, Text};
 use crate::app::triangle::content::TriangleMessage;
@@ -42,6 +43,8 @@ impl MainAction {
 #[derive(Debug, Clone)]
 pub(crate) enum MainMessage {
     ActionSelected(MainAction),
+    NextTest,
+    PrevTest,
 }
 
 #[derive(Debug, Clone)]
@@ -69,19 +72,22 @@ impl EditorApp {
         match message {
             AppMessage::Main(msg) => self.update_main(msg),
             AppMessage::Triangle(msg) => self.triangle_update(msg),
-            AppMessage::EventOccurred(MainEvent::Keyboard(KeyboardEvent::KeyPressed { key: NamedBox(named @ (Named::ArrowDown | Named::ArrowUp)), .. })) => {
-                match (named, self.state.selected_action.clone()) {
-                    (Named::ArrowDown, MainAction::Intersect) => self.triangle_next_test(),
-                    (Named::ArrowUp, MainAction::Intersect) => self.triangle_prev_test(),
-                    _ => {}
-                }
-            }
             _ => {}
         }
     }
 
     pub fn subscription(&self) -> Subscription<AppMessage> {
-        event::listen().map(AppMessage::EventOccurred)
+        keyboard::on_key_press(|key, _mods| {
+            match key.as_ref() {
+                Key::Named(Named::ArrowDown) => {
+                    Some(AppMessage::Main(MainMessage::NextTest))
+                }
+                Key::Named(Named::ArrowUp) => {
+                    Some(AppMessage::Main(MainMessage::PrevTest))
+                }
+                _ => None,
+            }
+        })
     }
 
     fn update_main(&mut self, message: MainMessage) {
@@ -92,6 +98,8 @@ impl EditorApp {
                     MainAction::Intersect => self.triangle_init(),
                 }
             }
+            MainMessage::NextTest => self.triangle_next_test(),
+            MainMessage::PrevTest => self.triangle_prev_test(),
         }
     }
 

@@ -26,15 +26,20 @@ mod wasm {
 
             let app_resource = AppResource::with_content(triangle_data);
 
-            let app_initializer = || {
-                let app = EditorApp::new(app_resource);
+            let app_initializer = move || {
+                info!("wasm init");
+                let app = EditorApp::with_resource(AppResource::with_content(&triangle_data));
+
                 (app, iced::Task::none())
             };
 
-            application("iOverlay", EditorApp::update, EditorApp::view)
-                .subscription(EditorApp::subscription)
+            application(app_initializer, EditorApp::update, EditorApp::view)
                 .resizable(true)
-                .run_with(app_initializer).unwrap();
+                .centered()
+                .title("iTriangle Editor")
+                .subscription(EditorApp::subscription)
+                .run()
+                .unwrap();
         }
     }
 }

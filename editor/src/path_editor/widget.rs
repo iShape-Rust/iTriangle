@@ -42,7 +42,7 @@ impl<'a, Message> PathEditorWidget<'a, Message> {
             id,
             path,
             camera,
-            mesh_radius: 6.0,
+            mesh_radius: 4.0,
             hover_radius: 12.0,
             split_factor: 5,
             schema: PathEditorColorSchema::with_theme(Theme::default()),
@@ -88,52 +88,54 @@ impl<Message> Widget<Message, Theme, Renderer> for PathEditorWidget<'_, Message>
         layout::Node::new(limits.max())
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn Clipboard,
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
-    ) -> event::Status {
-        let state = tree.state.downcast_mut::<PathEditorState>();
-
+    ) {
         let bounds = layout.bounds();
-        if let Event::Mouse(mouse_event) = event {
-            match mouse_event {
-                mouse::Event::CursorMoved { position } => {
-                    if bounds.contains(position) {
-                        let view_cursor = position - bounds.position();
-                        if let Some(updated_point) = state.mouse_move(&*self, view_cursor) {
-                            shell.publish((self.on_update)(updated_point));
-                            return event::Status::Captured;
-                        }
-                    }
-                }
-                mouse::Event::ButtonPressed(mouse::Button::Left) => {
-                    let position = cursor.position().unwrap_or(Point::ORIGIN);
-                    if bounds.contains(position) {
-                        let view_cursor = position - bounds.position();
-                        if state.mouse_press(&*self, view_cursor) {
-                            return event::Status::Captured;
-                        }
-                    }
-                }
-                mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                    let position = cursor.position().unwrap_or(Point::ORIGIN);
-                    let view_cursor = position - bounds.position();
-                    if state.mouse_release(&*self, view_cursor) {
-                        return event::Status::Captured;
-                    }
-                }
-                _ => {}
-            }
-        }
 
-        event::Status::Ignored
+        let mouse_event = if let Event::Mouse(mouse_event) = event {
+            mouse_event
+        } else {
+            return;
+        };
+
+        let state = tree.state.downcast_mut::<PathEditorState>();
+        match mouse_event {
+            mouse::Event::CursorMoved { position } => {
+                if bounds.contains(*position) {
+                    let view_cursor = *position - bounds.position();
+                    if let Some(updated_point) = state.mouse_move(&*self, view_cursor) {
+                        shell.publish((self.on_update)(updated_point));
+                        shell.capture_event();
+                    }
+                }
+            }
+            mouse::Event::ButtonPressed(mouse::Button::Left) => {
+                let position = cursor.position().unwrap_or(Point::ORIGIN);
+                if bounds.contains(position) {
+                    let view_cursor = position - bounds.position();
+                    if state.mouse_press(&*self, view_cursor) {
+                        shell.capture_event();
+                    }
+                }
+            }
+            mouse::Event::ButtonReleased(mouse::Button::Left) => {
+                let position = cursor.position().unwrap_or(Point::ORIGIN);
+                let view_cursor = position - bounds.position();
+                if state.mouse_release(&*self, view_cursor) {
+                    shell.capture_event();
+                }
+            }
+            _ => {}
+        }
     }
 
     fn draw(
@@ -163,7 +165,7 @@ impl<Message> Widget<Message, Theme, Renderer> for PathEditorWidget<'_, Message>
 
         let mut contour_builder = PathBuilder::new(self.camera, offset_vec.convert());
         contour_builder.add_paths(&self.path, true, 4.0);
-        if let Some(mesh) = contour_builder.into_mesh(Color::new(1.0, 1.0, 1.0, 0.2)) {
+        if let Some(mesh) = contour_builder.into_mesh(Color ::from_rgba(1.0, 1.0, 1.0, 0.2)) {
             renderer.with_translation(Vector::new(0.0, 0.0), |renderer| renderer.draw_mesh(mesh));
         }
 

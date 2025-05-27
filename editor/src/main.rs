@@ -19,17 +19,17 @@ fn main() -> iced::Result {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn run_desktop() -> iced::Result {
-
-    let app_resource = AppResource::with_paths(
-        "./tests/triangle",
-    );
-
-    let app_initializer = || {
-        let app = EditorApp::new(app_resource);
+    let app_initializer = move || {
+        let app = EditorApp::new(AppResource::with_paths(
+            "./tests/triangle",
+        ));
         (app, iced::Task::none())
     };
 
-    application("iTriangle", EditorApp::update, EditorApp::view)
+    application(app_initializer, EditorApp::update, EditorApp::view)
+        .resizable(true)
+        .centered()
+        .title("iTriangle Editor")
         .subscription(EditorApp::subscription)
-        .run_with(app_initializer)
+        .run()
 }

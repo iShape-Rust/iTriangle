@@ -94,7 +94,8 @@ impl PathWidget {
             FloatPoint::new(v.x, v.y)
         }).collect();
 
-        let sub_triangulation = stroke_builder.build_closed_path_mesh(&screen_path);
+        let sub_triangulation = stroke_builder
+            .build_closed_path_mesh::<FloatPoint<f32>, usize>(&screen_path);
         builder.append(sub_triangulation);
 
         let r2 = 2.0 * width;
@@ -135,20 +136,6 @@ impl<Message> Widget<Message, Theme, Renderer> for PathWidget {
         limits: &layout::Limits,
     ) -> layout::Node {
         layout::Node::new(limits.max())
-    }
-
-    fn on_event(
-        &mut self,
-        _tree: &mut Tree,
-        _event: Event,
-        _layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        _shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
-    ) -> event::Status {
-        event::Status::Ignored
     }
 
     fn draw(
