@@ -4,27 +4,27 @@ use crate::int::monotone::v_segment::VSegment;
 use i_tree::set::sort::KeyValue;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum EdgeType {
+pub(crate) enum EdgeType {
     Regular(usize), // keep index to triangle
     Phantom(usize), // keep index to itself(edge) in phantom store
 }
 #[derive(Debug, Clone, Copy)]
-pub(super) struct TriangleEdge {
-    pub(super) a: IndexPoint,
-    pub(super) b: IndexPoint,
-    pub(super) kind: EdgeType,
+pub(crate) struct TriangleEdge {
+    pub(crate) a: IndexPoint,
+    pub(crate) b: IndexPoint,
+    pub(crate) kind: EdgeType,
 }
 
 #[derive(Debug, Clone)]
-pub(super) enum Content {
+pub(crate) enum Content {
     Point(IndexPoint),
     Edges(Vec<TriangleEdge>),
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Section {
-    pub(super) sort: VSegment,
-    pub(super) content: Content,
+pub(crate) struct Section {
+    pub(crate) sort: VSegment,
+    pub(crate) content: Content,
 }
 
 impl Default for Section {
@@ -46,7 +46,7 @@ impl KeyValue<VSegment> for Section {
 
 impl TriangleEdge {
     #[inline]
-    pub(super) fn border(a: IndexPoint, b: IndexPoint) -> Self {
+    pub(crate) fn border(a: IndexPoint, b: IndexPoint) -> Self {
         Self {
             a,
             b,
@@ -55,7 +55,7 @@ impl TriangleEdge {
     }
 
     #[inline]
-    pub(super) fn phantom(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
+    pub(crate) fn phantom(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
         Self {
             a,
             b,
@@ -64,7 +64,7 @@ impl TriangleEdge {
     }
 
     #[inline]
-    pub(super) fn regular(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
+    pub(crate) fn regular(a: IndexPoint, b: IndexPoint, index: usize) -> Self {
         Self {
             a,
             b,
@@ -76,7 +76,7 @@ impl TriangleEdge {
 #[cfg(test)]
 mod tests {
     use crate::geom::point::IndexPoint;
-    use crate::int::monotone::section::{Content, Section, VSegment};
+    use crate::int::monotone::net::section::{Content, Section, VSegment};
     use i_overlay::i_float::int::point::IntPoint;
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;

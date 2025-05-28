@@ -14,7 +14,7 @@ pub(crate) enum VertexType {
     Steiner,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct ChainVertex {
     pub(crate) index: usize,
     pub(crate) this: IntPoint,

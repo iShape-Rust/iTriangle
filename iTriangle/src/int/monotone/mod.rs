@@ -1,5 +1,6 @@
 pub mod builder;
-mod section;
-pub(crate) mod v_segment;
 mod chain;
-mod phantom;
+pub(crate) mod flat;
+mod net;
+pub(crate) mod triangulator;
+pub(crate) mod v_segment;

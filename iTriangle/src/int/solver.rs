@@ -1,19 +1,18 @@
+use crate::int::meta::MeshMetaProvider;
+use crate::int::monotone::triangulator::MonotoneTriangulator;
+use crate::int::triangulation::RawIntTriangulation;
+use crate::int::unchecked::IntUncheckedTriangulatable;
+use crate::int::validation::Validation;
 use alloc::vec::Vec;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use crate::int::meta::MeshMetaProvider;
-use crate::int::monotone::builder::TrianglesBuilder;
-use crate::int::triangulation::RawIntTriangulation;
-use crate::int::unchecked::IntUncheckedTriangulatable;
-use crate::int::validation::Validation;
 
 pub(super) struct ShapesSolver;
 pub(super) struct ShapeSolver;
 pub(super) struct ContourSolver;
 
 impl ShapesSolver {
-
     #[inline]
     pub(super) fn triangulate(validation: Validation, shapes: &IntShapes) -> RawIntTriangulation {
         let shapes = shapes.simplify(validation.fill_rule, validation.options);
@@ -25,7 +24,7 @@ impl ShapesSolver {
             return if let Some(first) = shapes.first() {
                 first.uncheck_triangulate()
             } else {
-                RawIntTriangulation::empty()
+                Default::default()
             };
         }
 
@@ -66,7 +65,8 @@ impl ShapesSolver {
         shapes: &IntShapes,
         points: &[IntPoint],
     ) -> RawIntTriangulation {
-        shapes.simplify(validation.fill_rule, validation.options)
+        shapes
+            .simplify(validation.fill_rule, validation.options)
             .uncheck_triangulate_with_steiner_points(points)
     }
 
@@ -78,7 +78,7 @@ impl ShapesSolver {
             return if let Some(first) = shapes.first() {
                 first.uncheck_triangulate_with_steiner_points(&groups[0])
             } else {
-                RawIntTriangulation::empty()
+                Default::default()
             };
         }
 
@@ -93,9 +93,13 @@ impl ShapesSolver {
         let mut triangles = Vec::with_capacity(triangles_count);
         let mut points = Vec::with_capacity(points_count);
 
-        let mut raw_0 = TrianglesBuilder::shape_triangulation(&shapes[0], Some(&groups[0]));
-        triangles.append(&mut raw_0.triangles);
-        points.append(&mut raw_0.points);
+        let mut raw_buffer = RawIntTriangulation::default();
+
+        let mut triangulator = MonotoneTriangulator::default();
+        triangulator.shape_into_net_triangulation(&shapes[0], Some(&groups[0]), &mut raw_buffer);
+
+        triangles.extend_from_slice(&mut raw_buffer.triangles);
+        points.extend_from_slice(&mut raw_buffer.points);
 
         let mut i = 1;
         while i < shapes.len() {
@@ -105,11 +109,12 @@ impl ShapesSolver {
 
             let points_offset = points.len();
             let triangle_offset = triangles.len();
-            let mut raw_i = TrianglesBuilder::shape_triangulation(shape, Some(steiner_points));
-            raw_i.shift(points_offset, triangle_offset);
 
-            triangles.append(&mut raw_i.triangles);
-            points.append(&mut raw_i.points);
+            triangulator.shape_into_net_triangulation(shape, Some(steiner_points), &mut raw_buffer);
+            raw_buffer.shift(points_offset, triangle_offset);
+
+            triangles.extend_from_slice(&mut raw_buffer.triangles);
+            points.extend_from_slice(&mut raw_buffer.points);
         }
 
         RawIntTriangulation::new(triangles, points)
@@ -117,7 +122,6 @@ impl ShapesSolver {
 }
 
 impl ShapeSolver {
-
     #[inline]
     pub(super) fn triangulate(validation: Validation, shape: &IntShape) -> RawIntTriangulation {
         let shapes = shape.simplify(validation.fill_rule, validation.options);
@@ -126,7 +130,9 @@ impl ShapeSolver {
 
     #[inline]
     pub(super) fn uncheck_triangulate(shape: &IntShape) -> RawIntTriangulation {
-        TrianglesBuilder::shape_triangulation(shape, None)
+        let mut raw = RawIntTriangulation::default();
+        MonotoneTriangulator::default().shape_into_net_triangulation(shape, None, &mut raw);
+        raw
     }
 
     #[inline]
@@ -135,7 +141,8 @@ impl ShapeSolver {
         shape: &IntShape,
         points: &[IntPoint],
     ) -> RawIntTriangulation {
-        shape.simplify(validation.fill_rule, validation.options)
+        shape
+            .simplify(validation.fill_rule, validation.options)
             .uncheck_triangulate_with_steiner_points(points)
     }
 
@@ -148,27 +155,31 @@ impl ShapeSolver {
             return if let Some(first) = shape.first() {
                 first.uncheck_triangulate_with_steiner_points(points)
             } else {
-                RawIntTriangulation::empty()
+                RawIntTriangulation::default()
             };
         }
-
-        TrianglesBuilder::shape_triangulation(shape, Some(points))
+        let mut raw = RawIntTriangulation::default();
+        MonotoneTriangulator::default().shape_into_net_triangulation(shape, Some(points), &mut raw);
+        raw
     }
 }
 
 impl ContourSolver {
-
     #[inline]
     pub(super) fn triangulate(validation: Validation, contour: &IntContour) -> RawIntTriangulation {
-        contour.simplify(validation.fill_rule, validation.options).uncheck_triangulate()
+        contour
+            .simplify(validation.fill_rule, validation.options)
+            .uncheck_triangulate()
     }
 
     #[inline]
     pub(super) fn uncheck_triangulate(contour: &IntContour) -> RawIntTriangulation {
         if contour.len() < 3 {
-            RawIntTriangulation::empty()
+            RawIntTriangulation::default()
         } else {
-            TrianglesBuilder::contour_triangulation(contour, None)
+            let mut raw = RawIntTriangulation::default();
+            MonotoneTriangulator::default().contour_into_net_triangulation(contour, None, &mut raw);
+            raw
         }
     }
 
@@ -178,7 +189,8 @@ impl ContourSolver {
         contour: &IntContour,
         points: &[IntPoint],
     ) -> RawIntTriangulation {
-        contour.simplify(validation.fill_rule, validation.options)
+        contour
+            .simplify(validation.fill_rule, validation.options)
             .uncheck_triangulate_with_steiner_points(points)
     }
 
@@ -188,9 +200,15 @@ impl ContourSolver {
         points: &[IntPoint],
     ) -> RawIntTriangulation {
         if contour.len() < 3 {
-            RawIntTriangulation::empty()
+            Default::default()
         } else {
-            TrianglesBuilder::contour_triangulation(contour, Some(points))
+            let mut raw = RawIntTriangulation::default();
+            MonotoneTriangulator::default().contour_into_net_triangulation(
+                contour,
+                Some(points),
+                &mut raw,
+            );
+            raw
         }
     }
 }

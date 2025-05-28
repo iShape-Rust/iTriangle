@@ -34,7 +34,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -54,7 +54,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -69,7 +69,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -89,7 +89,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -104,7 +104,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }
@@ -124,7 +124,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> CustomTriangulatable<P, T> for 
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
-                raw: RawIntTriangulation::empty(),
+                raw: RawIntTriangulation::default(),
                 adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
             }
         }

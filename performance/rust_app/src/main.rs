@@ -57,8 +57,8 @@ fn debug_run() {
         min_radius_scale: 0.1, // must be > 0 to prevent intersection!
         max_radius_scale: 1.0,
     };
-    s = test.run_unchecked_raw(32, 2);
-    println!("s: {}", s);
+    // s = test.run_unchecked_raw(32, 2);
+    // println!("s: {}", s);
     s = test.run_unchecked_triangulator(32, 2, false);
     println!("s: {}", s);
 }

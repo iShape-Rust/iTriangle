@@ -1,29 +1,30 @@
 use alloc::vec::Vec;
 
 #[derive(Copy, Clone)]
-pub(super) struct PhantomHandler {
-    pub(super) vertex: usize,
-    pub(super) triangle: usize,
+pub(crate) struct PhantomHandler {
+    pub(crate) vertex: usize,
+    pub(crate) triangle: usize,
 }
 
-pub(super) struct PhantomEdgePool {
+pub(crate) struct PhantomEdgePool {
     buffer: Vec<PhantomHandler>,
     unused: Vec<usize>,
 }
 
 impl PhantomEdgePool {
+    const INIT_LEN: usize = 8;
+
     const EMPTY: PhantomHandler = PhantomHandler {
         vertex: usize::MAX,
         triangle: usize::MAX,
     };
 
-    pub(super) fn new() -> Self {
-        let capacity = 4;
+    pub(crate) fn new() -> Self {
         let mut store = Self {
-            buffer: Vec::with_capacity(capacity),
-            unused: Vec::with_capacity(capacity),
+            buffer: Vec::with_capacity(Self::INIT_LEN),
+            unused: Vec::with_capacity(Self::INIT_LEN),
         };
-        store.reserve(capacity);
+        store.reserve(Self::INIT_LEN);
         store
     }
 
@@ -38,7 +39,7 @@ impl PhantomEdgePool {
     }
 
     #[inline]
-    pub(super) fn get(&self, index: usize) -> Option<PhantomHandler> {
+    pub(crate) fn get(&self, index: usize) -> Option<PhantomHandler> {
         let item = self.buffer[index];
         if item.triangle == usize::MAX {
             None
@@ -48,13 +49,13 @@ impl PhantomEdgePool {
     }
 
     #[inline]
-    pub(super) fn register_phantom_link(&mut self, index: usize, handler: PhantomHandler) {
+    pub(crate) fn register_phantom_link(&mut self, index: usize, handler: PhantomHandler) {
         debug_assert!(self.buffer[index].triangle == usize::MAX);
         self.buffer[index] = handler;
     }
 
     #[inline]
-    pub(super) fn alloc_phantom_index(&mut self) -> usize {
+    pub(crate) fn alloc_phantom_index(&mut self) -> usize {
         if self.unused.is_empty() {
             self.reserve(self.unused.capacity());
         }
@@ -62,7 +63,7 @@ impl PhantomEdgePool {
     }
 
     #[inline]
-    pub(super) fn free_phantom_index(&mut self, index: usize) {
+    pub(crate) fn free_phantom_index(&mut self, index: usize) {
         self.buffer[index] = Self::EMPTY;
         self.unused.push(index)
     }

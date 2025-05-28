@@ -1,7 +1,7 @@
-use alloc::vec;
 use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
 use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::util::reserve::Reserve;
 
 pub trait IndexType: Copy + Clone + TryFrom<usize> + Default {
@@ -86,19 +86,13 @@ pub struct IntTriangulation<I = u16> {
 ///
 /// Use this when you need detailed control over topology, neighbor tracking, or
 /// advanced mesh manipulation.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RawIntTriangulation {
     pub(crate) triangles: Vec<IntTriangle>,
     pub(crate) points: Vec<IntPoint>,
 }
 
 impl RawIntTriangulation {
-    pub(crate) fn empty() -> Self {
-        Self {
-            triangles: vec![],
-            points: vec![],
-        }
-    }
 
     #[inline]
     pub(super) fn new(triangles: Vec<IntTriangle>, points: Vec<IntPoint>) -> Self {
@@ -141,6 +135,17 @@ impl RawIntTriangulation {
         }
     }
 
+    /// Converts the int triangulation into a simpler index-based mesh.
+    ///
+    /// Returns a [`IntTriangulation`] with separate index buffer and point list.
+    #[inline]
+    pub fn to_triangulation<I: IndexType>(&self) -> IntTriangulation<I> {
+        IntTriangulation {
+            indices: self.triangle_indices(),
+            points: self.points.as_slice().to_vec(),
+        }
+    }
+
     #[inline]
     pub(crate) fn shift(&mut self, points_offset: usize, triangle_offset: usize) {
         for t in self.triangles.iter_mut() {
@@ -154,6 +159,14 @@ impl RawIntTriangulation {
     }
 }
 impl<I: IndexType> IntTriangulation<I> {
+
+    #[inline]
+    pub fn empty() -> Self {
+        Self {
+            points: Vec::new(),
+            indices: Vec::new()
+        }
+    }
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
@@ -178,6 +191,14 @@ impl<I: IndexType> IntTriangulation<I> {
         self.points.clear();
         self.indices.reserve_capacity(3 * new_len);
         self.indices.clear();
+    }
+
+    #[inline]
+    pub fn fill_with_raw(&mut self, triangulation: &RawIntTriangulation) {
+        self.points.clear();
+        self.points.extend_from_slice(&triangulation.points);
+
+        triangulation.triangles.feed_indices(triangulation.points.len(), &mut self.indices);
     }
 }
 
@@ -211,3 +232,71 @@ impl IndicesBuilder for [IntTriangle] {
         }
     }
 }
+
+impl RawIntTriangulation {
+    pub fn validate(&self) {
+        for (i, t) in self.triangles.iter().enumerate() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+            let area = Triangle::area_two_point(a, b, c);
+            assert!(area <= 0);
+
+            let n0 = t.neighbors[0];
+            let n1 = t.neighbors[1];
+            let n2 = t.neighbors[2];
+
+            if n0 != usize::MAX {
+                assert!(self.triangles[n0].neighbors.contains(&i));
+            }
+            if n1 != usize::MAX {
+                assert!(self.triangles[n1].neighbors.contains(&i));
+            }
+            if n2 != usize::MAX {
+                assert!(self.triangles[n2].neighbors.contains(&i));
+            }
+        }
+    }
+
+    pub fn area(&self) -> i64 {
+        let mut s = 0;
+        for t in self.triangles.iter() {
+            let a = t.vertices[0].point;
+            let b = t.vertices[1].point;
+            let c = t.vertices[2].point;
+
+            s += Triangle::area_two_point(a, b, c);
+        }
+        s
+    }
+}
+
+#[cfg(test)]
+impl<I: IndexType> IntTriangulation<I> {
+        pub fn validate(&self, shape_area: i64) {
+            let mut s = 0;
+            let mut i = 0;
+            while i < self.indices.len() {
+                let ai = self.indices[i];
+                i += 1;
+                let bi = self.indices[i];
+                i += 1;
+                let ci = self.indices[i];
+                i += 1;
+
+                let a = self.points[ai.into_usize()];
+                let b = self.points[bi.into_usize()];
+                let c = self.points[ci.into_usize()];
+
+                let abc = Triangle::area_two_point(a, b, c);
+
+                assert!(abc > 0);
+
+                s = s + abc;
+            }
+
+            s = s / 2;
+
+            assert!(s == shape_area);
+        }
+    }

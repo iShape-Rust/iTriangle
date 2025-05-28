@@ -44,7 +44,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> RawTriangulation<P, T> {
         self.raw.triangle_indices()
     }
 
-    /// Converts this raw triangulation into a flat [`Triangulation`] (points + indices).
+    /// Converts this flat triangulation into a flat [`Triangulation`] (points + indices).
     #[inline]
     pub fn to_triangulation<I: IndexType>(&self) -> Triangulation<P, I> {
         Triangulation {
