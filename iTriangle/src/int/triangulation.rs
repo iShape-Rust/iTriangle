@@ -273,7 +273,7 @@ impl RawIntTriangulation {
 
 #[cfg(test)]
 impl<I: IndexType> IntTriangulation<I> {
-        pub fn validate(&self, shape_area: i64) {
+        pub fn validate(&self, shape_x2_area: i64) {
             let mut s = 0;
             let mut i = 0;
             while i < self.indices.len() {
@@ -290,13 +290,11 @@ impl<I: IndexType> IntTriangulation<I> {
 
                 let abc = Triangle::area_two_point(a, b, c);
 
-                assert!(abc > 0);
+                assert!(abc < 0);
 
                 s = s + abc;
             }
 
-            s = s / 2;
-
-            assert!(s == shape_area);
+            assert!(s == shape_x2_area);
         }
     }

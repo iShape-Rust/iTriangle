@@ -70,16 +70,13 @@ impl MonotoneTriangulator {
     pub(crate) fn shape_into_flat_triangulation<I: IndexType>(
         &mut self,
         shape: &IntShape,
-        points: Option<&[IntPoint]>,
         triangulation: &mut IntTriangulation<I>,
     ) {
-        let points_count = points.map(|points| points.len()).unwrap_or(0);
-
         let mut vertices = self.vertices.take().unwrap_or_default();
         self.vertices_builder
-            .shape_to_vertices(shape, points, &mut vertices);
+            .shape_to_vertices(shape, None, &mut vertices);
 
-        vertices.flat_triangulate_into(shape.triangles_count(points_count), triangulation);
+        vertices.flat_triangulate_into(shape.triangles_count(0), triangulation);
 
         self.vertices = Some(vertices);
     }
@@ -88,16 +85,13 @@ impl MonotoneTriangulator {
     pub(crate) fn contour_into_flat_triangulation<I: IndexType>(
         &mut self,
         contour: &IntContour,
-        points: Option<&[IntPoint]>,
         triangulation: &mut IntTriangulation<I>,
     ) {
-        let points_count = points.map(|points| points.len()).unwrap_or(0);
-
         let mut vertices = self.vertices.take().unwrap_or_default();
         self.vertices_builder
-            .contour_to_vertices(contour, points, &mut vertices);
+            .contour_to_vertices(contour, None, &mut vertices);
 
-        vertices.flat_triangulate_into(contour.triangles_count(points_count), triangulation);
+        vertices.flat_triangulate_into(contour.triangles_count(0), triangulation);
 
         self.vertices = Some(vertices);
     }

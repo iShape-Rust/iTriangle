@@ -37,9 +37,9 @@ impl NetTriangulation for [ChainVertex] {
         let n = self.len();
         let capacity = if n < 128 { 4 } else { n.ilog2() as usize };
         if capacity <= 12 {
-            builder.triangulate(&self, SetList::new(capacity));
+            builder.triangulate(self, SetList::new(capacity));
         } else {
-            builder.triangulate(&self, SetTree::new(capacity));
+            builder.triangulate(self, SetTree::new(capacity));
         }
     }
 }
@@ -1238,7 +1238,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
@@ -1258,7 +1258,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
@@ -1278,7 +1278,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
@@ -1298,7 +1298,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
@@ -1318,7 +1318,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
@@ -1342,8 +1342,8 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default().shape_into_net_triangulation(&shape, None, &mut raw);
-                
+                MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
+
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
             };
@@ -1395,10 +1395,10 @@ mod tests {
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
-                
+
                 let mut raw = RawIntTriangulation::default();
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
-                
+
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
             };
@@ -1422,7 +1422,7 @@ mod tests {
 
                 let mut raw = RawIntTriangulation::default();
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
-                
+
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
             };
@@ -1446,7 +1446,7 @@ mod tests {
 
                 let mut raw = RawIntTriangulation::default();
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
-                
+
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
             };
@@ -1469,10 +1469,10 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let group = vec![first.clone()].group_by_shapes(&points);
-                
+
                 let mut raw = RawIntTriangulation::default();
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, Some(&group[0]), &mut raw);
-                
+
                 raw.validate();
                 assert_eq!(raw.area(), shape_area);
             };

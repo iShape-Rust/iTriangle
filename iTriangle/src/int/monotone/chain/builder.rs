@@ -6,6 +6,7 @@ use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
+use i_overlay::i_shape::util::reserve::Reserve;
 
 pub(crate) struct ChainBuilder {
     bin_store: BinStore<i32>,
@@ -251,6 +252,24 @@ impl ChainVertexVec for Vec<ChainVertex> {
     fn add_steiner_points(&mut self, points: &[IntPoint]) {
         for &this in points {
             self.push(ChainVertex::implant(this));
+        }
+    }
+}
+
+pub(crate) trait ChainVertexExport {
+    fn feed_points(&self, points: &mut Vec<IntPoint>);
+}
+impl ChainVertexExport for [ChainVertex] {
+    #[inline]
+    fn feed_points(&self, points: &mut Vec<IntPoint>) {
+        points.reserve_capacity(self.len());
+        points.clear();
+        let mut index = usize::MAX;
+        for v in self.iter() {
+            if v.index != index {
+                index = v.index;
+                points.push(v.this);
+            }
         }
     }
 }

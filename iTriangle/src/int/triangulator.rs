@@ -151,7 +151,7 @@ impl<I: IndexType> IntTriangulator<I> {
             triangulation.fill_with_raw(&raw);
             self.raw_buffer = Some(raw);
         } else {
-            self.triangulator.contour_into_flat_triangulation(contour, None, triangulation);
+            self.triangulator.contour_into_flat_triangulation(contour, triangulation);
         }
     }
 
@@ -180,7 +180,7 @@ impl<I: IndexType> IntTriangulator<I> {
             triangulation.fill_with_raw(&raw);
             self.raw_buffer = Some(raw);
         } else {
-            self.triangulator.shape_into_flat_triangulation(shape, None, triangulation);
+            self.triangulator.shape_into_flat_triangulation(shape, triangulation);
         }
     }
 

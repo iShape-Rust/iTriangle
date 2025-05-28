@@ -98,8 +98,8 @@ impl ShapesSolver {
         let mut triangulator = MonotoneTriangulator::default();
         triangulator.shape_into_net_triangulation(&shapes[0], Some(&groups[0]), &mut raw_buffer);
 
-        triangles.extend_from_slice(&mut raw_buffer.triangles);
-        points.extend_from_slice(&mut raw_buffer.points);
+        triangles.extend_from_slice(&raw_buffer.triangles);
+        points.extend_from_slice(&raw_buffer.points);
 
         let mut i = 1;
         while i < shapes.len() {
@@ -113,8 +113,8 @@ impl ShapesSolver {
             triangulator.shape_into_net_triangulation(shape, Some(steiner_points), &mut raw_buffer);
             raw_buffer.shift(points_offset, triangle_offset);
 
-            triangles.extend_from_slice(&mut raw_buffer.triangles);
-            points.extend_from_slice(&mut raw_buffer.points);
+            triangles.extend_from_slice(&raw_buffer.triangles);
+            points.extend_from_slice(&raw_buffer.points);
         }
 
         RawIntTriangulation::new(triangles, points)
