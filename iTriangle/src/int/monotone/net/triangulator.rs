@@ -14,6 +14,7 @@ use i_overlay::i_shape::util::reserve::Reserve;
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
+use crate::int::monotone::chain::builder::ChainVertexExport;
 
 struct NetBuilder<'a> {
     triangulation: &'a mut RawIntTriangulation,
@@ -41,6 +42,8 @@ impl NetTriangulation for [ChainVertex] {
         } else {
             builder.triangulate(self, SetTree::new(capacity));
         }
+
+        self.feed_points(&mut triangulation.points);
     }
 }
 
