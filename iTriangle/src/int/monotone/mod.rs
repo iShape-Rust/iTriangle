@@ -1,4 +1,3 @@
-pub mod builder;
 mod chain;
 pub(crate) mod flat;
 mod net;

@@ -8,3 +8,4 @@ pub(crate) mod monotone;
 mod binder;
 mod solver;
 mod meta;
+mod earcut;
