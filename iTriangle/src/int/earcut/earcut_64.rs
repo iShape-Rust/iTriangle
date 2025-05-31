@@ -37,8 +37,7 @@ impl Earcut64 for IntContour {
 
 enum ConvexSearchResult {
     Circle,
-    IndexSamePoint(usize),
-    Index(usize),
+    Index(usize, bool),
     None,
 }
 
@@ -69,12 +68,10 @@ impl<'a> EarcutSolver<'a> {
                     self.collect_last_ear_triangles(i, triangulation);
                     return true;
                 }
-                ConvexSearchResult::IndexSamePoint(convex_end) => {
-                    self.collect_ear_triangles(i, convex_end, true, triangulation);
-                }
-                ConvexSearchResult::Index(convex_end) => {
-                    if let Some(ear_end) = self.validate_and_shrink_ear(i, convex_end) {
-                        self.collect_ear_triangles(i, ear_end, false, triangulation);
+                ConvexSearchResult::Index(convex_end, same_point) => {
+                    if let Some(ear_end) = self.validate_and_shrink_ear(i, convex_end, same_point) {
+                        let same_point_after_shrink = same_point && ear_end == convex_end;
+                        self.collect_ear_triangles(i, ear_end, same_point_after_shrink, triangulation);
                     }
                 }
             }
@@ -186,7 +183,7 @@ impl<'a> EarcutSolver<'a> {
 
                 if cross_0 == 0 {
                     if a == c {
-                        return ConvexSearchResult::IndexSamePoint(j);
+                        return ConvexSearchResult::Index(j, true);
                     } else {
                         // a, c, b on the same line
                         // if c inside ab we step back, ac and cb will be opposite
@@ -200,7 +197,7 @@ impl<'a> EarcutSolver<'a> {
                     }
                 }
 
-                return ConvexSearchResult::Index(i);
+                return ConvexSearchResult::Index(i, false);
             }
             b = c;
             i = j;
@@ -211,7 +208,12 @@ impl<'a> EarcutSolver<'a> {
     }
 
     #[inline]
-    fn validate_and_shrink_ear(&self, start: usize, end: usize) -> Option<usize> {
+    fn validate_and_shrink_ear(
+        &self,
+        start: usize,
+        end: usize,
+        mut same_point: bool,
+    ) -> Option<usize> {
         let candidates = self.fast_ear_bounding_box_check(start, end);
         if candidates == 0 {
             return Some(end);
@@ -220,12 +222,22 @@ impl<'a> EarcutSolver<'a> {
         let ear_indices = self.available & u64::ones_in_range_include(start, end);
         let second_index = ear_indices.next_wrapped_index(start);
         let mut range_end = end;
+
         while range_end != second_index {
-            if self.candidates_ear_check(start, range_end, candidates) {
-                return Some(range_end);
+            if same_point {
+                if self.candidates_ear_check_same_points(start, range_end, candidates) {
+                    return Some(range_end);
+                }
+                same_point = false;
+            } else {
+                if self.candidates_ear_check(start, range_end, candidates) {
+                    return Some(range_end);
+                }
             }
+
             range_end = ear_indices.prev_wrapped_index(range_end);
         }
+
         None
     }
 
@@ -293,6 +305,27 @@ impl<'a> EarcutSolver<'a> {
     }
 
     #[inline]
+    fn candidates_ear_check_same_points(&self, start: usize, end: usize, candidates: u64) -> bool {
+        let ear_indices = self.available & u64::ones_in_range_include(start, end);
+
+        let mut bits = candidates;
+        let mut i = bits.trailing_zeros() as usize;
+
+        // by all candidates
+        while bits != 0 {
+            let c = self.contour[i];
+            if self.is_not_valid_candidate(ear_indices, c) {
+                return false;
+            }
+
+            bits &= !(1 << i);
+            i = bits.trailing_zeros() as usize;
+        }
+
+        true
+    }
+
+    #[inline]
     fn is_not_valid_candidate(&self, ear_indices: u64, c: IntPoint) -> bool {
         let n = ear_indices.count_ones();
 
@@ -321,7 +354,7 @@ impl<'a> EarcutSolver<'a> {
                     count += 1;
                 } else if cross == 0 {
                     // touch contour, skip
-                    return false
+                    return false;
                 }
             }
             p0 = pi;
@@ -847,6 +880,28 @@ mod tests {
     }
 
     #[test]
+    fn test_earcut_22() {
+        let contour = vec![
+            IntPoint::new(-2, 4),
+            IntPoint::new(-2, -4),
+            IntPoint::new(2, -3),
+            IntPoint::new(2, 0),
+            IntPoint::new(0, -1),
+            IntPoint::new(1, -2),
+            IntPoint::new(-1, -2),
+            IntPoint::new(0, -1),
+            IntPoint::new(-1, -1),
+            IntPoint::new(1, 2),
+            IntPoint::new(2, 0),
+            IntPoint::new(3, -2),
+            IntPoint::new(2, 2),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
     fn test_random_0() {
         for _ in 0..100_000 {
             if let Some(first) = random(8, 5)
@@ -896,7 +951,57 @@ mod tests {
 
     #[test]
     fn test_random_3() {
-        for _ in 0..100_000 {
+        for _ in 0..50_000 {
+            if let Some(first) = random(8, 12)
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
+                .first()
+            {
+                if let Some(contour) = first.first() {
+                    if !contour.is_empty() {
+                        single_test(&contour);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_4() {
+        for _ in 0..40_000 {
+            if let Some(first) = random(16, 32)
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
+                .first()
+            {
+                if let Some(contour) = first.first() {
+                    let n = contour.len();
+                    if 3 <= n && n <= 64 {
+                        single_test(&contour);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_5() {
+        for _ in 0..20_000 {
+            if let Some(first) = random(16, 48)
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
+                .first()
+            {
+                if let Some(contour) = first.first() {
+                    let n = contour.len();
+                    if 3 <= n && n <= 64 {
+                        single_test(&contour);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_random_6() {
+        for _ in 0..10_000 {
             if let Some(first) = random(16, 64)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
