@@ -319,6 +319,9 @@ impl<'a> EarcutSolver<'a> {
                 let cross = ab.cross_product(ac);
                 if cross > 0 {
                     count += 1;
+                } else if cross == 0 {
+                    // touch contour, skip
+                    return false
                 }
             }
             p0 = pi;
@@ -821,6 +824,22 @@ mod tests {
             IntPoint::new(1, 0),
             IntPoint::new(1, -1),
             IntPoint::new(-1, -1),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_21() {
+        let contour = vec![
+            IntPoint::new(3, 2),
+            IntPoint::new(-4, 0),
+            IntPoint::new(1, -4),
+            IntPoint::new(0, 1),
+            IntPoint::new(-1, 0),
+            IntPoint::new(-3, 0),
+            IntPoint::new(0, 1),
         ];
 
         single_test(&contour);
