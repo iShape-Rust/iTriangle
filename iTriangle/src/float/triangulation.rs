@@ -183,7 +183,7 @@ mod tests {
     fn test_0() {
         let rect = [[0.0, 0.0], [5.0, 0.0], [5.0, 8.0], [0.0, 8.0]];
 
-        let triangulation = Triangulator::<u32>::default().triangulate(&rect, false);
+        let triangulation = Triangulator::<u32>::default().triangulate(&rect);
         assert_eq!(triangulation.points.len(), 4);
         assert_eq!(triangulation.indices.len(), 6);
 

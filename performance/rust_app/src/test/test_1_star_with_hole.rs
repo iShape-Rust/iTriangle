@@ -192,6 +192,7 @@ impl StarWithHoleTest {
 
         let max_capacity = shape.points_count();
         let mut triangulator = Triangulator::<u32>::new(max_capacity, Default::default(), Default::default());
+        triangulator.delaunay(delaunay);
         let mut triangulation = Triangulation::with_capacity(max_capacity);
 
         for _ in 0..repeat_count {
@@ -211,7 +212,7 @@ impl StarWithHoleTest {
                         &mut shape,
                     );
 
-                    triangulator.triangulate_into(&shape, delaunay, &mut triangulation);
+                    triangulator.triangulate_into(&shape, &mut triangulation);
                     sum += triangulation.points.len();
                     start_angle += angle_step;
                 }
@@ -245,6 +246,7 @@ impl StarWithHoleTest {
 
         let max_capacity = shape.points_count();
         let mut triangulator = Triangulator::<u32>::new(max_capacity, Default::default(), Default::default());
+        triangulator.delaunay(delaunay);
         let mut triangulation = Triangulation::with_capacity(max_capacity);
 
         for _ in 0..repeat_count {
@@ -264,7 +266,7 @@ impl StarWithHoleTest {
                         &mut shape,
                     );
 
-                    triangulator.uncheck_triangulate_into(&shape, delaunay, &mut triangulation);
+                    triangulator.uncheck_triangulate_into(&shape, &mut triangulation);
                     sum += triangulation.indices.len();
                     start_angle += angle_step;
                 }

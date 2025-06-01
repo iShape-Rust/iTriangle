@@ -190,6 +190,7 @@ impl SimpleStarTest {
 
         let start = Instant::now();
         let mut triangulator = Triangulator::<u32>::new(points.len(), Default::default(), Default::default());
+        triangulator.delaunay(delaunay);
         let mut triangulation = Triangulation::with_capacity(points.len());
         for _ in 0..repeat_count {
 
@@ -209,7 +210,7 @@ impl SimpleStarTest {
                         true,
                         &mut points,
                     );
-                    triangulator.triangulate_into(&points, delaunay, &mut triangulation);
+                    triangulator.triangulate_into(&points, &mut triangulation);
                     start_angle += angle_step;
                     sum += triangulation.points.len();
                 }
@@ -238,6 +239,7 @@ impl SimpleStarTest {
 
         let start = Instant::now();
         let mut triangulator = Triangulator::<u32>::new(points.len(), Default::default(), Default::default());
+        triangulator.delaunay(delaunay);
         let mut triangulation = Triangulation::with_capacity(points.len());
         for _ in 0..repeat_count {
 
@@ -257,7 +259,7 @@ impl SimpleStarTest {
                         true,
                         &mut points,
                     );
-                    triangulator.uncheck_triangulate_into(&points, delaunay, &mut triangulation);
+                    triangulator.uncheck_triangulate_into(&points, &mut triangulation);
                     start_angle += angle_step;
                     sum += triangulation.indices.len();
                 }

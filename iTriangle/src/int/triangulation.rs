@@ -258,7 +258,7 @@ impl RawIntTriangulation {
         }
     }
 
-    pub fn area(&self) -> i64 {
+    pub fn area_two(&self) -> i64 {
         let mut s = 0;
         for t in self.triangles.iter() {
             let a = t.vertices[0].point;

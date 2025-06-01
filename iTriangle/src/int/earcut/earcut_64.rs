@@ -1,37 +1,49 @@
+use crate::int::earcut::flat::FlatEarcutStore;
+use crate::int::earcut::net::NetEarcutStore;
 use crate::int::meta::TrianglesCount;
-use crate::int::triangulation::{IndexType, IntTriangulation};
+use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
 use core::cmp::Ordering;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::int::rect::IntRect;
-use i_overlay::i_shape::int::shape::IntContour;
 use i_overlay::i_shape::util::reserve::Reserve;
 
-pub(crate) trait Earcut64 {
-    fn earcut_triangulate_into<I: IndexType>(
-        &self,
-        triangulation: &mut IntTriangulation<I>,
-    ) -> bool;
+pub(super) trait EarcutStore {
+    fn collect_triangles(&mut self, contour: &[IntPoint], start: usize, bits: u64, count: u32);
 }
 
-impl Earcut64 for IntContour {
-    fn earcut_triangulate_into<I: IndexType>(
-        &self,
-        triangulation: &mut IntTriangulation<I>,
-    ) -> bool {
+pub trait Earcut64 {
+    fn earcut_flat_triangulate_into<I: IndexType>(&self, triangulation: &mut IntTriangulation<I>);
+
+    fn earcut_net_triangulate_into(&self, triangulation: &mut RawIntTriangulation);
+}
+
+impl Earcut64 for [IntPoint] {
+    fn earcut_flat_triangulate_into<I: IndexType>(&self, triangulation: &mut IntTriangulation<I>) {
         debug_assert!(self.len() <= 64);
+
         triangulation
             .indices
             .reserve_capacity(self.triangles_count(0));
         triangulation.indices.clear();
 
-        let success = EarcutSolver::new(self).triangulate_into(triangulation);
+        EarcutSolver::new(self, FlatEarcutStore::new(triangulation)).triangulate();
 
-        if success {
-            triangulation.points.clear();
-            triangulation.points.extend_from_slice(self);
-        }
+        triangulation.points.clear();
+        triangulation.points.extend_from_slice(self);
+    }
 
-        success
+    fn earcut_net_triangulate_into(&self, triangulation: &mut RawIntTriangulation) {
+        debug_assert!(self.len() <= 64);
+
+        triangulation
+            .triangles
+            .reserve_capacity(self.triangles_count(0));
+        triangulation.triangles.clear();
+
+        EarcutSolver::new(self, NetEarcutStore::new(self.len(), triangulation)).triangulate();
+
+        triangulation.points.clear();
+        triangulation.points.extend_from_slice(self);
     }
 }
 
@@ -41,14 +53,16 @@ enum ConvexSearchResult {
     None,
 }
 
-struct EarcutSolver<'a> {
-    contour: &'a IntContour,
+struct EarcutSolver<'a, S> {
+    store: S,
+    contour: &'a [IntPoint],
     available: u64,
 }
 
-impl<'a> EarcutSolver<'a> {
-    fn new(contour: &'a IntContour) -> Self {
+impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
+    fn new(contour: &'a [IntPoint], store: S) -> Self {
         Self {
+            store,
             contour,
             available: u64::ones_start_to_index(contour.len()),
         }
@@ -59,36 +73,28 @@ impl<'a> EarcutSolver<'a> {
         unsafe { *self.contour.get_unchecked(index) }
     }
 
-    fn triangulate_into<I: IndexType>(&mut self, triangulation: &mut IntTriangulation<I>) -> bool {
+    fn triangulate(&mut self) {
         let mut i = 0;
         while self.available.count_ones() >= 3 {
             match self.find_convex_part(i) {
                 ConvexSearchResult::None => {}
                 ConvexSearchResult::Circle => {
-                    self.collect_last_ear_triangles(i, triangulation);
-                    return true;
+                    self.collect_last_ear_triangles(i);
+                    return;
                 }
                 ConvexSearchResult::Index(convex_end, same_point) => {
                     if let Some(ear_end) = self.validate_and_shrink_ear(i, convex_end, same_point) {
                         let same_point_after_shrink = same_point && ear_end == convex_end;
-                        self.collect_ear_triangles(i, ear_end, same_point_after_shrink, triangulation);
+                        self.collect_ear_triangles(i, ear_end, same_point_after_shrink);
                     }
                 }
             }
             i = self.available.next_wrapped_index(i);
         }
-
-        true
     }
 
     #[inline]
-    fn collect_ear_triangles<I: IndexType>(
-        &mut self,
-        start: usize,
-        end: usize,
-        same_point: bool,
-        triangulation: &mut IntTriangulation<I>,
-    ) {
+    fn collect_ear_triangles(&mut self, start: usize, end: usize, same_point: bool) {
         // ear indices
         let bits = self.available & u64::ones_in_range_include(start, end);
 
@@ -110,44 +116,14 @@ impl<'a> EarcutSolver<'a> {
         }
 
         self.available &= invert;
-
-        let mut i = start;
-        let a = unsafe { I::try_from(i).unwrap_unchecked() };
-        i = bits.next_wrapped_index(i);
-        let mut b = unsafe { I::try_from(i).unwrap_unchecked() };
-
-        for _ in 0..n {
-            i = bits.next_wrapped_index(i);
-            let c = unsafe { I::try_from(i).unwrap_unchecked() };
-            triangulation.indices.push(a);
-            triangulation.indices.push(b);
-            triangulation.indices.push(c);
-
-            b = c;
-        }
+        self.store.collect_triangles(self.contour, start, bits, n);
     }
 
     #[inline]
-    fn collect_last_ear_triangles<I: IndexType>(
-        &self,
-        start: usize,
-        triangulation: &mut IntTriangulation<I>,
-    ) {
+    fn collect_last_ear_triangles(&mut self, start: usize) {
         let bits = self.available;
-        let mut i = start;
-        let a = unsafe { I::try_from(i).unwrap_unchecked() };
-        i = bits.next_wrapped_index(i);
-        let mut b = unsafe { I::try_from(i).unwrap_unchecked() };
-        i = bits.next_wrapped_index(i);
-        while i != start {
-            let c = unsafe { I::try_from(i).unwrap_unchecked() };
-            triangulation.indices.push(a);
-            triangulation.indices.push(b);
-            triangulation.indices.push(c);
-
-            b = c;
-            i = bits.next_wrapped_index(i);
-        }
+        self.store
+            .collect_triangles(self.contour, start, bits, bits.count_ones() - 2);
     }
 
     fn find_convex_part(&self, i0: usize) -> ConvexSearchResult {
@@ -229,10 +205,8 @@ impl<'a> EarcutSolver<'a> {
                     return Some(range_end);
                 }
                 same_point = false;
-            } else {
-                if self.candidates_ear_check(start, range_end, candidates) {
-                    return Some(range_end);
-                }
+            } else if self.candidates_ear_check(start, range_end, candidates) {
+                return Some(range_end);
             }
 
             range_end = ear_indices.prev_wrapped_index(range_end);
@@ -364,7 +338,7 @@ impl<'a> EarcutSolver<'a> {
     }
 }
 
-trait Bit {
+pub(super) trait Bit {
     fn ones_start_to_index(count: usize) -> Self;
     fn ones_index_to_end(count: usize) -> Self;
     fn ones_in_sorted_closed_range(start: usize, end: usize) -> Self;
@@ -436,7 +410,7 @@ impl Bit for u64 {
 #[cfg(test)]
 mod tests {
     use crate::int::earcut::earcut_64::{Bit, Earcut64};
-    use crate::int::triangulation::IntTriangulation;
+    use crate::int::triangulation::{IntTriangulation, RawIntTriangulation};
     use alloc::vec;
     use alloc::vec::Vec;
     use i_overlay::core::fill_rule::FillRule;
@@ -1017,11 +991,20 @@ mod tests {
     }
 
     fn single_test(contour: &IntContour) {
-        let mut triangulation = IntTriangulation::<u8>::default();
-        contour.earcut_triangulate_into(&mut triangulation);
+        // flat
+        let mut flat = IntTriangulation::<u8>::default();
+        contour.earcut_flat_triangulate_into(&mut flat);
 
-        triangulation.validate(contour.area_two());
-        assert!(triangulation.indices.len() / 3 <= contour.len() - 2);
+        flat.validate(contour.area_two());
+        assert!(flat.indices.len() / 3 <= contour.len() - 2);
+
+        // net
+        let mut net = RawIntTriangulation::default();
+        contour.earcut_net_triangulate_into(&mut net);
+
+        net.validate();
+        assert_eq!(net.area_two(), contour.area_two());
+        assert!(net.triangles.len() / 3 <= contour.len() - 2);
     }
 
     fn roll_test(contour: &IntContour) {
@@ -1029,7 +1012,7 @@ mod tests {
 
         let mut path = contour.to_vec();
         for _ in 0..path.len() {
-            contour.earcut_triangulate_into(&mut triangulation);
+            contour.earcut_flat_triangulate_into(&mut triangulation);
 
             triangulation.validate(contour.area_two());
             assert!(triangulation.indices.len() / 3 <= contour.len() - 2);

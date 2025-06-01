@@ -1,11 +1,11 @@
+mod binder;
 pub mod custom;
+pub mod earcut;
+mod meta;
+pub(crate) mod monotone;
+mod solver;
 pub mod triangulatable;
 pub mod triangulation;
+pub mod triangulator;
 pub mod unchecked;
 pub mod validation;
-pub mod triangulator;
-pub(crate) mod monotone;
-mod binder;
-mod solver;
-mod meta;
-mod earcut;

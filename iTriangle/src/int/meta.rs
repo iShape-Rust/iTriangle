@@ -1,5 +1,6 @@
+use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
-use i_overlay::i_shape::int::shape::{IntContour, IntShape};
+use i_overlay::i_shape::int::shape::IntContour;
 
 pub(crate) struct MeshMeta {
     pub(crate) triangles_count: usize,
@@ -20,7 +21,7 @@ impl TrianglesCount for FlatContoursBuffer {
     }
 }
 
-impl TrianglesCount for IntShape {
+impl TrianglesCount for [IntContour] {
     #[inline]
     fn triangles_count(&self, points_count: usize) -> usize {
         let mut count = 2 * points_count;
@@ -31,7 +32,7 @@ impl TrianglesCount for IntShape {
     }
 }
 
-impl TrianglesCount for IntContour {
+impl TrianglesCount for [IntPoint] {
     #[inline]
     fn triangles_count(&self, points_count: usize) -> usize {
         self.len() - 2 + 2 * points_count
@@ -42,7 +43,7 @@ pub(crate) trait MeshMetaProvider {
     fn meta(&self, points_count: usize) -> MeshMeta;
 }
 
-impl MeshMetaProvider for IntContour {
+impl MeshMetaProvider for [IntPoint] {
     #[inline]
     fn meta(&self, points_count: usize) -> MeshMeta {
         MeshMeta {
@@ -52,7 +53,7 @@ impl MeshMetaProvider for IntContour {
     }
 }
 
-impl MeshMetaProvider for IntShape {
+impl MeshMetaProvider for [IntContour] {
     #[inline]
     fn meta(&self, points_count: usize) -> MeshMeta {
         let mut triangles_count = 2 * points_count;

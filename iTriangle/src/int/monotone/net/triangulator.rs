@@ -636,7 +636,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -655,7 +655,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -674,7 +674,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -693,7 +693,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -712,7 +712,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -733,7 +733,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -755,7 +755,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 5);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -775,7 +775,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 3);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -798,7 +798,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 6);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -823,7 +823,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 8);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -843,7 +843,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 16);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -864,7 +864,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 24);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -899,7 +899,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 16);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -922,7 +922,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 6);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -938,7 +938,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 3);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -952,7 +952,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -966,7 +966,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 3);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -989,7 +989,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 6);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1011,7 +1011,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 5);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1032,7 +1032,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1054,7 +1054,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 5);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1077,7 +1077,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 6);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1092,7 +1092,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 3);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1107,7 +1107,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1130,7 +1130,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 7);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1149,7 +1149,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 8);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1164,7 +1164,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1179,7 +1179,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1194,7 +1194,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1210,7 +1210,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 4);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1226,7 +1226,7 @@ mod tests {
         assert_eq!(raw.triangles.len(), 2);
         raw.validate();
 
-        assert_eq!(raw.area(), shape_area);
+        assert_eq!(raw.area_two(), shape_area);
     }
 
     #[test]
@@ -1244,7 +1244,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1264,7 +1264,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1284,7 +1284,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1304,7 +1304,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1324,7 +1324,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1348,7 +1348,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, None, &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1364,7 +1364,7 @@ mod tests {
             MonotoneTriangulator::default().shape_into_net_triangulation(&shape, Some(&points), &mut raw);
 
             raw.validate();
-            assert_eq!(raw.area(), shape_area);
+            assert_eq!(raw.area_two(), shape_area);
         }
     }
 
@@ -1380,7 +1380,7 @@ mod tests {
             MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
 
             raw.validate();
-            assert_eq!(raw.area(), shape_area);
+            assert_eq!(raw.area_two(), shape_area);
         }
     }
 
@@ -1403,7 +1403,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1427,7 +1427,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1451,7 +1451,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&shapes[0], Some(&group[0]), &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }
@@ -1477,7 +1477,7 @@ mod tests {
                 MonotoneTriangulator::default().shape_into_net_triangulation(&first, Some(&group[0]), &mut raw);
 
                 raw.validate();
-                assert_eq!(raw.area(), shape_area);
+                assert_eq!(raw.area_two(), shape_area);
             };
         }
     }

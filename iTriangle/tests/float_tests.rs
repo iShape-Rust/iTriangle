@@ -39,8 +39,11 @@ mod tests {
 
         let mut triangulator = Triangulator::<u32>::default();
 
-        let t0 = triangulator.triangulate(&contour, false);
-        let t1 = triangulator.triangulate(&contour, true);
+        triangulator.delaunay(false);
+        let t0 = triangulator.triangulate(&contour);
+
+        triangulator.delaunay(true);
+        let t1 = triangulator.triangulate(&contour);
 
         let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -63,10 +66,11 @@ mod tests {
         
         let mut triangulator = Triangulator::<u32>::default();
 
-        let t0 = triangulator.triangulate(&contour, false);
-        let t1 = triangulator.triangulate(&contour, true);
+        triangulator.delaunay(false);
+        let t0 = triangulator.triangulate(&contour);
 
-        
+        triangulator.delaunay(true);
+        let t1 = triangulator.triangulate(&contour);
 
         t0.validate(area, 0.001);
         t1.validate(area, 0.001);
@@ -84,8 +88,11 @@ mod tests {
 
         let mut triangulator = Triangulator::<u32>::default();
 
-        let t0 = triangulator.triangulate(&contour, false);
-        let t1 = triangulator.triangulate(&contour, true);
+        triangulator.delaunay(false);
+        let t0 = triangulator.triangulate(&contour);
+
+        triangulator.delaunay(true);
+        let t1 = triangulator.triangulate(&contour);
 
         let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -102,10 +109,12 @@ mod tests {
             let contour = random(8, 5);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&contour, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&contour, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
         }
     }
@@ -119,10 +128,12 @@ mod tests {
             let contour = random(10, 6);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&contour, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&contour, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
         }
     }
@@ -136,10 +147,12 @@ mod tests {
             let contour = random(10, 12);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&contour, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&contour, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
         }
     }
@@ -153,10 +166,12 @@ mod tests {
             let contour = random(20, 20);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&contour, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&contour, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
         }
     }
@@ -170,10 +185,12 @@ mod tests {
             let contour = random(30, 50);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&contour, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&contour, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&contour, &mut t);
             t.validate(area, 0.001);
         }
     }
@@ -192,10 +209,12 @@ mod tests {
 
             let area = shape.simplify_shape(FillRule::NonZero).area();
 
-            triangulator.triangulate_into(&shape, false, &mut t);
+            triangulator.delaunay(false);
+            triangulator.triangulate_into(&shape, &mut t);
             t.validate(area, 0.001);
 
-            triangulator.triangulate_into(&shape, true, &mut t);
+            triangulator.delaunay(true);
+            triangulator.triangulate_into(&shape, &mut t);
             t.validate(area, 0.001);
         }
     }
