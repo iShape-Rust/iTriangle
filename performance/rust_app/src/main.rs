@@ -1,6 +1,9 @@
+use crate::test::test::Test;
 use crate::test::test_0_star::SimpleStarTest;
 use crate::test::test_1_star_with_hole::StarWithHoleTest;
 use crate::test::test_2_rect_star_holes::RectStarHolesTest;
+use crate::test::test_3_spiral::SpiralTest;
+use crate::test::test_4_spike::SpikeTest;
 use crate::util::args::EnvArgs;
 
 mod test;
@@ -14,7 +17,6 @@ fn main() {
 
     #[cfg(not(debug_assertions))]
     {
-
         release_run();
     }
 }
@@ -27,6 +29,8 @@ fn release_run() {
         0 => star(&args),
         1 => star_with_hole(&args),
         2 => rect_with_star_holes(&args),
+        3 => spiral(&args),
+        4 => spike(&args),
         _ => {
             panic!("No test found")
         }
@@ -97,7 +101,7 @@ fn star(args: &EnvArgs) {
             s += test.run_unchecked_delaunay(count, repeat_count);
         }
         println!("s: {}", s);
-        
+
         // println!("raw: ");
         // s = 0;
         // for i in 0..n {
@@ -170,7 +174,7 @@ fn star(args: &EnvArgs) {
         println!("unchecked delaunay: ");
         let s1 = test.run_unchecked_delaunay(count, repeat_count);
         println!();
-        
+
         println!("raw: ");
         let s2 = test.run_raw(count, repeat_count);
         println!();
@@ -199,7 +203,10 @@ fn star(args: &EnvArgs) {
         let s8 = test.run_earcutr(count);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}", s0, s1, s2, s3, s4, s5, s6, s7, s8);
+        println!(
+            "s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}",
+            s0, s1, s2, s3, s4, s5, s6, s7, s8
+        );
     }
 }
 
@@ -302,7 +309,7 @@ fn star_with_hole(args: &EnvArgs) {
     } else {
         let count = args.get_usize("count");
         let repeat_count = (256 / count).max(1);
-        
+
         println!("unchecked raw: ");
         let s0 = test.run_unchecked_raw(count, repeat_count);
         println!();
@@ -339,7 +346,10 @@ fn star_with_hole(args: &EnvArgs) {
         let s8 = test.run_earcutr(count);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}", s0, s1, s2, s3, s4, s5, s6, s7, s8);
+        println!(
+            "s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}",
+            s0, s1, s2, s3, s4, s5, s6, s7, s8
+        );
     }
 }
 
@@ -347,7 +357,7 @@ fn star_with_hole(args: &EnvArgs) {
 fn rect_with_star_holes(args: &EnvArgs) {
     let complex = args.get_bool("complex");
 
-    let test = RectStarHolesTest{
+    let test = RectStarHolesTest {
         radius: 100.0,
         angle_steps_count: 5,
         points_per_corner: 10,
@@ -443,7 +453,7 @@ fn rect_with_star_holes(args: &EnvArgs) {
     } else {
         let count = args.get_usize("count");
         let repeat_count = (256 / count).max(1);
-        
+
         println!("unchecked raw: ");
         let s0 = test.run_unchecked_raw(count, repeat_count);
         println!();
@@ -480,6 +490,120 @@ fn rect_with_star_holes(args: &EnvArgs) {
         let s8 = test.run_earcutr(count);
         println!();
 
-        println!("s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}", s0, s1, s2, s3, s4, s5, s6, s7, s8);
+        println!(
+            "s0: {}, s1: {}, s2: {}, s3: {}, s4: {}, s5: {}, s6: {}, s7: {}, s8: {}",
+            s0, s1, s2, s3, s4, s5, s6, s7, s8
+        );
+    }
+}
+
+#[allow(dead_code)]
+fn spiral(args: &EnvArgs) {
+    let complex = args.get_bool("complex");
+
+    let test = SpiralTest { width: 10.0 };
+
+    if complex {
+        let mut tests = vec![
+            Test::new(8, 10_000),
+            Test::new(16, 10_000),
+            Test::new(24, 10_000),
+            Test::new(32, 10_000),
+            Test::new(40, 10_000),
+            Test::new(48, 10_000),
+            Test::new(64, 10_000),
+        ];
+        for i in 1..6 {
+            tests.push(Test::new(64 << i, 256 >> i));
+        }
+
+        let mut s;
+
+        println!("flat + earcut: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, false, true);
+        }
+        println!("s: {}", s);
+
+        println!("flat + monotone: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, false, false);
+        }
+        println!("s: {}", s);
+
+        println!("flat + delaunay: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, true, true);
+        }
+        println!("s: {}", s);
+
+        println!("rust earcut: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_earcutr(t);
+        }
+        println!("s: {}", s);
+    } else {
+        println!("not implemented");
+    }
+}
+
+#[allow(dead_code)]
+fn spike(args: &EnvArgs) {
+    let complex = args.get_bool("complex");
+
+    let test = SpikeTest {
+        inner_radius: 80.0,
+        outer_radius: 160.0,
+    };
+
+    if complex {
+        let mut tests = vec![
+            Test::new(8, 10_000),
+            Test::new(16, 10_000),
+            Test::new(24, 10_000),
+            Test::new(32, 10_000),
+            Test::new(40, 10_000),
+            Test::new(48, 10_000),
+            Test::new(64, 10_000),
+        ];
+        for i in 1..6 {
+            tests.push(Test::new(64 << i, 256 >> i));
+        }
+
+        let mut s;
+
+        println!("flat + earcut: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, false, true);
+        }
+        println!("s: {}", s);
+
+        println!("flat + monotone: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, false, false);
+        }
+        println!("s: {}", s);
+
+        println!("flat + delaunay: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_triangle(t, true, true);
+        }
+        println!("s: {}", s);
+
+        println!("rust earcut: ");
+        s = 0;
+        for t in tests.iter() {
+            s += test.run_earcutr(t);
+        }
+        println!("s: {}", s);
+    } else {
+        println!("not implemented");
     }
 }
