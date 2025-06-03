@@ -84,7 +84,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
                     return;
                 }
                 ConvexSearchResult::Index(convex_end, same_point) => {
-                    if let Some(ear_end) = self.validate_and_shrink_ear(i, convex_end, same_point) {
+                    if let Some(ear_end) = self.validate_and_shrink_ear(i, convex_end) {
                         let same_point_after_shrink = same_point && ear_end == convex_end;
                         self.collect_ear_triangles(i, ear_end, same_point_after_shrink);
                     }
@@ -133,7 +133,8 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         let mut b = *self.point(i1);
 
         let mut i = i1;
-        let mut v0 = b.subtract(a); // prev edge
+        let ab = b.subtract(a);
+        let mut v0 = ab; // prev edge
         while i != i0 {
             let j = self.available.next_wrapped_index(i);
             let c = *self.point(j);
@@ -150,7 +151,10 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
             // must not go in clock wise direction
             let cross_1 = cb.cross_product(v0);
 
-            if cross_1 > 0 || cross_0 >= 0 {
+            // first and last edge must create an angle not more 180
+            let cross_2 = ac.cross_product(ab);
+
+            if cross_1 > 0 || cross_0 >= 0 || cross_2 > 0 {
                 if i == i1 {
                     // empty ear
                     return ConvexSearchResult::None;
@@ -185,32 +189,25 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
     }
 
     #[inline]
-    fn validate_and_shrink_ear(&self, start: usize, end: usize, same_point: bool) -> Option<usize> {
+    fn validate_and_shrink_ear(&self, start: usize, end: usize) -> Option<usize> {
         let ear_indices = self.available & u64::ones_in_range_include(start, end);
         let mut candidates = self.filter_by_bounding_box(ear_indices);
         if candidates == 0 {
             return Some(end);
         }
 
-        if !same_point {
-            candidates = self.filter_by_slice(start, end, candidates);
-            if candidates == 0 {
-                return Some(end);
-            }
-        }
-
-        candidates = self.filter_by_even_odd(ear_indices, candidates);
+        candidates = self.filter_by_even_odd(start, end, ear_indices, candidates);
         if candidates == 0 {
             return Some(end);
         }
 
-        // from this moment we should shrink the ear form the end
-        // keep in mind that ear is a convex polygon
-        // first we should find minimal vector which allow us to do it
+        // from this moment we should shrink the ear from the end
+        // ear is a convex polygon, all candidates strong inside it
+        // first we should find minimal vector which exclude all candidates
         // this vector the star of this vector in the point[start]
-        let limit = self.find_shrink_vector(start, candidates);
+        let (v, indices) = self.find_shrink_vector(start, candidates);
 
-        self.find_max_possible_ear(start, ear_indices, limit)
+        self.find_max_possible_ear(start, ear_indices, v, indices)
     }
 
     #[inline]
@@ -248,59 +245,28 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         rect
     }
 
-    fn filter_by_slice(&self, start: usize, end: usize, candidates: u64) -> u64 {
-        // remove all candidates which not belong edge AB
+    #[inline]
+    fn filter_by_even_odd(&self, start: usize, end: usize, ear_indices: u64, candidates: u64) -> u64 {
+        let n = candidates.count_ones();
 
-        let a = *self.point(start);
-        let b = *self.point(end);
-        let ab = a.subtract(b);
-
-        let mut result = 0;
-
-        let mut bits = candidates;
-        let mut i = bits.trailing_zeros() as usize;
-
-        // by all candidates
-        while bits != 0 {
-            let c = *self.point(i);
-            let ac = a.subtract(c);
-
-            let bit_val = 1 << i;
-            bits &= !bit_val;
-            i = bits.trailing_zeros() as usize;
-
-            if ac.cross_product(ab) == 0 {
-                // if same line as last cut edge
-                let bc = b.subtract(c);
-
-                // must be opposite for inner point
-                if bc.dot_product(ac) < 0 {
-                    continue;
-                }
-            }
-            result |= bit_val;
-        }
-
-        result
-    }
-
-    fn filter_by_even_odd(&self, ear_indices: u64, candidates: u64) -> u64 {
-        let n = ear_indices.count_ones();
-        let m = candidates.count_ones();
-
-        let mut i = ear_indices.trailing_zeros() as usize;
         let j0 = candidates.trailing_zeros() as usize;
         let mut j;
-        let mut p0 = *self.point(i);
 
+        let mut p0 = *self.point(start);
+        let mut i = ear_indices.next_wrapped_index(start);
+
+        // if even then a point is outside ear
         let mut count = 0u64; // count even odd
-        let mut touch = 0u64; // detect touch
-        for _ in 0..n {
-            i = ear_indices.next_wrapped_index(i);
+
+        // we will skip points that only touch the contour
+        let mut skip = 0u64; // detect touch
+
+        while i != start {
             let pi = *self.point(i);
             let (a, b) = match p0.x.cmp(&pi.x) {
                 Ordering::Equal => {
                     p0 = pi;
+                    i = ear_indices.next_wrapped_index(i);
                     continue;
                 }
                 Ordering::Less => (p0, pi),
@@ -310,7 +276,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
             let ab = a.subtract(b);
 
             j = j0;
-            for _ in 0..m {
+            for _ in 0..n {
                 let c = *self.point(j);
                 if a.x <= c.x && c.x < b.x {
                     let ac = a.subtract(c);
@@ -321,7 +287,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
                         count ^= 1 << j;
                     } else if cross == 0 {
                         // touch contour
-                        touch |= 1 << j;
+                        skip |= 1 << j;
                     }
                 }
 
@@ -329,16 +295,56 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
             }
 
             p0 = pi;
+            i = ear_indices.next_wrapped_index(i);
+        }
+
+        // check slice edge individually
+        let p_start = *self.point(start);
+        let p_end = *self.point(end);
+        if p_start != p_end {
+            // can be same point, sandglass case
+            let (a, b) = if p_start < p_end { (p_start, p_end) } else { (p_end, p_start) };
+
+            let ab = a.subtract(b);
+
+            j = j0;
+            for _ in 0..n {
+                let c = *self.point(j);
+                if a.x <= c.x && c.x <= b.x {
+                    let ac = a.subtract(c);
+
+                    let cross = ab.cross_product(ac);
+                    if cross > 0 && c.x != b.x {
+                        // the edge must be under the point
+                        count ^= 1 << j;
+                    } else if cross == 0 {
+                        // touch contour
+
+                        // we can skip C if it not inside AB
+                        // C is inside AB if AC and BC opposite
+                        let bc = b.subtract(c);
+
+                        // must be collinear to skip
+                        if bc.dot_product(ac) > 0 {
+                            skip |= 1 << j;
+                        } else {
+                            count |= 1 << j; // set to 1
+                        }
+                    }
+                }
+
+                j = candidates.next_wrapped_index(j);
+            }
         }
 
         // we remove that one which touch contour
         // we keep that one which count number is odd
         let mut filtered = 0;
         j = j0;
-        for _ in 0..m {
+        for _ in 0..n {
             let bit_val = 1 << j;
             let xor = count & bit_val;
-            let off = touch & bit_val;
+            let off = skip & bit_val;
             filtered |= xor & !off;
 
             j = candidates.next_wrapped_index(j);
@@ -348,15 +354,16 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
     }
 
     #[inline]
-    fn find_shrink_vector(&self, start: usize, candidates: u64) -> FixVec {
+    fn find_shrink_vector(&self, start: usize, candidates: u64) -> (FixVec, u64) {
         let a = *self.point(start);
 
         let mut bits = candidates;
         let i = bits.trailing_zeros() as usize;
         let b = *self.point(i);
         bits &= !(1 << i);
+        let mut indices = 1 << i;
 
-        let mut ab = a.subtract(b);
+        let mut ba = b.subtract(a);
 
         // compare with rest candidates
         while bits != 0 {
@@ -364,40 +371,81 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
             let c = *self.point(i);
             bits &= !(1 << i);
 
-            let ac = a.subtract(c);
+            let ca = c.subtract(a);
 
-            if ac.cross_product(ab) > 0 {
-                ab = ac;
+            match ca.cross_product(ba).cmp(&0) {
+                Ordering::Equal => indices |= 1 << i,
+                Ordering::Greater => {
+                    indices = 1 << i;
+                    ba = ca;
+                }
+                _ => {}
             }
         }
 
-        ab
+        (ba, indices)
     }
 
     #[inline]
-    fn find_max_possible_ear(&self, start: usize, ear_indices: u64, limit: FixVec) -> Option<usize> {
+    fn find_max_possible_ear(&self, start: usize, ear_indices: u64, limit: FixVec, vec_indices: u64) -> Option<usize> {
         let a = *self.point(start);
-        let i1 = ear_indices.next_wrapped_index(start);
-        let b = *self.point(i1);
 
-        let mut ab = a.subtract(b);
+        let b0 = ear_indices.next_wrapped_index(start);
+        let mut i = start;
+        let mut j = start;
+        let mut bi = b0;
 
-        let mut i = i1;
-        let mut j = i1;
+        let mut cross = i64::MIN;
+        while cross < 0 {
+            let b = *self.point(bi);
+            let ba = b.subtract(a);
 
-        // must be at least one not suited point
-        while limit.cross_product(ab) < 0 {
-            j = i;
-            i = ear_indices.next_wrapped_index(i);
-            ab = a.subtract(*self.point(i))
+            cross = limit.cross_product(ba);
+
+            j = i;  // last success 
+            i = bi; // keep prev
+            bi = ear_indices.next_wrapped_index(bi);
         }
 
-        if j == i1 {
+        // we need check are all indices inside AB
+        if cross == 0 && !self.is_any_on_edge(a, *self.point(i), vec_indices) {
+            // all candidates outside AB(slice edge)
+            j = i;
+        }
+
+        if j == b0 {
             None
         } else {
             Some(j)
         }
     }
+
+    #[inline]
+    fn is_any_on_edge(&self, a: IntPoint, b: IntPoint, vec_indices: u64) -> bool {
+        // we need check are all indices inside AB
+        let mut bits = vec_indices;
+        while bits != 0 {
+            let i = bits.trailing_zeros() as usize;
+            let c = *self.point(i);
+            bits &= !(1 << i);
+
+            let ac = a.subtract(c);
+
+            // we can skip C if it not inside AB
+            // C is inside AB if AC and BC opposite
+            let bc = b.subtract(c);
+
+            // must be collinear to skip
+            let dot = bc.dot_product(ac);
+            if dot < 0 {
+                // C is inside AB
+                return true
+            }
+        }
+
+        false
+    }
+
 }
 
 pub(super) trait Bit {
@@ -931,6 +979,50 @@ mod tests {
             IntPoint::new(2, 0),
             IntPoint::new(3, -2),
             IntPoint::new(2, 2),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_23() {
+        let contour = vec![
+            IntPoint::new(4, 4),
+            IntPoint::new(-4, 4),
+            IntPoint::new(2, 2),
+            IntPoint::new(4, 1),
+            IntPoint::new(3, 3),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_24() {
+        let contour = vec![
+            IntPoint::new(1, 2),
+            IntPoint::new(0, 3),
+            IntPoint::new(0, 0),
+            IntPoint::new(1, 1),
+            IntPoint::new(3, 1),
+            IntPoint::new(1, 3),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_25() {
+        let contour = vec![
+            IntPoint::new(1, 4),
+            IntPoint::new(0, 5),
+            IntPoint::new(0, 0),
+            IntPoint::new(1, 1),
+            IntPoint::new(3, 1),
+            IntPoint::new(1, 3),
         ];
 
         single_test(&contour);
