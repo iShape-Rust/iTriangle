@@ -128,33 +128,38 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
     }
 
     fn find_convex_part(&self, i0: usize) -> ConvexSearchResult {
+        // the ear must be a convex polygon
+
         let a = *self.point(i0);
         let i1 = self.available.next_wrapped_index(i0);
-        let mut b = *self.point(i1);
+        let b = *self.point(i1);
 
         let mut i = i1;
         let ab = b.subtract(a);
-        let mut v0 = ab; // prev edge
+        let mut ce = ab; // the prev vector
+        let mut cj = *self.point(i);
+
         while i != i0 {
             let j = self.available.next_wrapped_index(i);
-            let c = *self.point(j);
+            let ci = cj;
+            cj = *self.point(j);
 
-            // cb - next edge
-            let cb = c.subtract(b);
+            // appended edge
+            let cc = cj.subtract(ci);
 
-            // ac - cut ear edge
-            let ac = c.subtract(a);
+            // ca - slice edge
+            let ca = a.subtract(cj);
 
-            // ac must be inside ear
-            let cross_0 = cb.cross_product(ac);
+            // cab < 180
+            let cross_a = ab.cross_product(ca);
 
-            // must not go in clock wise direction
-            let cross_1 = cb.cross_product(v0);
+            // cca < 180
+            let cross_c = cc.cross_product(ca);
 
-            // first and last edge must create an angle not more 180
-            let cross_2 = ac.cross_product(ab);
+            // cce <= 180
+            let cross_v = cc.cross_product(ce);
 
-            if cross_1 > 0 || cross_0 >= 0 || cross_2 > 0 {
+            if cross_a >= 0 || cross_c <= 0 || cross_v > 0 {
                 if i == i1 {
                     // empty ear
                     return ConvexSearchResult::None;
@@ -162,27 +167,14 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
                     return ConvexSearchResult::Circle;
                 }
 
-                if cross_0 == 0 {
-                    if a == c {
-                        return ConvexSearchResult::Index(j, true);
-                    } else {
-                        // a, c, b on the same line
-                        // if c inside ab we step back, ac and cb will be opposite
-                        let dot = ac.dot_product(cb);
-                        if dot < 0 {
-                            i = self.available.prev_wrapped_index(i);
-                            if i == i1 {
-                                return ConvexSearchResult::None;
-                            }
-                        }
-                    }
+                if cross_a == 0 && a == cj {
+                    return ConvexSearchResult::Index(j, true);
                 }
 
                 return ConvexSearchResult::Index(i, false);
             }
-            b = c;
             i = j;
-            v0 = cb;
+            ce = cc;
         }
         // if we here then we did a full round
         ConvexSearchResult::Circle
@@ -408,11 +400,13 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         let mut bi = b0;
 
         let mut cross = i64::MIN;
-        while cross < 0 {
+        let mut dot = i64::MAX;
+        while cross < 0 || cross == 0 && dot < 0 {
             let b = *self.point(bi);
             let ba = b.subtract(a);
 
             cross = limit.cross_product(ba);
+            dot = limit.dot_product(ba);
 
             j = i;  // last success
             i = bi; // keep prev
@@ -1052,6 +1046,41 @@ mod tests {
             IntPoint::new(-2, 3),
             IntPoint::new(-3, 0),
             IntPoint::new(0, 3),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_27() {
+        let contour = vec![
+            IntPoint::new(-4, 0),
+            IntPoint::new(2, -2),
+            IntPoint::new(0, -1),
+            IntPoint::new(1, 0),
+            IntPoint::new(2, -2),
+            IntPoint::new(3, -4),
+            IntPoint::new(3, 0),
+            IntPoint::new(4, 0),
+            IntPoint::new(-2, 4),
+            IntPoint::new(0, 0),
+            IntPoint::new(-1, 0),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_28() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(1, 0),
+            IntPoint::new(2, 2),
+            IntPoint::new(1, 1),
+            IntPoint::new(0, 1),
+            IntPoint::new(-1, -1),
         ];
 
         single_test(&contour);
