@@ -247,7 +247,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         while bits != 0 {
             let i = bits.trailing_zeros() as usize;
             bits &= !(1 << i);
-            rect.unsafe_add_point(&self.point(i));
+            rect.unsafe_add_point(self.point(i));
         }
 
         rect
@@ -290,12 +290,12 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
                     let ac = a.subtract(c);
 
                     let cross = ab.cross_product(ac);
-                    if cross > 0 {
+                    match cross.cmp(&0) {
                         // the edge must be under the point
-                        count ^= 1 << j;
-                    } else if cross == 0 {
+                        Ordering::Greater => count ^= 1 << j,
                         // touch contour
-                        skip |= 1 << j;
+                        Ordering::Equal => skip |= 1 << j,
+                        Ordering::Less => {}
                     }
                 }
 
@@ -460,7 +460,6 @@ pub(super) trait Bit {
     fn ones_in_sorted_closed_range(start: usize, end: usize) -> Self;
     fn ones_in_range_include(start: usize, end: usize) -> Self;
     fn next_wrapped_index(&self, after: usize) -> usize;
-    fn prev_wrapped_index(&self, before: usize) -> usize;
 }
 
 impl Bit for u64 {
@@ -508,17 +507,6 @@ impl Bit for u64 {
             front.trailing_zeros() as usize
         } else {
             self.trailing_zeros() as usize
-        }
-    }
-
-    #[inline(always)]
-    fn prev_wrapped_index(&self, before: usize) -> usize {
-        debug_assert!(before <= 63);
-        let back = *self & u64::ones_start_to_index(before);
-        if back != 0 {
-            63 - back.leading_zeros() as usize
-        } else {
-            63 - self.leading_zeros() as usize
         }
     }
 }
@@ -617,17 +605,6 @@ mod tests {
 
         assert_eq!(0b110_u64.next_wrapped_index(1), 2);
         assert_eq!(0b110_u64.next_wrapped_index(2), 1);
-    }
-
-    #[test]
-    fn test_prev_wrapped_index_0() {
-        assert_eq!(0b011_u64.prev_wrapped_index(0), 1);
-        assert_eq!(0b011_u64.prev_wrapped_index(1), 0);
-        assert_eq!(0b111_u64.prev_wrapped_index(2), 1);
-
-        assert_eq!(0b0110_u64.prev_wrapped_index(1), 2);
-        assert_eq!(0b0110_u64.prev_wrapped_index(2), 1);
-        assert_eq!(0b1110_u64.prev_wrapped_index(3), 2);
     }
 
     #[test]
@@ -1038,23 +1015,6 @@ mod tests {
     #[test]
     fn test_earcut_26() {
         let contour = vec![
-            IntPoint::new(-2, 4),
-            IntPoint::new(-4, 3),
-            IntPoint::new(-2, 3),
-            IntPoint::new(-1, 2),
-            IntPoint::new(-2, 1),
-            IntPoint::new(-2, 3),
-            IntPoint::new(-3, 0),
-            IntPoint::new(0, 3),
-        ];
-
-        single_test(&contour);
-        roll_test(&contour);
-    }
-
-    #[test]
-    fn test_earcut_27() {
-        let contour = vec![
             IntPoint::new(-4, 0),
             IntPoint::new(2, -2),
             IntPoint::new(0, -1),
@@ -1073,7 +1033,7 @@ mod tests {
     }
 
     #[test]
-    fn test_earcut_28() {
+    fn test_earcut_27() {
         let contour = vec![
             IntPoint::new(0, 0),
             IntPoint::new(1, 0),

@@ -53,17 +53,13 @@ fn debug_run() {
     //     min_radius_scale: 0.0,
     //     max_radius_scale: 1.0,
     // };
-    let test = StarWithHoleTest {
-        radius: 100.0,
-        angle_steps_count: 100,
-        points_per_corner: 10,
-        radius_steps_count: 100,
-        min_radius_scale: 0.1, // must be > 0 to prevent intersection!
-        max_radius_scale: 1.0,
+    let test = SpiralTest {
+        width: 10.0,
     };
+    let t = Test::new(64, 10000);
     // s = test.run_unchecked_raw(32, 2);
     // println!("s: {}", s);
-    s = test.run_unchecked_triangulator(32, 2, false);
+    s = test.run_triangle(&t, false, true);
     println!("s: {}", s);
 }
 

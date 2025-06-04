@@ -23,7 +23,7 @@ impl SpiralTest {
         let mut triangulation = Triangulation::with_capacity(test.count);
 
         for _ in 0..test.repeat {
-            black_box(triangulator.triangulate_into(&contour, &mut triangulation));
+            black_box(triangulator.uncheck_triangulate_into(&contour, &mut triangulation));
             sum += triangulation.indices.len();
         }
 
@@ -114,7 +114,7 @@ impl SpiralTest {
             s1 += s;
         }
 
-        path_0.extend(path_1.into_iter().rev());
-        path_0
+        path_1.extend(path_0.into_iter().rev());
+        path_1
     }
 }

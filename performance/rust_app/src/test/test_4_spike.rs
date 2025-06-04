@@ -25,7 +25,7 @@ impl SpikeTest {
         let mut triangulation = Triangulation::with_capacity(test.count);
 
         for _ in 0..test.repeat {
-            black_box(triangulator.triangulate_into(&contour, &mut triangulation));
+            black_box(triangulator.uncheck_triangulate_into(&contour, &mut triangulation));
             sum += triangulation.indices.len();
         }
 
