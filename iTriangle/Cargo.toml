@@ -1,13 +1,13 @@
 [package]
 name = "i_triangle"
-version = "0.35.0"
+version = "0.36.0"
 edition = "2021"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 description = "Polygon Triangulation Library: Efficient Delaunay Triangulation for Complex Shapes."
 license = "MIT"
 repository = "https://github.com/iShape-Rust/iTriangle"
 
-categories = ["no-std", "graphics", "game-development"]
+categories = ["algorithms", "graphics", "game-development", "science::geo", "no-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,7 +22,7 @@ serde = { version = "^1.0", default-features = false, features = ["derive"], opt
 #i_tree = { path = "../../iTree" }
 #i_key_sort = { path = "../../iKeySort" }
 
-i_overlay = "~4.0.0"
+i_overlay = "~4.0.2"
 i_tree = "~0.16.0"
 i_key_sort = "~0.6.0"
 
