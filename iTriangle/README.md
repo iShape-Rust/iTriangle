@@ -12,10 +12,10 @@ A fast, stable, and robust 2d triangulation library for rust — tested on over 
 <img src="readme/triangulation_process.gif" width="512"/>
 
 ## Delaunay
-<img src="readme/star_triangle.svg" width="250"/>
+<img src="readme/star_triangle.svg" width="200"/>
 
 ## Convex polygons
-<img src="readme/star_polygon.svg" width="250"/>
+<img src="readme/star_polygon.svg" width="200"/>
 
 ## Steiner points
 <img src="readme/eagle_triangles_extra_points.svg" width="250"/>
