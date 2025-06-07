@@ -1,6 +1,6 @@
 use crate::int::earcut::flat::FlatEarcutStore;
 use crate::int::earcut::net::NetEarcutStore;
-use crate::int::earcut::util::{ABCExcludeResult, AB, ABC};
+use crate::int::earcut::util::{ABCExcludeResult, AB, Abc};
 use crate::int::meta::TrianglesCount;
 use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
 use core::cmp::Ordering;
@@ -254,7 +254,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         ear_indices: u64,
         same_point: bool,
     ) -> bool {
-        let abc = ABC::new(a, b, c);
+        let abc = Abc::new(a, b, c);
         let mut bits = self.available & !ear_indices;
 
         if same_point {
@@ -295,7 +295,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         let rect = self.bounding_box(ear_indices);
 
         // first triangle
-        let abc = ABC::new(a, b, c);
+        let abc = Abc::new(a, b, c);
 
         // last edge
         let ae = a.subtract(e);

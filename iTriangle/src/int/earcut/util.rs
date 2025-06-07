@@ -10,7 +10,7 @@ pub(super) enum ABCExcludeResult {
 }
 
 // a, b, c - counter clock wised points
-pub(super) struct ABC {
+pub(super) struct Abc {
     a: IntPoint,
     b: IntPoint,
     c: IntPoint,
@@ -19,7 +19,7 @@ pub(super) struct ABC {
     ca: FixVec,
 }
 
-impl ABC {
+impl Abc {
     #[inline(always)]
     pub(super) fn new(a: IntPoint, b: IntPoint, c: IntPoint) -> Self {
         let ab = b.subtract(a);

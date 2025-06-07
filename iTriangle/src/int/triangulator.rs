@@ -25,7 +25,7 @@ impl<I: IndexType> IntTriangulator<I> {
         Self {
             overlay: Overlay::new_custom(max_points_count, validation.options, solver),
             fill_rule: validation.fill_rule,
-            earcut: true,
+            earcut: false,
             delaunay: false,
             triangulator: MonotoneTriangulator::default(),
             raw_buffer: None,
