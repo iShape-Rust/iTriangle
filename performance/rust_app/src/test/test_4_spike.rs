@@ -3,7 +3,7 @@ use i_triangle::float::triangulator::Triangulator;
 use std::f32::consts::PI;
 use std::hint::black_box;
 use std::time::Instant;
-use crate::test::test::Test;
+use crate::test::test::TestData;
 
 pub(crate) struct SpikeTest {
     pub(crate) inner_radius: f32,
@@ -11,7 +11,7 @@ pub(crate) struct SpikeTest {
 }
 
 impl SpikeTest {
-    pub(crate) fn run_triangle(&self, test: &Test, delaunay: bool, earcut: bool) -> usize {
+    pub(crate) fn run_triangle(&self, test: &TestData, delaunay: bool, earcut: bool) -> usize {
         let contour = Self::contour(test.count, self.inner_radius, self.outer_radius);
 
         let start = Instant::now();
@@ -30,7 +30,7 @@ impl SpikeTest {
         }
 
         let duration = start.elapsed();
-        let time = duration.as_secs_f64() / test.repeat as f64;
+        let time = 1000_000.0 * duration.as_secs_f64() / test.repeat as f64;
 
         println!("{} - {:.8}", test.count, time);
         sum
@@ -39,7 +39,7 @@ impl SpikeTest {
 
 // earcutr
 impl SpikeTest {
-    pub(crate) fn run_earcutr(&self, test: &Test) -> usize {
+    pub(crate) fn run_earcutr(&self, test: &TestData) -> usize {
         let contour: Vec<f32> = Self::contour(test.count, self.inner_radius, self.outer_radius)
             .into_iter()
             .flat_map(|p| p)
@@ -55,7 +55,7 @@ impl SpikeTest {
         }
 
         let duration = start.elapsed();
-        let time = duration.as_secs_f64() / test.repeat as f64;
+        let time = 1000_000.0 * duration.as_secs_f64() / test.repeat as f64;
 
         println!("{} - {:.8}", test.count, time);
         sum

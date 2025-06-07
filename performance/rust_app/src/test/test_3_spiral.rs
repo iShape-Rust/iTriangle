@@ -2,14 +2,14 @@ use i_triangle::float::triangulation::Triangulation;
 use i_triangle::float::triangulator::Triangulator;
 use std::hint::black_box;
 use std::time::Instant;
-use crate::test::test::Test;
+use crate::test::test::TestData;
 
 pub(crate) struct SpiralTest {
     pub(crate) width: f32,
 }
 
 impl SpiralTest {
-    pub(crate) fn run_triangle(&self, test: &Test, delaunay: bool, earcut: bool) -> usize {
+    pub(crate) fn run_triangle(&self, test: &TestData, delaunay: bool, earcut: bool) -> usize {
         let contour = Self::contour(test.count, self.width);
 
         let start = Instant::now();
@@ -28,7 +28,7 @@ impl SpiralTest {
         }
 
         let duration = start.elapsed();
-        let time = duration.as_secs_f64() / test.repeat as f64;
+        let time = 1000_000.0 * duration.as_secs_f64() / test.repeat as f64;
 
         println!("{} - {:.8}", test.count, time);
         sum
@@ -37,7 +37,7 @@ impl SpiralTest {
 
 // earcutr
 impl SpiralTest {
-    pub(crate) fn run_earcutr(&self, test: &Test) -> usize {
+    pub(crate) fn run_earcutr(&self, test: &TestData) -> usize {
         let contour: Vec<f32> = Self::contour(test.count, self.width)
             .into_iter()
             .flat_map(|p| p)
@@ -53,7 +53,7 @@ impl SpiralTest {
         }
 
         let duration = start.elapsed();
-        let time = duration.as_secs_f64() / test.repeat as f64;
+        let time = 1000_000.0 * duration.as_secs_f64() / test.repeat as f64;
 
         println!("{} - {:.8}", test.count, time);
         sum

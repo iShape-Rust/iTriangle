@@ -1,4 +1,4 @@
-use crate::test::test::Test;
+use crate::test::test::TestData;
 use crate::test::test_0_star::SimpleStarTest;
 use crate::test::test_1_star_with_hole::StarWithHoleTest;
 use crate::test::test_2_rect_star_holes::RectStarHolesTest;
@@ -56,7 +56,7 @@ fn debug_run() {
     let test = SpiralTest {
         width: 10.0,
     };
-    let t = Test::new(64, 10000);
+    let t = TestData::new(64, 10000);
     // s = test.run_unchecked_raw(32, 2);
     // println!("s: {}", s);
     s = test.run_triangle(&t, false, true);
@@ -501,16 +501,16 @@ fn spiral(args: &EnvArgs) {
 
     if complex {
         let mut tests = vec![
-            Test::new(8, 10_000),
-            Test::new(16, 10_000),
-            Test::new(24, 10_000),
-            Test::new(32, 10_000),
-            Test::new(40, 10_000),
-            Test::new(48, 10_000),
-            Test::new(64, 10_000),
+            TestData::new(8, 10_000),
+            TestData::new(16, 10_000),
+            TestData::new(24, 10_000),
+            TestData::new(32, 10_000),
+            TestData::new(40, 10_000),
+            TestData::new(48, 10_000),
+            TestData::new(64, 10_000),
         ];
-        for i in 1..6 {
-            tests.push(Test::new(64 << i, 256 >> i));
+        for i in 1..9 {
+            tests.push(TestData::new(64 << i, 256 >> i));
         }
 
         let mut s;
@@ -558,16 +558,16 @@ fn spike(args: &EnvArgs) {
 
     if complex {
         let mut tests = vec![
-            Test::new(8, 10_000),
-            Test::new(16, 10_000),
-            Test::new(24, 10_000),
-            Test::new(32, 10_000),
-            Test::new(40, 10_000),
-            Test::new(48, 10_000),
-            Test::new(64, 10_000),
+            TestData::new(8, 10_000),
+            TestData::new(16, 10_000),
+            TestData::new(24, 10_000),
+            TestData::new(32, 10_000),
+            TestData::new(40, 10_000),
+            TestData::new(48, 10_000),
+            TestData::new(64, 10_000),
         ];
-        for i in 1..6 {
-            tests.push(Test::new(64 << i, 256 >> i));
+        for i in 1..9 {
+            tests.push(TestData::new(64 << i, 256 >> i));
         }
 
         let mut s;

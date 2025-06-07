@@ -1,9 +1,9 @@
 use crate::int::earcut::flat::FlatEarcutStore;
 use crate::int::earcut::net::NetEarcutStore;
+use crate::int::earcut::util::{ABCExcludeResult, AB, ABC};
 use crate::int::meta::TrianglesCount;
 use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
 use core::cmp::Ordering;
-use i_overlay::i_float::fix_vec::FixVec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::int::rect::IntRect;
 use i_overlay::i_shape::util::reserve::Reserve;
@@ -46,12 +46,6 @@ impl Earcut64 for [IntPoint] {
         triangulation.points.clear();
         triangulation.points.extend_from_slice(self);
     }
-}
-
-enum ShrinkResult {
-    Impossible,
-    Full,
-    NotMore(FixVec),
 }
 
 enum ConvexSearchResult {
@@ -190,40 +184,157 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
     #[inline]
     fn validate_and_shrink_ear(&self, start: usize, end: usize, same_point: bool) -> Option<usize> {
         let ear_indices = self.available & u64::ones_in_range_include(start, end);
-        let candidates = self.filter_by_bounding_box(ear_indices);
+
+        let i0 = start;
+        let i1 = ear_indices.next_wrapped_index(i0);
+        let i2 = ear_indices.next_wrapped_index(i1);
+
+        // first triangle
+        let a = *self.point(i0);
+        let b = *self.point(i1);
+        let c = *self.point(i2);
+
+        // fast test for single triangle
+
+        let ear_count = ear_indices.count_ones();
+
+        if ear_count == 3 || ear_count == 4 && same_point {
+            return if self.triangle_contains(a, b, c, ear_indices, same_point) {
+                None
+            } else {
+                Some(end)
+            };
+        }
+
+        let mut ie0 = if same_point {
+            ear_indices.prev_wrapped_index(end)
+        } else {
+            end
+        };
+
+        let e = *self.point(ie0);
+
+        let mut candidates = self.fast_filter(a, b, c, e, ear_indices, same_point)?;
         if candidates == 0 {
             return Some(end);
         }
 
-        // we should shrink the ear from the end
-        // ear is a convex polygon
-        // we should find minimal vector which exclude all candidates
-        match self.find_shrink_vector(start, ear_indices, candidates, same_point) {
-            ShrinkResult::Impossible => None,
-            ShrinkResult::Full => Some(end),
-            ShrinkResult::NotMore(max_vec) => {
-                self.find_max_possible_ear(start, ear_indices, max_vec)
+        // we are going to find the closest vector to AC
+        // the end of this new vector must be inside ear
+        // every time we find a new vector we shrink ear from end
+
+        let mut ac = a.subtract(e);
+
+        while candidates > 0 {
+            let j = candidates.trailing_zeros() as usize;
+            candidates &= !(1 << j);
+
+            let p = *self.point(j);
+            let ap = p.subtract(a);
+
+            let cross = ac.cross_product(ap);
+
+            if cross >= 0 {
+                if let Some(new_end) = self.find_point(a, i0, ie0, p, ear_indices) {
+                    ie0 = new_end;
+                    ac = a.subtract(*self.point(new_end));
+                }
             }
         }
+
+        Some(ie0)
     }
 
     #[inline(always)]
-    fn filter_by_bounding_box(&self, ear_indices: u64) -> u64 {
+    fn triangle_contains(
+        &self,
+        a: IntPoint,
+        b: IntPoint,
+        c: IntPoint,
+        ear_indices: u64,
+        same_point: bool,
+    ) -> bool {
+        let abc = ABC::new(a, b, c);
+        let mut bits = self.available & !ear_indices;
+
+        if same_point {
+            while bits != 0 {
+                let i = bits.trailing_zeros() as usize;
+                bits &= !(1 << i);
+
+                if abc.contains(*self.point(i)) {
+                    return true;
+                }
+            }
+        } else {
+            while bits != 0 {
+                let i = bits.trailing_zeros() as usize;
+                bits &= !(1 << i);
+
+                if abc.contains_exclude_ca(*self.point(i)) == ABCExcludeResult::Inside {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    #[inline(always)]
+    fn fast_filter(
+        &self,
+        a: IntPoint,
+        b: IntPoint,
+        c: IntPoint,
+        e: IntPoint,
+        ear_indices: u64,
+        same_point: bool,
+    ) -> Option<u64> {
+        // filter by bounding box and first triangle
+        // return None if first triangle is not possible
+
         let rect = self.bounding_box(ear_indices);
 
-        let mut candidates = 0;
+        // first triangle
+        let abc = ABC::new(a, b, c);
+
+        // last edge
+        let ae = a.subtract(e);
+
+        let mut filtered = 0;
         let mut bits = self.available & !ear_indices;
         while bits != 0 {
             let index = bits.trailing_zeros() as usize;
-            let bit_val = 1 << index;
-            bits &= !bit_val;
+            bits &= !(1 << index);
 
-            if rect.contains(*self.point(index)) {
-                candidates |= bit_val;
+            let p = *self.point(index);
+
+            if !rect.contains(p) {
+                continue;
             }
+
+            let ap = p.subtract(a);
+            let e_cross = ap.cross_product(ae);
+
+            match e_cross.cmp(&0) {
+                Ordering::Less => {}
+                Ordering::Equal => {
+                    if same_point {
+                        continue;
+                    }
+                }
+                Ordering::Greater => continue,
+            }
+
+            match abc.contains_exclude_ca(p) {
+                ABCExcludeResult::Inside => return None,
+                ABCExcludeResult::Outside => continue,
+                ABCExcludeResult::OutsideEdge => {}
+            }
+
+            filtered |= 1 << index;
         }
 
-        candidates
+        Some(filtered)
     }
 
     #[inline(always)]
@@ -243,140 +354,59 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         rect
     }
 
-    #[inline]
-    fn find_shrink_vector(
+    #[inline(always)]
+    fn find_point(
         &self,
+        a: IntPoint,
         start: usize,
+        end: usize,
+        p: IntPoint,
         ear_indices: u64,
-        candidates: u64,
-        same_point: bool,
-    ) -> ShrinkResult {
-        let a = *self.point(start);
-        let end = ear_indices.prev_wrapped_index(start);
-        let (b, count) = if same_point {
-            let count = ear_indices.count_ones() as usize - 1;
-            let bi = ear_indices.prev_wrapped_index(end);
-            (*self.point(bi), count)
-        } else {
-            let count = ear_indices.count_ones() as usize;
-            (*self.point(end), count)
-        };
+    ) -> Option<usize> {
 
-        let mut ba = b.subtract(a);
+        let mut i = end;
+        let mut b = *self.point(i);
 
-        let mut bits = candidates;
-        let n = bits.count_ones();
-
-        let mut any = false;
-
-        // compare with candidates
-        for _ in 0..n {
-            let i = bits.trailing_zeros() as usize;
-            bits &= !(1 << i);
+        // check triangles fan
+        while i != start {
+            i = ear_indices.prev_wrapped_index(i);
 
             let c = *self.point(i);
-            let ca = c.subtract(a);
 
-            let cross = ca.cross_product(ba);
+            // border edge
+            let bc = b.subtract(c);
 
-            match cross.cmp(&0) {
-                Ordering::Less => {}
+            let bp = p.subtract(b);
+            let b_cross = bc.cross_product(bp);
+            if b_cross <= 0 {
+                return None;
+            }
+
+            // inner edge
+            let ac = a.subtract(c);
+
+            let cp = p.subtract(c);
+            let c_cross = ac.cross_product(cp);
+
+            match c_cross.cmp(&0) {
+                // inside triangle
+                Ordering::Less => return Some(i),
                 Ordering::Equal => {
-                    if !(any || same_point) {
-                        // if C inside AB, ear is not possible
-                        if Math::ab_contains_c(a.subtract(c), c, b) {
-                            return ShrinkResult::Impossible;
-                        }
+                    return if AB::contains(a, c, p) {
+                        let prev = ear_indices.prev_wrapped_index(i);
+                        Some(prev)
+                    } else {
+                        None
                     }
                 }
-                Ordering::Greater => {
-                    if self.is_point_inside_ear(c, start, ear_indices, count) {
-                        ba = ca;
-                        any = true;
-                    }
-                }
-            }
-        }
-
-        if any {
-            ShrinkResult::NotMore(ba)
-        } else {
-            ShrinkResult::Full
-        }
-    }
-
-    #[inline(always)]
-    fn is_point_inside_ear(
-        &self,
-        c: IntPoint,
-        start: usize,
-        ear_indices: u64,
-        count: usize,
-    ) -> bool {
-        let mut a = *self.point(start);
-        let mut j = ear_indices.next_wrapped_index(start);
-
-        for _ in 0..count {
-            let b = *self.point(j);
-            let ab = b.subtract(a);
-            let ac = c.subtract(a);
-            let cross = ab.cross_product(ac);
-
-            if cross <= 0 {
-                // true only if C inside last slice edge
-                return cross != 0 && j == start && Math::ab_contains_c(ac, c, b);
+                // outside triangle
+                Ordering::Greater => {}
             }
 
-            a = b;
-            j = ear_indices.next_wrapped_index(j)
+            b = c;
         }
 
-        true
-    }
-
-    #[inline]
-    fn find_max_possible_ear(
-        &self,
-        start: usize,
-        ear_indices: u64,
-        min_vec: FixVec,
-    ) -> Option<usize> {
-        let a = *self.point(start);
-
-        let b0 = ear_indices.next_wrapped_index(start);
-        let mut i = start;
-        let mut j = start;
-        let mut bi = b0;
-
-        let mut cross = i64::MIN;
-        while cross < 0 {
-            let b = *self.point(bi);
-            let ba = b.subtract(a);
-
-            cross = min_vec.cross_product(ba);
-
-            j = i; // last success
-            i = bi; // keep prev
-            bi = ear_indices.next_wrapped_index(bi);
-        }
-
-        if j == b0 {
-            None
-        } else {
-            Some(j)
-        }
-    }
-}
-
-struct Math;
-
-impl Math {
-    #[inline(always)]
-    fn ab_contains_c(ac: FixVec, c: IntPoint, b: IntPoint) -> bool {
-        // a, b, c already on the same line
-        let bc = b.subtract(c);
-        let dot = ac.dot_product(bc);
-        dot < 0
+        None
     }
 }
 
@@ -451,7 +481,7 @@ impl Bit for u64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::int::earcut::earcut_64::{Bit, Earcut64, EarcutSolver, Math};
+    use crate::int::earcut::earcut_64::{Bit, Earcut64, EarcutSolver};
     use crate::int::earcut::flat::FlatEarcutStore;
     use crate::int::triangulation::{IntTriangulation, RawIntTriangulation};
     use alloc::vec;
@@ -464,23 +494,6 @@ mod tests {
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntContour;
     use rand::Rng;
-
-    #[test]
-    fn test_ab_contains_0() {
-        let a = IntPoint::new(0, 0);
-        let b = IntPoint::new(10, 0);
-        let c0 = IntPoint::new(-5, 0);
-        let c1 = IntPoint::new(0, 0);
-        let c2 = IntPoint::new(5, 0);
-        let c3 = IntPoint::new(10, 0);
-        let c4 = IntPoint::new(15, 0);
-
-        assert_eq!(Math::ab_contains_c(a.subtract(c0), c0, b), false);
-        assert_eq!(Math::ab_contains_c(a.subtract(c1), c1, b), false);
-        assert_eq!(Math::ab_contains_c(a.subtract(c2), c2, b), true);
-        assert_eq!(Math::ab_contains_c(a.subtract(c3), c3, b), false);
-        assert_eq!(Math::ab_contains_c(a.subtract(c4), c4, b), false);
-    }
 
     #[test]
     fn test_ones_start_to_index_0() {
@@ -575,46 +588,143 @@ mod tests {
     }
 
     #[test]
-    fn test_next_contains_0() {
+    fn test_fast_filter_0() {
         let contour = vec![
             IntPoint::new(0, 0),
             IntPoint::new(10, 0),
             IntPoint::new(10, 10),
             IntPoint::new(0, 10),
+            IntPoint::new(5, 1), // inside first triangle
         ];
 
         let mut triangulation = IntTriangulation::<u32>::empty();
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
-        let p0 = IntPoint::new(5, 5);
-        let r0 = solver.is_point_inside_ear(p0, 0, 0b1111, 3);
-        assert_eq!(r0, true);
+        let candidates = solver.fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false);
 
-        let p1 = IntPoint::new(15, 15);
-        let r1 = solver.is_point_inside_ear(p1, 0, 0b1111, 3);
-        assert_eq!(r1, false);
-
-        let p2 = IntPoint::new(10, 0);
-        let r2 = solver.is_point_inside_ear(p2, 0, 0b1111, 3);
-        assert_eq!(r2, false);
-
-        let p3 = IntPoint::new(5, 0);
-        let r3 = solver.is_point_inside_ear(p3, 0, 0b1111, 3);
-        assert_eq!(r3, false);
-
-        let p4 = IntPoint::new(10, 5);
-        let r4 = solver.is_point_inside_ear(p4, 0, 0b1111, 3);
-        assert_eq!(r4, false);
-
-        let p5 = IntPoint::new(5, 10);
-        let r5 = solver.is_point_inside_ear(p5, 0, 0b1111, 3);
-        assert_eq!(r5, false);
-
-        // slice edge
-        let p6 = IntPoint::new(0, 5);
-        let r6 = solver.is_point_inside_ear(p6, 0, 0b1111, 3);
-        assert_eq!(r6, true);
+        assert_eq!(candidates.is_none(), true);
     }
+
+    #[test]
+    fn test_fast_filter_1() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(5, 5), // inside AC
+        ];
+
+        let mut triangulation = IntTriangulation::<u32>::empty();
+        let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
+
+        let candidates = solver.fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false);
+
+        assert_eq!(candidates.is_none(), true);
+    }
+
+    #[test]
+    fn test_fast_filter_2() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(0, 0), // P == A
+        ];
+
+        let mut triangulation = IntTriangulation::<u32>::empty();
+        let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
+
+        let candidates = solver
+            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .unwrap();
+
+        assert_eq!(candidates, 0);
+    }
+
+    #[test]
+    fn test_fast_filter_3() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(15, 15), // on AC but outside
+        ];
+
+        let mut triangulation = IntTriangulation::<u32>::empty();
+        let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
+
+        let candidates = solver
+            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .unwrap();
+
+        assert_eq!(candidates, 0);
+    }
+
+    #[test]
+    fn test_fast_filter_4() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+            IntPoint::new(1, 9), // inside second triangle
+        ];
+
+        let mut triangulation = IntTriangulation::<u32>::empty();
+        let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
+
+        let candidates = solver
+            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .unwrap();
+
+        assert_eq!(candidates, 1 << 4);
+    }
+
+    // find_point
+
+    #[test]
+    fn test_find_point_0() {
+        let contour = vec![
+            IntPoint::new(-15, 5),
+            IntPoint::new(-5, 15),
+            IntPoint::new( 5, 15),
+            IntPoint::new(15, 5),
+            IntPoint::new(15, -5),
+            IntPoint::new(5, -15),
+            IntPoint::new(-5, -15),
+            IntPoint::new(-15, -5)
+        ];
+
+        let mut triangulation = IntTriangulation::<u32>::empty();
+        let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
+
+        let r = solver.find_point(contour[0], 0, 7, IntPoint::new(-15, 0), 0b11111111);
+        if let Some(e) = r {
+            assert_eq!(e, 6);
+        }
+
+        let r = solver.find_point(contour[0], 0, 7, IntPoint::new(-10, -10), 0b11111111);
+        assert_eq!(r.is_none(), true);
+
+        let r = solver.find_point(contour[0], 0, 7, IntPoint::new(-5, -10), 0b11111111);
+        if let Some(e) = r {
+            assert_eq!(e, 5);
+        }
+
+        let r = solver.find_point(contour[0], 0, 7, IntPoint::new(0, -10), 0b11111111);
+        if let Some(e) = r {
+            assert_eq!(e, 4);
+        }
+
+        let r = solver.find_point(contour[0], 0, 7, IntPoint::new(0, -5), 0b11111111);
+        if let Some(e) = r {
+            assert_eq!(e, 4);
+        }
+    }
+
 
     #[test]
     fn test_earcut_0() {
