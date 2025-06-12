@@ -167,9 +167,10 @@ impl FlatSection {
         v: &ChainVertex,
         triangles: &mut Vec<I>,
     ) -> FlatSection {
+        debug_assert!(!self.points.is_empty());
         let a = v.index_point();
         let mut b = self.points[0];
-        if self.points.len() == 1 {
+        if self.points.len() <= 1 {
             self.points.push(a);
 
             let bottom_section = FlatSection {
@@ -269,7 +270,7 @@ impl FlatSection {
     fn add_from_start<I: IndexType>(&mut self, v: &ChainVertex, triangles: &mut Vec<I>) {
         let a = v.index_point();
         debug_assert!(!self.points.is_empty());
-        if self.points.len() == 1 {
+        if self.points.len() <= 1 {
             self.points.insert(0, a);
             return;
         }
@@ -298,7 +299,7 @@ impl FlatSection {
     fn add_from_end<I: IndexType>(&mut self, v: &ChainVertex, triangles: &mut Vec<I>) {
         let a = v.index_point();
         debug_assert!(!self.points.is_empty());
-        if self.points.len() == 1 {
+        if self.points.len() <= 1 {
             self.points.push(a);
             return;
         }
