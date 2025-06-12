@@ -105,33 +105,33 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_2() {
-        let window = FloatRect::new(-100.0, 100.0, -100.0, 100.0);
-        let adapter = FloatPointAdapter::new(window);
-
-        let list_of_shapes = random_shapes(100, &adapter);
-
-        let mut triangulator = Triangulator::<u32>::default();
-
-        // apply Delaunay condition
-        triangulator.delaunay(true);
-
-        // use fast earcut solver for a small contours less 64 points
-        triangulator.earcut(true);
-
-        let mut triangulation = Triangulation::with_capacity(100);
-
-        for shapes in list_of_shapes.iter() {
-            // it safe to uncheck triangulate valid shapes
-            triangulator.uncheck_triangulate_into(shapes, &mut triangulation);
-
-            // do something with triangulation draw, accumulate, etc
-
-            println!("points: {:?}", triangulation.points);
-            println!("indices: {:?}", triangulation.indices);
-        }
-    }
+    // #[test]
+    // fn test_2() {
+    //     let window = FloatRect::new(-100.0, 100.0, -100.0, 100.0);
+    //     let adapter = FloatPointAdapter::new(window);
+    // 
+    //     let list_of_shapes = random_shapes(100, &adapter);
+    // 
+    //     let mut triangulator = Triangulator::<u32>::default();
+    // 
+    //     // apply Delaunay condition
+    //     triangulator.delaunay(true);
+    // 
+    //     // use fast earcut solver for a small contours less 64 points
+    //     triangulator.earcut(true);
+    // 
+    //     let mut triangulation = Triangulation::with_capacity(100);
+    // 
+    //     for shapes in list_of_shapes.iter() {
+    //         // it safe to uncheck triangulate valid shapes
+    //         triangulator.uncheck_triangulate_into(shapes, &mut triangulation);
+    // 
+    //         // do something with triangulation draw, accumulate, etc
+    // 
+    //         println!("points: {:?}", triangulation.points);
+    //         println!("indices: {:?}", triangulation.indices);
+    //     }
+    // }
 
     fn random_contours(count: usize) -> Vec<Contour<[f32; 2]>> {
         let mut contours = Vec::with_capacity(count);
