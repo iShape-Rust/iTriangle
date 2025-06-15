@@ -5,7 +5,6 @@ mod tests {
     use i_overlay::core::overlay_rule::OverlayRule;
     use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
     use i_overlay::i_float::adapter::FloatPointAdapter;
-    use i_overlay::i_float::float::rect::FloatRect;
     use i_overlay::i_shape::base::data::{Contour, Shapes};
     use rand::Rng;
     use i_triangle::float::triangulatable::Triangulatable;

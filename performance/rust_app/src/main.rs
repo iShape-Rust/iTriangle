@@ -38,7 +38,12 @@ fn release_run() {
 
 #[cfg(debug_assertions)]
 fn debug_run() {
+    let mut s = 0;
+    let t = TestData::new(64, 100_000);
+    let resource = SpiralTest::resource(t.count);
+    s += Runner::run_triangle(&resource, &t, false, true);
 
+    println!("s: {}", s);
 }
 
 #[allow(dead_code)]
