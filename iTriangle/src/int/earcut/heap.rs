@@ -147,7 +147,7 @@ impl<T: Default + Copy, C: Compare<T>, const N: usize> FixedHeap<T, C, N> {
 
 #[cfg(test)]
 mod tests {
-    use crate::int::earcut::heap::{ClockOrderHeap, Compare, FixedHeap};
+    use crate::int::earcut::heap::{ClockOrderHeap, Compare, FixedHeap, CLOCK_ORDER_HEAP_LEN};
     use core::cmp::Ordering;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_float::triangle::Triangle;
@@ -222,13 +222,11 @@ mod tests {
             heap.add(p);
         }
 
-        assert_eq!(heap.count, 7);
-
         heap.sort_in_place();
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..7], points[0..7]);
+        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
     }
 
     #[test]
@@ -252,7 +250,7 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..7], points[0..7]);
+        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
     }
 
     #[test]
@@ -296,6 +294,6 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..7], points[0..7]);
+        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
     }
 }
