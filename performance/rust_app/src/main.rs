@@ -49,9 +49,9 @@ fn debug_run() {
 #[allow(dead_code)]
 fn test_0() {
         let mut tests = vec![
-            TestData::new(8, 10_000),
-            TestData::new(16, 10_000),
-            TestData::new(32, 10_000),
+            TestData::new(8, 100_000),
+            TestData::new(16, 100_000),
+            TestData::new(32, 100_000),
             TestData::new(64, 10_000),
         ];
 
@@ -97,9 +97,9 @@ fn test_0() {
 #[allow(dead_code)]
 fn test_1() {
     let mut tests = vec![
-        TestData::new(8, 10_000),
-        TestData::new(16, 10_000),
-        TestData::new(32, 10_000),
+        TestData::new(8, 100_000),
+        TestData::new(16, 100_000),
+        TestData::new(32, 100_000),
         TestData::new(64, 10_000),
     ];
 

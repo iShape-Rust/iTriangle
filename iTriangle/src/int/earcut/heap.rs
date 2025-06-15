@@ -3,7 +3,9 @@ use core::ptr;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 
-pub(super) type ClockOrderHeap = FixedHeap<IntPoint, ClockOrderCompare, 7>;
+const CLOCK_ORDER_HEAP_LEN: usize = 3;
+
+pub(super) type ClockOrderHeap = FixedHeap<IntPoint, ClockOrderCompare, CLOCK_ORDER_HEAP_LEN>;
 
 impl ClockOrderHeap {
     #[inline(always)]
@@ -226,7 +228,7 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer, points[0..7]);
+        assert_eq!(heap.buffer[0..7], points[0..7]);
     }
 
     #[test]
@@ -250,7 +252,7 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer, points[0..7]);
+        assert_eq!(heap.buffer[0..7], points[0..7]);
     }
 
     #[test]
@@ -294,6 +296,6 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer, points[0..7]);
+        assert_eq!(heap.buffer[0..7], points[0..7]);
     }
 }
