@@ -103,6 +103,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
         tree.delete_by_index(index);
     }
 
+    #[inline]
     fn split<S: SetCollection<VSegment, FlatSection>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
         let section = tree.value_by_index_mut(index);
@@ -161,7 +162,6 @@ impl FlatSection {
         self.add_from_end(v, triangles);
     }
 
-    #[inline]
     fn add_to_middle<I: IndexType>(
         &mut self,
         v: &ChainVertex,

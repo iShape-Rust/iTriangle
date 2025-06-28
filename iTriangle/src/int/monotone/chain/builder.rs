@@ -282,6 +282,8 @@ trait ChainVertexSort {
 }
 
 impl ChainVertexSort for [ChainVertex] {
+
+    #[inline]
     fn sort_by_swipe_line(&mut self) {
         self.sort_unstable_by(|a, b| a.this.cmp(&b.this));
         self.sort_possible_nodes();
