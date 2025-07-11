@@ -84,7 +84,9 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
 
     fn triangulate(&mut self) {
         let mut i = 0;
-        while self.available.count_ones() >= 3 {
+        let cnt = self.available.count_ones();
+        while cnt >= 3 {
+            i = self.scroll_to_first_ccw_angle(i, cnt);
             match self.find_convex_part(i) {
                 ConvexSearchResult::None => {}
                 ConvexSearchResult::Circle => {
@@ -133,6 +135,36 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
         let bits = self.available;
         self.store
             .collect_triangles(self.contour, start, bits, bits.count_ones() - 2);
+    }
+
+    #[inline(always)]
+    fn scroll_to_first_ccw_angle(&self, i0: usize, max_count: u32) -> usize {
+        let mut ai = i0;
+        let a = *self.point(ai);
+
+        let mut bi = self.available.next_wrapped_index(ai);
+        let mut b = *self.point(bi);
+
+        let mut ab = b.subtract(a);
+
+        for _ in 0..max_count {
+            let ci = self.available.next_wrapped_index(bi);
+            let c = *self.point(ci);
+
+            let bc = c.subtract(b);
+
+            let cross = ab.cross_product(bc);
+            if cross > 0 {
+                return ai;
+            }
+
+            b = c;
+            ai = bi;
+            bi = ci;
+            ab = bc;
+        }
+
+        i0
     }
 
     #[inline(always)]
@@ -1459,6 +1491,53 @@ mod tests {
             IntPoint::new(2, -1),
             IntPoint::new(3, -4),
             IntPoint::new(2, 1),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_32() {
+        let contour = vec![
+            IntPoint::new(-8, 3),
+            IntPoint::new(-7, -3),
+            IntPoint::new(-4, -1),
+            IntPoint::new(-3, 1),
+            IntPoint::new(-1, 2),
+            IntPoint::new(0, 1),
+            IntPoint::new(1, 1),
+            IntPoint::new(-2, 3),
+            IntPoint::new(-4, 0),
+            IntPoint::new(-6, -2),
+            IntPoint::new(-7, -1),
+            IntPoint::new(-6, 1),
+        ];
+
+        single_test(&contour);
+        roll_test(&contour);
+    }
+
+    #[test]
+    fn test_earcut_33() {
+        let contour = vec![
+            IntPoint::new(-8, 3),
+            IntPoint::new(-7, -3),
+            IntPoint::new(-4, -1),
+            IntPoint::new(-3, 1),
+            IntPoint::new(-1, 2),
+            IntPoint::new(0, 1),
+            IntPoint::new(1, 1),
+            IntPoint::new(0, 0),
+            IntPoint::new(-2, -1),
+            IntPoint::new(-2, -2),
+            IntPoint::new(5, -2),
+            IntPoint::new(2, 1),
+            IntPoint::new(-2, 3),
+            IntPoint::new(-4, 0),
+            IntPoint::new(-6, -2),
+            IntPoint::new(-7, -1),
+            IntPoint::new(-6, 1)
         ];
 
         single_test(&contour);
