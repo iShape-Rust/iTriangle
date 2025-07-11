@@ -84,7 +84,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
 
     fn triangulate(&mut self) {
         let mut i = 0;
-        let cnt = self.available.count_ones();
+        let mut cnt = self.available.count_ones();
         while cnt >= 3 {
             i = self.scroll_to_first_ccw_angle(i, cnt);
             match self.find_convex_part(i) {
@@ -101,6 +101,7 @@ impl<'a, S: EarcutStore> EarcutSolver<'a, S> {
                 }
             }
             i = self.available.next_wrapped_index(i);
+            cnt = self.available.count_ones();
         }
     }
 
