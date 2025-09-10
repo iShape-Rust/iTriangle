@@ -1,11 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use i_overlay::core::fill_rule::FillRule;
-    use i_overlay::core::overlay::ShapeType;
-    use i_overlay::core::overlay_rule::OverlayRule;
-    use i_overlay::float::overlay::{FloatOverlay, OverlayOptions};
-    use i_overlay::i_float::adapter::FloatPointAdapter;
-    use i_overlay::i_shape::base::data::{Contour, Shapes};
+    use i_overlay::i_shape::base::data::Contour;
     use rand::Rng;
     use i_triangle::float::triangulatable::Triangulatable;
     use i_triangle::float::triangulation::Triangulation;
@@ -104,62 +99,12 @@ mod tests {
         }
     }
 
-    // #[test]
-    // fn test_2() {
-    //     let window = FloatRect::new(-100.0, 100.0, -100.0, 100.0);
-    //     let adapter = FloatPointAdapter::new(window);
-    // 
-    //     let list_of_shapes = random_shapes(100, &adapter);
-    // 
-    //     let mut triangulator = Triangulator::<u32>::default();
-    // 
-    //     // apply Delaunay condition
-    //     triangulator.delaunay(true);
-    // 
-    //     // use fast earcut solver for a small contours less 64 points
-    //     triangulator.earcut(true);
-    // 
-    //     let mut triangulation = Triangulation::with_capacity(100);
-    // 
-    //     for shapes in list_of_shapes.iter() {
-    //         // it safe to uncheck triangulate valid shapes
-    //         triangulator.uncheck_triangulate_into(shapes, &mut triangulation);
-    // 
-    //         // do something with triangulation draw, accumulate, etc
-    // 
-    //         println!("points: {:?}", triangulation.points);
-    //         println!("indices: {:?}", triangulation.indices);
-    //     }
-    // }
-
     fn random_contours(count: usize) -> Vec<Contour<[f32; 2]>> {
         let mut contours = Vec::with_capacity(count);
         for _ in 0..count {
             contours.push(random(100.0, 100));
         }
         contours
-    }
-
-    fn random_shapes(count: usize, adapter: &FloatPointAdapter<[f32; 2], f32>) -> Vec<Shapes<[f32; 2]>> {
-        let mut list = Vec::with_capacity(count);
-
-        let mut opt = OverlayOptions::default();
-        // important option to get a valid contours for triangulation
-        opt.preserve_output_collinear = true;
-
-        let mut overlay = FloatOverlay::new_custom(adapter.clone(), opt, Default::default(), 100);
-        for _ in 0..count {
-            // contour must be in adapter window!
-            let contour = random(100.0, 100);
-            overlay = overlay.unsafe_add_source(&contour, ShapeType::Subject);
-
-            // get a valid geometry
-            let shapes = overlay.overlay(OverlayRule::Subject, FillRule::NonZero);
-
-            list.push(shapes);
-        }
-
-        list
     }
 
     fn random(radius: f32, n: usize) -> Contour<[f32; 2]> {

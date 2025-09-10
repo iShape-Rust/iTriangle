@@ -1,6 +1,4 @@
 use crate::geom::point::IndexPoint;
-use i_key_sort::bin_key::index::BinKey;
-use i_key_sort::bin_key::index::BinLayout;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 
@@ -14,7 +12,7 @@ pub(crate) enum VertexType {
     Steiner,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct ChainVertex {
     pub(crate) index: usize,
     pub(crate) this: IntPoint,
@@ -23,13 +21,6 @@ pub(crate) struct ChainVertex {
 }
 
 impl ChainVertex {
-    pub(super) const EMPTY: ChainVertex = ChainVertex {
-        index: 0,
-        this: IntPoint::EMPTY,
-        next: IntPoint::EMPTY,
-        prev: IntPoint::EMPTY,
-    };
-
     #[inline]
     pub(super) fn new(this: IntPoint, next: IntPoint, prev: IntPoint) -> Self {
         Self {
@@ -75,17 +66,5 @@ impl ChainVertex {
     #[inline]
     pub(crate) fn index_point(&self) -> IndexPoint {
         IndexPoint::new(self.index, self.this)
-    }
-}
-
-impl BinKey<i32> for ChainVertex {
-    #[inline]
-    fn bin_key(&self) -> i32 {
-        self.this.x
-    }
-
-    #[inline]
-    fn bin_index(&self, layout: &BinLayout<i32>) -> usize {
-        layout.index(self.this.x)
     }
 }

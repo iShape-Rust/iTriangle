@@ -1,209 +1,53 @@
 use crate::int::monotone::chain::vertex::ChainVertex;
 use alloc::vec::Vec;
-use i_key_sort::bin_key::index::BinLayout;
-use i_key_sort::sort::layout::BinStore;
+use i_key_sort::sort::key_sort::KeySort;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
 use i_overlay::i_shape::util::reserve::Reserve;
 
-pub(crate) struct ChainBuilder {
-    bin_store: BinStore<i32>,
-}
-
-impl Default for ChainBuilder {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            bin_store: BinStore::empty(0, 0),
-        }
-    }
-}
+pub(crate) struct ChainBuilder;
 
 impl ChainBuilder {
     pub(crate) fn flat_to_vertices(
-        &mut self,
         flat: &FlatContoursBuffer,
         vertices: &mut Vec<ChainVertex>,
     ) {
-        if let Some(layout) = self.flat_layout_and_reserve(flat, 0) {
-            self.bin_store.init(layout);
-
-            self.bin_store
-                .reserve_bins_space(flat.points.iter().map(|p| &p.x));
-
-            let count = self.bin_store.prepare_bins();
-            vertices.resize(count, ChainVertex::EMPTY);
-
-            for range in flat.ranges.iter() {
-                let contour = &flat.points[range.clone()];
-                vertices.add_contour_with_bins(contour, &mut self.bin_store);
-            }
-            vertices.sort_by_swipe_line_with_bins(&mut self.bin_store);
-        } else {
-            vertices.clear();
-            for range in flat.ranges.iter() {
-                let contour = &flat.points[range.clone()];
-                vertices.add_contour(contour);
-            }
-            vertices.sort_by_swipe_line();
+        vertices.clear();
+        for range in flat.ranges.iter() {
+            let contour = &flat.points[range.clone()];
+            vertices.add_contour(contour);
         }
+        vertices.sort_by_swipe_line();
     }
 
     pub(crate) fn shape_to_vertices(
-        &mut self,
         shape: &IntShape,
         points: Option<&[IntPoint]>,
         vertices: &mut Vec<ChainVertex>,
     ) {
-        if let Some(layout) = self.shape_layout_and_reserve(shape, 0) {
-            self.bin_store.init(layout);
-
-            for contour in shape.iter() {
-                self.bin_store
-                    .reserve_bins_space(contour.iter().map(|p| &p.x));
-            }
-            if let Some(points) = points {
-                self.bin_store
-                    .reserve_bins_space(points.iter().map(|p| &p.x));
-            }
-
-            let count = self.bin_store.prepare_bins();
-            vertices.resize(count, ChainVertex::EMPTY);
-
-            for contour in shape.iter() {
-                vertices.add_contour_with_bins(contour, &mut self.bin_store);
-            }
-
-            if let Some(points) = points {
-                for &p in points {
-                    self.bin_store.feed_vec(vertices, ChainVertex::implant(p));
-                }
-            }
-
-            vertices.sort_by_swipe_line_with_bins(&mut self.bin_store);
-        } else {
-            vertices.clear();
-            for contour in shape.iter() {
-                vertices.add_contour(contour);
-            }
-            if let Some(points) = points {
-                vertices.add_steiner_points(points);
-            }
-            vertices.sort_by_swipe_line();
+        vertices.clear();
+        for contour in shape.iter() {
+            vertices.add_contour(contour);
         }
+        if let Some(points) = points {
+            vertices.add_steiner_points(points);
+        }
+        vertices.sort_by_swipe_line();
     }
 
     pub(crate) fn contour_to_vertices(
-        &mut self,
         contour: &IntContour,
         points: Option<&[IntPoint]>,
         vertices: &mut Vec<ChainVertex>,
     ) {
-        if let Some(layout) = self.contour_layout_and_reserve(contour, 0) {
-            self.bin_store.init(layout);
-            self.bin_store
-                .reserve_bins_space(contour.iter().map(|p| &p.x));
-            if let Some(points) = points {
-                self.bin_store
-                    .reserve_bins_space(points.iter().map(|p| &p.x));
-            }
-            let count = self.bin_store.prepare_bins();
-            vertices.resize(count, ChainVertex::EMPTY);
-
-            vertices.add_contour_with_bins(contour, &mut self.bin_store);
-            if let Some(points) = points {
-                for &p in points {
-                    self.bin_store.feed_vec(vertices, ChainVertex::implant(p));
-                }
-            }
-
-            vertices.sort_by_swipe_line_with_bins(&mut self.bin_store);
-        } else {
-            vertices.clear();
-            vertices.add_contour(contour);
-            if let Some(points) = points {
-                vertices.add_steiner_points(points);
-            }
-            vertices.sort_by_swipe_line();
+        vertices.clear();
+        vertices.add_contour(contour);
+        if let Some(points) = points {
+            vertices.add_steiner_points(points);
         }
-    }
-
-    #[inline]
-    fn contour_layout_and_reserve(
-        &mut self,
-        contour: &[IntPoint],
-        extra_count: usize,
-    ) -> Option<BinLayout<i32>> {
-        let count = contour.len() + extra_count;
-
-        if !(64..=1_000_000).contains(&count) {
-            // direct approach work better for small and large data
-            return None;
-        }
-
-        let mut min = i32::MAX;
-        let mut max = i32::MIN;
-
-        for p in contour.iter() {
-            min = min.min(p.x);
-            max = max.max(p.x);
-        }
-
-        BinLayout::new(min..max, count)
-    }
-
-    #[inline]
-    fn shape_layout_and_reserve(
-        &mut self,
-        shape: &IntShape,
-        extra_count: usize,
-    ) -> Option<BinLayout<i32>> {
-        let main_count = shape.iter().fold(0, |s, path| s + path.len());
-        let count = main_count + extra_count;
-
-        if !(64..=1_000_000).contains(&count) {
-            // direct approach work better for small and large data
-            return None;
-        }
-
-        let mut min = i32::MAX;
-        let mut max = i32::MIN;
-
-        for contour in shape.iter() {
-            for p in contour.iter() {
-                min = min.min(p.x);
-                max = max.max(p.x);
-            }
-        }
-
-        BinLayout::new(min..max, count)
-    }
-
-    #[inline]
-    fn flat_layout_and_reserve(
-        &mut self,
-        flat: &FlatContoursBuffer,
-        extra_count: usize,
-    ) -> Option<BinLayout<i32>> {
-        let main_count = flat.points.len();
-        let count = main_count + extra_count;
-
-        if !(64..=1_000_000).contains(&count) {
-            // direct approach work better for small and large data
-            return None;
-        }
-
-        let mut min = i32::MAX;
-        let mut max = i32::MIN;
-
-        for p in flat.points.iter() {
-            min = min.min(p.x);
-            max = max.max(p.x);
-        }
-
-        BinLayout::new(min..max, count)
+        vertices.sort_by_swipe_line();
     }
 }
 
@@ -220,7 +64,6 @@ struct Direction {
 
 trait ChainVertexVec {
     fn add_contour(&mut self, contour: &[IntPoint]);
-    fn add_contour_with_bins(&mut self, contour: &[IntPoint], bin_store: &mut BinStore<i32>);
     fn add_steiner_points(&mut self, points: &[IntPoint]);
 }
 
@@ -237,17 +80,6 @@ impl ChainVertexVec for Vec<ChainVertex> {
         }
     }
 
-    #[inline]
-    fn add_contour_with_bins(&mut self, contour: &[IntPoint], bin_store: &mut BinStore<i32>) {
-        let mut prev = contour[contour.len() - 2];
-        let mut this = contour[contour.len() - 1];
-
-        for &next in contour.iter() {
-            bin_store.feed_vec(self, ChainVertex::new(this, next, prev));
-            prev = this;
-            this = next;
-        }
-    }
     #[inline]
     fn add_steiner_points(&mut self, points: &[IntPoint]) {
         for &this in points {
@@ -276,31 +108,14 @@ impl ChainVertexExport for [ChainVertex] {
 
 trait ChainVertexSort {
     fn sort_by_swipe_line(&mut self);
-    fn sort_by_swipe_line_with_bins(&mut self, bin_store: &mut BinStore<i32>);
-    fn sort_possible_nodes(&mut self);
     fn sort_node_in_clockwise_order(&mut self);
 }
 
 impl ChainVertexSort for [ChainVertex] {
-
     #[inline]
     fn sort_by_swipe_line(&mut self) {
-        self.sort_unstable_by(|a, b| a.this.cmp(&b.this));
-        self.sort_possible_nodes();
-    }
+        self.sort_by_two_keys(false, |v| v.this.x, |v| v.this.y);
 
-    fn sort_by_swipe_line_with_bins(&mut self, bin_store: &mut BinStore<i32>) {
-        for bin in bin_store.bins.iter() {
-            let start = bin.offset;
-            let end = bin.data;
-            if start < end {
-                self[start..end].sort_by(|a, b| a.this.cmp(&b.this));
-            }
-        }
-        self.sort_possible_nodes();
-    }
-
-    fn sort_possible_nodes(&mut self) {
         debug_assert_eq!(self[0].index, 0); // must be 0 as default value
         let mut index = self[0].index;
         let mut p = self[0].this;
