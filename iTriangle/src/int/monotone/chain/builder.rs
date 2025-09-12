@@ -1,6 +1,6 @@
+use i_key_sort::sort::two_keys::TwoKeysSort;
 use crate::int::monotone::chain::vertex::ChainVertex;
 use alloc::vec::Vec;
-use i_key_sort::sort::key_sort::KeySort;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
