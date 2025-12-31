@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
+use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::util::reserve::Reserve;
@@ -93,7 +93,6 @@ pub struct RawIntTriangulation {
 }
 
 impl RawIntTriangulation {
-
     #[inline]
     pub(super) fn new(triangles: Vec<IntTriangle>, points: Vec<IntPoint>) -> Self {
         Self { triangles, points }
@@ -159,12 +158,11 @@ impl RawIntTriangulation {
     }
 }
 impl<I: IndexType> IntTriangulation<I> {
-
     #[inline]
     pub fn empty() -> Self {
         Self {
             points: Vec::new(),
-            indices: Vec::new()
+            indices: Vec::new(),
         }
     }
 
@@ -172,7 +170,7 @@ impl<I: IndexType> IntTriangulation<I> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             points: Vec::with_capacity(capacity),
-            indices: Vec::with_capacity(3 * capacity)
+            indices: Vec::with_capacity(3 * capacity),
         }
     }
 
@@ -198,7 +196,9 @@ impl<I: IndexType> IntTriangulation<I> {
         self.points.clear();
         self.points.extend_from_slice(&triangulation.points);
 
-        triangulation.triangles.feed_indices(triangulation.points.len(), &mut self.indices);
+        triangulation
+            .triangles
+            .feed_indices(triangulation.points.len(), &mut self.indices);
     }
 }
 
@@ -207,7 +207,6 @@ pub(crate) trait IndicesBuilder {
 }
 
 impl IndicesBuilder for [IntTriangle] {
-
     #[inline]
     fn feed_indices<I: IndexType>(&self, max_count: usize, indices: &mut Vec<I>) {
         if max_count > I::MAX {
@@ -273,28 +272,28 @@ impl RawIntTriangulation {
 
 #[cfg(test)]
 impl<I: IndexType> IntTriangulation<I> {
-        pub fn validate(&self, shape_x2_area: i64) {
-            let mut s = 0;
-            let mut i = 0;
-            while i < self.indices.len() {
-                let ai = self.indices[i];
-                i += 1;
-                let bi = self.indices[i];
-                i += 1;
-                let ci = self.indices[i];
-                i += 1;
+    pub fn validate(&self, shape_x2_area: i64) {
+        let mut s = 0;
+        let mut i = 0;
+        while i < self.indices.len() {
+            let ai = self.indices[i];
+            i += 1;
+            let bi = self.indices[i];
+            i += 1;
+            let ci = self.indices[i];
+            i += 1;
 
-                let a = self.points[ai.into_usize()];
-                let b = self.points[bi.into_usize()];
-                let c = self.points[ci.into_usize()];
+            let a = self.points[ai.into_usize()];
+            let b = self.points[bi.into_usize()];
+            let c = self.points[ci.into_usize()];
 
-                let abc = Triangle::area_two_point(a, b, c);
+            let abc = Triangle::area_two_point(a, b, c);
 
-                assert!(abc < 0);
+            assert!(abc < 0);
 
-                s = s + abc;
-            }
-
-            assert!(s == shape_x2_area);
+            s = s + abc;
         }
+
+        assert!(s == shape_x2_area);
     }
+}
