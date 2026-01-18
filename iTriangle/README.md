@@ -50,18 +50,13 @@ iTriangle is a high-performance 2D polygon triangulation library for Rust. It so
 flowchart LR
     A[Input contours] --> B[Normalize and fix self-intersections]
     B --> C[Sweep-line triangulation]
-    C --> D{Optional refinement}
+    C --> D[Raw triangulation]
     D -->|Delaunay| E[Delaunay triangulation]
-    D -->|Tessellation| F[Adaptive refinement]
-    C --> G[Convex decomposition]
-    C --> H[Centroid net]
-    C --> I[Triangles and indices]
-    E --> G
-    E --> H
+    D --> I[Triangles and indices]
+    E -->|Tessellation| E
+    E --> G[Convex decomposition]
+    E --> H[Centroid net]
     E --> I
-    F --> G
-    F --> H
-    F --> I
 ```
 
 ## Quick Start
