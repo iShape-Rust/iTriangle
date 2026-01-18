@@ -1,30 +1,37 @@
 # iTriangle
 
-
 [![crates.io version](https://img.shields.io/crates/v/i_triangle.svg)](https://crates.io/crates/i_triangle)
 ![Stability](https://img.shields.io/badge/tested-10⁹+_random_cases-green)
 [![docs.rs docs](https://docs.rs/i_triangle/badge.svg)](https://docs.rs/i_triangle)
+[![tests](https://github.com/iShape-Rust/iTriangle/actions/workflows/tests.yml/badge.svg)](https://github.com/iShape-Rust/iTriangle/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/iShape-Rust/iTriangle/branch/main/graph/badge.svg)](https://codecov.io/gh/iShape-Rust/iTriangle)
+[![license](https://img.shields.io/crates/l/i_triangle.svg)](https://crates.io/crates/i_triangle)
 
-A fast, stable, and robust 2d triangulation library for rust — tested on over **10⁹ randomized inputs**.
+iTriangle is a high-performance 2D polygon triangulation library for Rust. It solves robust triangulation for real-world, messy input (holes, self-intersections, mixed winding) and is built for GIS/CAD, simulation, and rendering pipelines that need deterministic results.
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
 
 <img src="readme/triangulation_process.gif" width="512"/>
 
-## Delaunay
-<img src="readme/star_triangle.svg" width="200"/>
+## Table of Contents
 
-## Convex polygons
-<img src="readme/star_polygon.svg" width="200"/>
+- [Why iTriangle?](#why-itrangle)
+- [Features](#features)
+- [Architecture Overview](#architecture-overview)
+- [Quick Start](#quick-start)
+- [Documentation](#documentation)
+- [Examples](#examples)
+- [Performance](#performance)
+- [Gallery](#gallery)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Steiner points
-<img src="readme/eagle_triangles_extra_points.svg" width="250"/>
+## Why iTriangle?
 
-## Tessellation
-<img src="readme/eagle_tessellation.svg" width="250"/>
-
-## Centroid net
-<img src="readme/eagle_centroid.svg" width="250"/>
+- Robust on complex input: supports holes and self-intersections with automatic resolution.
+- Deterministic and stable: integer-based core avoids floating-point corner cases.
+- High-performance: optimized sweep-line triangulation with cache-friendly outputs.
+- Flexible outputs: Delaunay, convex decomposition, tessellation, and centroid nets.
 
 ## Features
 
@@ -37,31 +44,56 @@ A fast, stable, and robust 2d triangulation library for rust — tested on over 
 - **Steiner Points**: Add custom inner points to influence triangulation.
 - **GPU-Friendly Layout**: Triangles and vertices are naturally ordered by X due to the sweep-line algorithm, improving cache locality for rendering.
 
-## Reliability
+## Architecture Overview
 
-- Extremely Stable: The core triangulation and Delaunay algorithms have been tested against over 1 billion randomized polygon samples.
-- Uses pure integer math to avoid floating-point precision issues.
-- Designed for use in CAD, EDA, game engines, and any application where robustness is critical.
+```mermaid
+flowchart LR
+    A[Input contours] --> B[Normalize and fix self-intersections]
+    B --> C[Sweep-line triangulation]
+    C --> D{Optional refinement}
+    D -->|Delaunay| E[Delaunay triangulation]
+    D -->|Tessellation| F[Adaptive refinement]
+    C --> G[Convex decomposition]
+    C --> H[Centroid net]
+    C --> I[Triangles and indices]
+```
 
-## Demo
+## Quick Start
 
-- [Triangulation](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
-- [Tessellation](https://ishape-rust.github.io/iShape-js/triangle/tessellation.html)
-
-## Documentation
-- [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
-
-## Getting Started
+Requires Rust stable.
 
 Add to your `Cargo.toml`:
-```
+
+```toml
 [dependencies]
-i_triangle = "^0.36.0"
+i_triangle = "0.36"
 ```
 
----
+Minimal example:
 
-## Example: Single Shape Triangulation
+```rust
+use i_triangle::float::triangulatable::Triangulatable;
+
+let contour = vec![
+    [0.0, 0.0],
+    [10.0, 0.0],
+    [10.0, 10.0],
+    [0.0, 10.0],
+];
+
+let triangulation = vec![contour].triangulate().to_triangulation::<u16>();
+println!("triangles: {}", triangulation.indices.len() / 3);
+```
+
+## Documentation
+
+- [Docs.rs](https://docs.rs/i_triangle)
+- [Delaunay](https://ishape-rust.github.io/iShape-js/triangle/delaunay.html)
+- [Demos](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
+
+## Examples
+
+### Single Shape Triangulation
 
 <img src="readme/cheese_example.svg" width="500"/>
 
@@ -137,13 +169,12 @@ let centroids = shape
 println!("centroids: {:?}", centroids);
 ```
 
-> 💡 Output: Triangle indices and vertices, where all triangles oriented in a **counter-clockwise** direction..
+> 💡 Output: Triangle indices and vertices, where all triangles oriented in a **counter-clockwise** direction.
 
----
+### Triangulating Multiple Shapes Efficiently
 
-## Example: Triangulating Multiple Shapes Efficiently
+If you need to triangulate many shapes, it is more efficient to use `Triangulator`.
 
-If you need triangulate many shapes it's more efficient way is to use Triangulator
 ```rust
 let contours = random_contours(100);
 
@@ -165,3 +196,30 @@ for contour in contours.iter() {
     println!("indices: {:?}", triangulation.indices);
 }
 ```
+
+## Performance
+
+Benchmarks and interactive demos are available here:
+- [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
+- [Triangulation Demo](https://ishape-rust.github.io/iShape-js/triangle/triangulation.html)
+- [Tessellation Demo](https://ishape-rust.github.io/iShape-js/triangle/tessellation.html)
+
+## Gallery
+
+| Delaunay | Convex Polygons | Steiner Points |
+| --- | --- | --- |
+| <img src="readme/star_triangle.svg" width="200"/> | <img src="readme/star_polygon.svg" width="200"/> | <img src="readme/eagle_triangles_extra_points.svg" width="250"/> |
+
+| Tessellation | Centroid Net | |
+| --- | --- | --- |
+| <img src="readme/eagle_tessellation.svg" width="250"/> | <img src="readme/eagle_centroid.svg" width="250"/> | |
+
+## Contributing
+
+See `CONTRIBUTING.md` for development setup, tests, and PR guidelines.
+
+## License
+
+Licensed under either of:
+- MIT license (LICENSE-MIT)
+- Apache License, Version 2.0 (LICENSE-APACHE)
