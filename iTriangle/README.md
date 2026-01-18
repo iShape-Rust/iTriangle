@@ -51,17 +51,13 @@ flowchart LR
     A[Input contours] --> B[Normalize and fix self-intersections]
     B --> C[Sweep-line triangulation]
     C --> D[Raw triangulation]
+    D -->|Delaunay| E[Delaunay triangulation]
     D --> I[Triangles and indices]
-
-    subgraph DelaunayPath[Delaunay path]
-        direction LR
-        D -->|Delaunay| E[Delaunay triangulation]
-        E -->|Tessellation| F[Adaptive refinement]
-        F --> E
-        E --> G[Convex decomposition]
-        E --> H[Centroid net]
-        E --> I
-    end
+    E -->|Tessellation| F[Adaptive refinement]
+    F --> E
+    E --> G[Convex decomposition]
+    E --> H[Centroid net]
+    E --> I
 ```
 
 ## Quick Start
