@@ -46,7 +46,7 @@ iTriangle is a high-performance 2D polygon triangulation library for Rust. It so
 
 ## Architecture Overview
 
-<img src="readme/architecture.svg" width="700"/>
+<img src="readme/architecture.png" width="700"/>
 
 <details>
 <summary>Mermaid source</summary>
