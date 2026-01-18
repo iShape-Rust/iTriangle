@@ -53,7 +53,8 @@ flowchart LR
     C --> D[Raw triangulation]
     D -->|Delaunay| E[Delaunay triangulation]
     D --> I[Triangles and indices]
-    E -->|Tessellation| E
+    E -->|Tessellation| F[Adaptive refinement]
+    F --> E
     E --> G[Convex decomposition]
     E --> H[Centroid net]
     E --> I
