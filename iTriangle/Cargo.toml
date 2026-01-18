@@ -4,7 +4,7 @@ version = "0.39.0"
 edition = "2021"
 authors = ["Nail Sharipov <nailxsharipov@gmail.com>"]
 description = "Polygon Triangulation Library: Efficient Delaunay Triangulation for Complex Shapes."
-license = "MIT"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/iShape-Rust/iTriangle"
 
 keywords = ["triangulation", "delaunay", "earcut", "monotone", "convex"]
