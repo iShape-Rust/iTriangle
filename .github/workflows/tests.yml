@@ -1,0 +1,30 @@
+name: Tests
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run tests
+        working-directory: iTriangle/iTriangle
+        run: cargo test
+      - name: Install tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+      - name: Run coverage
+        working-directory: iTriangle/iTriangle
+        run: cargo tarpaulin --out Lcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: iTriangle/iTriangle/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
