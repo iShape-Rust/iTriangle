@@ -69,8 +69,6 @@ flowchart TD
 
 ## Quick Start
 
-Requires Rust stable.
-
 Add to your `Cargo.toml`:
 
 ```toml
