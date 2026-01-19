@@ -35,7 +35,7 @@ iTriangle is a high-performance 2D polygon triangulation library for Rust. It so
 
 ## Features
 
-- **Sweep-line (Raw) Triangulation** - Fast and simple triangulation of polygons with or without holes.
+- **Sweep-line Triangulation** - Fast and simple triangulation of polygons with or without holes.
 - **Delaunay Triangulation** - Efficient and robust implementation for generating Delaunay triangulations.
 - **Self-Intersection Handling** – Fully supports self-intersecting polygons with automatic resolution.
 - **Adaptive Tessellation** - Refine Delaunay triangles using circumcenters for better shape quality.
