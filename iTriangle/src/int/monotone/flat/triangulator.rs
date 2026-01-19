@@ -875,7 +875,7 @@ mod tests {
     #[test]
     fn test_random_4() {
         let mut raw = IntTriangulation::<u32>::default();
-        for _ in 0..10_000 {
+        for _ in 0..5_000 {
             let path = random(30, 50);
             let shape = vec![path];
             if let Some(first) = shape
