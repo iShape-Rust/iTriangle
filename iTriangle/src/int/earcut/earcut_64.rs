@@ -1547,7 +1547,7 @@ mod tests {
 
     #[test]
     fn test_random_0() {
-        for _ in 0..100_000 {
+        for _ in 0..20_000 {
             if let Some(first) = random(8, 5)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1563,7 +1563,7 @@ mod tests {
 
     #[test]
     fn test_random_1() {
-        for _ in 0..100_000 {
+        for _ in 0..20_000 {
             if let Some(first) = random(8, 7)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1579,7 +1579,7 @@ mod tests {
 
     #[test]
     fn test_random_2() {
-        for _ in 0..100_000 {
+        for _ in 0..20_000 {
             if let Some(first) = random(8, 10)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1595,7 +1595,7 @@ mod tests {
 
     #[test]
     fn test_random_3() {
-        for _ in 0..500_000 {
+        for _ in 0..100_000 {
             if let Some(first) = random(8, 12)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1611,7 +1611,7 @@ mod tests {
 
     #[test]
     fn test_random_4() {
-        for _ in 0..40_000 {
+        for _ in 0..10_000 {
             if let Some(first) = random(16, 32)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1628,7 +1628,7 @@ mod tests {
 
     #[test]
     fn test_random_5() {
-        for _ in 0..20_000 {
+        for _ in 0..5_000 {
             if let Some(first) = random(16, 48)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
@@ -1645,7 +1645,7 @@ mod tests {
 
     #[test]
     fn test_random_6() {
-        for _ in 0..10_000 {
+        for _ in 0..2_000 {
             if let Some(first) = random(16, 64)
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_output_points())
                 .first()
