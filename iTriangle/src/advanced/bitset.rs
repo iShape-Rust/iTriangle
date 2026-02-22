@@ -6,7 +6,6 @@ pub struct IndexBitSet {
 }
 
 impl IndexBitSet {
-
     #[inline]
     pub fn with_size(count: usize) -> Self {
         let len = count >> 6;
@@ -43,7 +42,11 @@ impl IndexBitSet {
 
     #[inline]
     pub fn read_and_clean(&mut self, indices: &mut Vec<usize>) {
-        let count = self.chunks.iter().map(|ch| ch.count_ones() as usize).sum::<usize>();
+        let count = self
+            .chunks
+            .iter()
+            .map(|ch| ch.count_ones() as usize)
+            .sum::<usize>();
         indices.clear();
         if count == 0 {
             return;
@@ -70,16 +73,13 @@ impl IndexBitSet {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        !self.chunks.iter().any(|&ch|ch != 0)
+        !self.chunks.iter().any(|&ch| ch != 0)
     }
-
 }
 
 impl Default for IndexBitSet {
     fn default() -> Self {
-        Self {
-            chunks: vec![0; 8],
-        }
+        Self { chunks: vec![0; 8] }
     }
 }
 
@@ -87,11 +87,11 @@ impl Default for IndexBitSet {
 mod tests {
     extern crate std;
 
-    use alloc::vec;
     use super::*;
-    use std::collections::HashSet;
-    use rand::{Rng, SeedableRng};
+    use alloc::vec;
     use rand::rngs::StdRng;
+    use rand::{Rng, SeedableRng};
+    use std::collections::HashSet;
 
     #[test]
     fn test_empty() {

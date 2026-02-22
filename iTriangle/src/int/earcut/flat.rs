@@ -1,6 +1,6 @@
-use i_overlay::i_float::int::point::IntPoint;
 use crate::int::earcut::earcut_64::{Bit, EarcutStore};
 use crate::int::triangulation::{IndexType, IntTriangulation};
+use i_overlay::i_float::int::point::IntPoint;
 
 pub(super) struct FlatEarcutStore<'a, I> {
     triangulation: &'a mut IntTriangulation<I>,

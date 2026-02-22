@@ -1,7 +1,7 @@
-use alloc::vec::Vec;
-use i_tree::set::sort::KeyValue;
 use crate::geom::point::IndexPoint;
 use crate::int::monotone::v_segment::VSegment;
+use alloc::vec::Vec;
+use i_tree::set::sort::KeyValue;
 
 #[derive(Debug, Clone)]
 pub(super) struct FlatSection {

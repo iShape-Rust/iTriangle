@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
     use i_overlay::i_shape::base::data::Contour;
-    use rand::Rng;
     use i_triangle::float::triangulatable::Triangulatable;
     use i_triangle::float::triangulation::Triangulation;
     use i_triangle::float::triangulator::Triangulator;
+    use rand::Rng;
 
     #[test]
     fn test_0() {
@@ -119,5 +119,4 @@ mod tests {
 
         points
     }
-
 }

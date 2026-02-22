@@ -1,4 +1,7 @@
+use crate::float::triangulation::RawTriangulation;
 use crate::int::custom::IntCustomTriangulatable;
+use crate::int::triangulation::RawIntTriangulation;
+use crate::int::validation::Validation;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
@@ -6,15 +9,11 @@ use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_shape::base::data::{Contour, Shape};
 use i_overlay::i_shape::float::adapter::{PathToInt, ShapeToInt, ShapesToInt};
 use i_overlay::i_shape::float::rect::RectInit;
-use crate::float::triangulation::RawTriangulation;
-use crate::int::triangulation::RawIntTriangulation;
-use crate::int::validation::Validation;
 
 /// A trait for triangulating float geometry with user-defined validation rules.
 ///
 /// Accepts a custom [`Validation`] object for tuning fill rule, min area, etc.
 pub trait CustomTriangulatable<P: FloatPointCompatible<T>, T: FloatNumber> {
-
     /// Performs triangulation using the specified [`Validation`] settings.
     fn custom_triangulate(&self, validation: Validation) -> RawTriangulation<P, T>;
 

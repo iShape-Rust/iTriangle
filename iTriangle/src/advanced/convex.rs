@@ -1,8 +1,8 @@
-use alloc::vec;
-use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::geom::triangle::IntTriangle;
 use crate::index::Index;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::IntContour;
 use i_overlay::i_shape::int::simple::Simplify;
@@ -47,7 +47,7 @@ impl ConvexPolygonBuilder {
         }
 
         contour.simplify_contour();
-        
+
         contour
     }
 

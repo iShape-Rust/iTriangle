@@ -1,3 +1,3 @@
-pub(crate) mod triangulator;
-pub mod section;
 pub mod phantom;
+pub mod section;
+pub(crate) mod triangulator;

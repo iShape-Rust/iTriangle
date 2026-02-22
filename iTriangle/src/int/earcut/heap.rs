@@ -115,7 +115,7 @@ impl<T: Default + Copy, C: Compare<T>, const N: usize> FixedHeap<T, C, N> {
                     self.swap(i, j);
                     i = j;
                 }
-                Ordering::Less | Ordering::Equal => break
+                Ordering::Less | Ordering::Equal => break,
             }
         }
     }
@@ -226,7 +226,10 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
+        assert_eq!(
+            heap.buffer[0..CLOCK_ORDER_HEAP_LEN],
+            points[0..CLOCK_ORDER_HEAP_LEN]
+        );
     }
 
     #[test]
@@ -250,15 +253,15 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
+        assert_eq!(
+            heap.buffer[0..CLOCK_ORDER_HEAP_LEN],
+            points[0..CLOCK_ORDER_HEAP_LEN]
+        );
     }
 
     #[test]
     fn test_2() {
-        let mut points = [
-            IntPoint::new(0, 2),
-            IntPoint::new(1, -1),
-        ];
+        let mut points = [IntPoint::new(0, 2), IntPoint::new(1, -1)];
         let c = IntPoint::new(3, 3);
         let mut heap = ClockOrderHeap::with_center(c);
         heap.add(points[0]);
@@ -268,7 +271,6 @@ mod tests {
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
         assert_eq!(heap.buffer[0..2], points);
-
     }
 
     #[test]
@@ -294,6 +296,9 @@ mod tests {
 
         points.sort_unstable_by(|a, b| Triangle::clock_order_point(c, *b, *a));
 
-        assert_eq!(heap.buffer[0..CLOCK_ORDER_HEAP_LEN], points[0..CLOCK_ORDER_HEAP_LEN]);
+        assert_eq!(
+            heap.buffer[0..CLOCK_ORDER_HEAP_LEN],
+            points[0..CLOCK_ORDER_HEAP_LEN]
+        );
     }
 }

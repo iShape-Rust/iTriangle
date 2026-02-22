@@ -194,7 +194,7 @@ impl<I: IndexType> IntTriangulator<I> {
             self.uncheck_triangulate_shape_into(&shapes[0], triangulation);
             return;
         }
-        
+
         triangulation.points.clear();
         triangulation.indices.clear();
 

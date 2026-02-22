@@ -1,10 +1,10 @@
+use crate::advanced::bitset::IndexBitSet;
 use crate::advanced::buffer::DelaunayBuffer;
-use alloc::vec::Vec;
 use crate::geom::triangle::IntTriangle;
 use crate::int::triangulation::RawIntTriangulation;
+use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::u128::UInt128;
-use crate::advanced::bitset::IndexBitSet;
 
 /// A 2D integer-based Delaunay triangulation.
 /// Each triangle satisfies the Delaunay condition.
@@ -19,7 +19,6 @@ pub struct IntDelaunay {
 }
 
 impl RawIntTriangulation {
-
     /// Converts an int triangle mesh into a Delaunay triangulation by applying edge flips.
     ///
     /// The mesh is refined in-place by checking local angle conditions and
@@ -50,7 +49,6 @@ pub trait DelaunayRefine {
 }
 
 impl DelaunayRefine for [IntTriangle] {
-
     #[inline]
     fn build(&mut self) {
         let mut buffer = DelaunayBuffer::new();
@@ -92,7 +90,7 @@ impl DelaunayRefine for [IntTriangle] {
     fn fix_triangle(&mut self, abc_index: usize, unchecked: &mut IndexBitSet) {
         // loop by same triangle increase cache locality
         let mut skip = usize::MAX;
-        let mut perfect= false;
+        let mut perfect = false;
         while !perfect {
             perfect = true;
             let neighbors = unsafe { self.get_unchecked(abc_index) }.neighbors;
@@ -276,14 +274,14 @@ impl IntDelaunay {
 
 #[cfg(test)]
 mod tests {
-    use crate::advanced::delaunay::Vec;
-use alloc::vec;
-use crate::advanced::delaunay::DelaunayCondition;
-use crate::advanced::delaunay::DelaunayRefine;
+    use crate::advanced::delaunay::DelaunayCondition;
+    use crate::advanced::delaunay::DelaunayRefine;
     use crate::advanced::delaunay::IntDelaunay;
+    use crate::advanced::delaunay::Vec;
     use crate::geom::point::IndexPoint;
     use crate::geom::triangle::IntTriangle;
     use crate::int::triangulatable::IntTriangulatable;
+    use alloc::vec;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::core::simplify::Simplify;
@@ -429,10 +427,7 @@ use crate::advanced::delaunay::DelaunayRefine;
             let shape = vec![random(8, 5)];
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -451,10 +446,7 @@ use crate::advanced::delaunay::DelaunayRefine;
             let shape = vec![random(8, 12)];
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();
@@ -477,10 +469,7 @@ use crate::advanced::delaunay::DelaunayRefine;
             }
 
             if let Some(first) = shape
-                .simplify(
-                    FillRule::NonZero,
-                    IntOverlayOptions::keep_all_points(),
-                )
+                .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
                 let shape_area = first.area_two();

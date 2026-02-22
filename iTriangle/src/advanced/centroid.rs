@@ -1,13 +1,12 @@
-use alloc::vec;
-use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::geom::triangle::IntTriangle;
+use alloc::vec;
+use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::area::Area;
 use i_overlay::i_shape::int::shape::IntContour;
 
 impl IntDelaunay {
-
     /// Constructs a centroid-based polygonal net from the Delaunay triangulation.
     /// Each polygon surrounds a vertex using adjacent triangle centers and edge midpoints.
     ///
@@ -146,9 +145,9 @@ fn middle(a: IntPoint, b: IntPoint) -> IntPoint {
 
 #[cfg(test)]
 mod tests {
+    use crate::int::triangulatable::IntTriangulatable;
     use alloc::vec;
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::int::triangulatable::IntTriangulatable;
 
     #[test]
     fn test_0() {
@@ -159,8 +158,10 @@ mod tests {
             IntPoint::new(0, 10),
         ];
 
-        let centroids = contour.triangulate_with_steiner_points(&[IntPoint::new(5, 5)])
-            .into_delaunay().centroid_net(0);
+        let centroids = contour
+            .triangulate_with_steiner_points(&[IntPoint::new(5, 5)])
+            .into_delaunay()
+            .centroid_net(0);
         assert_eq!(centroids.len(), 5);
     }
 }

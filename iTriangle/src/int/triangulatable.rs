@@ -1,7 +1,7 @@
+use crate::int::solver::{ContourSolver, ShapeSolver, ShapesSolver};
 use crate::int::triangulation::RawIntTriangulation;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use crate::int::solver::{ContourSolver, ShapeSolver, ShapesSolver};
 /// A trait for performing triangulation with default validation settings.
 ///
 /// Provides a simplified interface for converting shapes or contours into triangle meshes.

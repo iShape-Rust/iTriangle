@@ -12,7 +12,7 @@ struct TriangleHandler {
 
 struct EdgeItem {
     edge: Edge,
-    handler: TriangleHandler
+    handler: TriangleHandler,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -44,10 +44,7 @@ impl EdgePool {
         if let Some(index) = self.edges.iter().position(|it| it.edge == edge) {
             Some(self.edges.swap_remove(index).handler)
         } else {
-            let item = EdgeItem {
-                edge,
-                handler,
-            };
+            let item = EdgeItem { edge, handler };
             self.edges.push(item);
             None
         }
@@ -83,7 +80,6 @@ impl EarcutStore for NetEarcutStore<'_> {
         let mut b = IndexPoint::new(bi, contour[bi]);
         let mut ci = bits.next_wrapped_index(bi);
         for _ in 0..count {
-
             let c = IndexPoint::new(ci, contour[ci]);
 
             let triangle_index = self.triangulation.triangles.len();

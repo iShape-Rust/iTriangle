@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 use crate::float::triangulation::Triangulation;
 use crate::int::triangulation::IndexType;
+use alloc::vec::Vec;
 
 pub struct TriangulationBuilder<P, I> {
     points: Vec<P>,
@@ -21,11 +21,11 @@ impl<P, I: IndexType> TriangulationBuilder<P, I> {
                 points_count
             );
         }
-        
+
         let offset = I::try_from(self.points.len()).unwrap_or(I::ZERO);
         self.points.extend(triangulation.points);
         self.indices
-            .extend(triangulation.indices.iter().map(|&i|i.add(offset)));
+            .extend(triangulation.indices.iter().map(|&i| i.add(offset)));
         self
     }
 

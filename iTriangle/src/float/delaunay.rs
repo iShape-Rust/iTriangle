@@ -1,11 +1,11 @@
-use alloc::vec::Vec;
 use crate::advanced::delaunay::IntDelaunay;
+use crate::float::triangulation::{RawTriangulation, Triangulation};
+use crate::int::triangulation::IndexType;
+use alloc::vec::Vec;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
-use crate::float::triangulation::{RawTriangulation, Triangulation};
-use crate::int::triangulation::IndexType;
 
 /// A Delaunay-refined triangle mesh with float-mapped geometry.
 ///

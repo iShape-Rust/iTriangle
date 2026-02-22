@@ -75,7 +75,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
     #[inline]
     fn join<S: SetCollection<VSegment, FlatSection>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
-        let section = tree.value_by_index_mut(index);
+        let section = unsafe { tree.value_by_index_mut(index) };
         if section.sort.b == v.this {
             section.add_to_bottom(v, &mut self.triangulation.indices);
         } else {
@@ -98,7 +98,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
     #[inline]
     fn end<S: SetCollection<VSegment, FlatSection>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
-        let section = tree.value_by_index_mut(index);
+        let section = unsafe { tree.value_by_index_mut(index) };
         section.add_as_last(v, &mut self.triangulation.indices);
         tree.delete_by_index(index);
     }
@@ -106,7 +106,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
     #[inline]
     fn split<S: SetCollection<VSegment, FlatSection>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let index = tree.find_section(v);
-        let section = tree.value_by_index_mut(index);
+        let section = unsafe { tree.value_by_index_mut(index) };
         let new_section = section.add_to_middle(v, &mut self.triangulation.indices);
         tree.insert(new_section);
     }
@@ -114,7 +114,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
     fn merge<S: SetCollection<VSegment, FlatSection>>(&mut self, v: &ChainVertex, tree: &mut S) {
         let prev_index = tree.find_section(v);
         let next_index = tree.index_before(prev_index);
-        let next = tree.value_by_index_mut(next_index);
+        let next = unsafe { tree.value_by_index_mut(next_index) };
         next.add_from_start(v, &mut self.triangulation.indices);
 
         let mut next_points = if next.points.len() > 1 {
@@ -125,7 +125,7 @@ impl<I: IndexType> FlatBuilder<'_, I> {
 
         let sort = next.sort;
 
-        let prev = tree.value_by_index_mut(prev_index);
+        let prev = unsafe { tree.value_by_index_mut(prev_index) };
         prev.add_from_end(v, &mut self.triangulation.indices);
 
         prev.sort = sort;

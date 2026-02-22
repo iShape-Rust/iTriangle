@@ -30,12 +30,7 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let contour = [
-            [0.0, 2.0],
-            [0.0, 0.0],
-            [4.0, 2.0],
-            [4.0, 0.0]
-        ];
+        let contour = [[0.0, 2.0], [0.0, 0.0], [4.0, 2.0], [4.0, 0.0]];
 
         let mut triangulator = Triangulator::<u32>::default();
 
@@ -58,12 +53,12 @@ mod tests {
             [-4.0, -3.0],
             [4.0, -3.0],
             [3.0, -3.0],
-            [0.0, 3.0]
+            [0.0, 3.0],
         ];
 
         let simple = contour.simplify_shape(FillRule::NonZero);
         let area = simple.area();
-        
+
         let mut triangulator = Triangulator::<u32>::default();
 
         triangulator.delaunay(false);
@@ -75,16 +70,10 @@ mod tests {
         t0.validate(area, 0.001);
         t1.validate(area, 0.001);
     }
-    
+
     #[test]
     fn test_3() {
-        let contour = [
-            [2.0, 3.0],
-            [2.0, -2.0],
-            [0.0, 3.0],
-            [-1.0, 4.0],
-            [0.0, 1.0]
-        ];
+        let contour = [[2.0, 3.0], [2.0, -2.0], [0.0, 3.0], [-1.0, 4.0], [0.0, 1.0]];
 
         let mut triangulator = Triangulator::<u32>::default();
 

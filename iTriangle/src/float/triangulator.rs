@@ -16,7 +16,6 @@ pub struct Triangulator<I> {
 }
 
 impl<I: IndexType> Triangulator<I> {
-
     /// Enables or disables Delaunay refinement for triangulation.
     ///
     /// When enabled, the triangulator will attempt to generate a mesh that satisfies the
@@ -71,7 +70,6 @@ impl<I: IndexType> Default for Triangulator<I> {
 }
 
 impl<I: IndexType> Triangulator<I> {
-
     /// Performs triangulation on the provided shape resource and returns a new `Triangulation`.
     ///
     /// - `resource`: A `ShapeResource` that define contours.
@@ -153,10 +151,7 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
-    pub fn uncheck_triangulate<R, P, T>(
-        &mut self,
-        resource: &R,
-    ) -> Triangulation<P, I>
+    pub fn uncheck_triangulate<R, P, T>(&mut self, resource: &R) -> Triangulation<P, I>
     where
         R: ShapeResource<P, T> + ?Sized,
         P: FloatPointCompatible<T>,
@@ -181,7 +176,7 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Skips input validation (e.g., area checks or self-intersections), offering faster performance
     /// at the cost of issues.
-    /// 
+    ///
     /// Avoids allocating a new `Triangulation` by reusing the provided output buffer.
     ///
     /// - `resource`: A `ShapeResource` that define contours.

@@ -82,7 +82,6 @@ fn extract(a: IntPoint, b: IntPoint, radius: u64, sqr_radius: u64, contour: &mut
         return;
     }
 
-
     let sx = (ab.x << SCALE) / n;
     let sy = (ab.y << SCALE) / n;
 
@@ -92,21 +91,20 @@ fn extract(a: IntPoint, b: IntPoint, radius: u64, sqr_radius: u64, contour: &mut
     for _ in 1..n {
         dx += sx;
         dy += sy;
-        
+
         let x = a.x + (dx >> SCALE) as i32;
         let y = a.y + (dy >> SCALE) as i32;
-        
+
         contour.push(IntPoint::new(x, y));
     }
     contour.push(b);
 }
 
-
 #[cfg(test)]
 mod tests {
+    use crate::tessellation::split::SliceContour;
     use alloc::vec;
     use i_overlay::i_float::int::point::IntPoint;
-    use crate::tessellation::split::SliceContour;
 
     #[test]
     fn test_0() {

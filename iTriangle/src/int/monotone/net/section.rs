@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 use crate::geom::point::IndexPoint;
 use crate::int::monotone::v_segment::VSegment;
+use alloc::vec::Vec;
 use i_tree::set::sort::KeyValue;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,11 +77,11 @@ impl TriangleEdge {
 mod tests {
     use crate::geom::point::IndexPoint;
     use crate::int::monotone::net::section::{Content, Section, VSegment};
+    use core::cmp::Ordering;
     use i_overlay::i_float::int::point::IntPoint;
     use i_tree::set::sort::SetCollection;
     use i_tree::set::tree::SetTree;
     use i_tree::EMPTY_REF;
-    use core::cmp::Ordering;
 
     impl Section {
         fn with_sort(sort: VSegment) -> Section {
@@ -156,11 +156,11 @@ mod tests {
         let i4 = sections.first_index_less_by(|s| s.is_under_point_order(IntPoint::new(5, 2)));
         let i5 = sections.first_index_less_by(|s| s.is_under_point_order(IntPoint::new(5, 0)));
 
-        let r0 = sections.value_by_index(i0);
-        let r1 = sections.value_by_index(i1);
-        let r2 = sections.value_by_index(i2);
-        let r3 = sections.value_by_index(i3);
-        let r4 = sections.value_by_index(i4);
+        let r0 = unsafe { sections.value_by_index(i0) };
+        let r1 = unsafe { sections.value_by_index(i1) };
+        let r2 = unsafe { sections.value_by_index(i2) };
+        let r3 = unsafe { sections.value_by_index(i3) };
+        let r4 = unsafe { sections.value_by_index(i4) };
 
         assert!(r0.sort.eq(&Section::with_sort(vs0).sort));
         assert!(r1.sort.eq(&Section::with_sort(vs1).sort));

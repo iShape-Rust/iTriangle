@@ -118,7 +118,6 @@ impl<I: IndexType> IntTriangulation<I> {
 }
 
 impl<P, I: IndexType> Triangulation<P, I> {
-
     pub fn validate<T: FloatNumber>(&self, shape_area: T, epsilon: T)
     where
         P: FloatPointCompatible<T>,

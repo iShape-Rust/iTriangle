@@ -1,6 +1,6 @@
-use i_key_sort::sort::two_keys::TwoKeysSort;
 use crate::int::monotone::chain::vertex::ChainVertex;
 use alloc::vec::Vec;
+use i_key_sort::sort::two_keys::TwoKeysSort;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
@@ -10,10 +10,7 @@ use i_overlay::i_shape::util::reserve::Reserve;
 pub(crate) struct ChainBuilder;
 
 impl ChainBuilder {
-    pub(crate) fn flat_to_vertices(
-        flat: &FlatContoursBuffer,
-        vertices: &mut Vec<ChainVertex>,
-    ) {
+    pub(crate) fn flat_to_vertices(flat: &FlatContoursBuffer, vertices: &mut Vec<ChainVertex>) {
         vertices.clear();
         for range in flat.ranges.iter() {
             let contour = &flat.points[range.clone()];

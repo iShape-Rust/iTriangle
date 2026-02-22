@@ -1,7 +1,7 @@
-use alloc::vec::Vec;
-use i_overlay::i_float::int::point::IntPoint;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::int::triangulation::{IndexType, IntTriangulation};
+use alloc::vec::Vec;
+use i_overlay::i_float::int::point::IntPoint;
 
 impl IntDelaunay {
     #[inline]
@@ -17,7 +17,7 @@ impl IntDelaunay {
             let i0 = I::try_from(v[0].index).unwrap_or(I::ZERO);
             let i1 = I::try_from(v[1].index).unwrap_or(I::ZERO);
             let i2 = I::try_from(v[2].index).unwrap_or(I::ZERO);
-            
+
             result.extend_from_slice(&[i0, i1, i2]);
         }
         result

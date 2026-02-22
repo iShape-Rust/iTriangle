@@ -62,7 +62,7 @@ enum ConvexSearchResult {
     None,
 }
 
-struct EarcutSolver<'a , S > {
+struct EarcutSolver<'a, S> {
     store: S,
     contour: &'a [IntPoint],
     available: u64,
@@ -441,14 +441,14 @@ impl Ear {
                 Ordering::Less => {
                     let pc = c.subtract(p);
                     let bc = c.subtract(self.active_point);
-                    return bc.cross_product(pc) < 0
-                },
+                    return bc.cross_product(pc) < 0;
+                }
                 Ordering::Equal => {
                     let pc = c.subtract(p);
                     let bc = c.subtract(self.active_point);
                     let inside = bc.cross_product(pc) < 0;
                     return inside && AB::contains(self.a, c, p);
-                },
+                }
                 Ordering::Greater => {}
             }
 
@@ -543,7 +543,6 @@ impl Bit for u64 {
             63 - self.leading_zeros() as usize
         }
     }
-
 }
 
 #[cfg(test)]
@@ -667,7 +666,9 @@ mod tests {
         let mut triangulation = IntTriangulation::<u32>::empty();
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
-        let queue = solver.fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false);
+        let queue = solver.fast_filter(
+            contour[0], contour[1], contour[2], contour[3], 0b1111, false,
+        );
 
         assert_eq!(queue.is_none(), true);
     }
@@ -685,7 +686,9 @@ mod tests {
         let mut triangulation = IntTriangulation::<u32>::empty();
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
-        let queue = solver.fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false);
+        let queue = solver.fast_filter(
+            contour[0], contour[1], contour[2], contour[3], 0b1111, false,
+        );
 
         assert_eq!(queue.is_none(), true);
     }
@@ -704,7 +707,9 @@ mod tests {
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
         let queue = solver
-            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .fast_filter(
+                contour[0], contour[1], contour[2], contour[3], 0b1111, false,
+            )
             .unwrap();
 
         assert_eq!(queue.is_empty(), true);
@@ -724,7 +729,9 @@ mod tests {
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
         let queue = solver
-            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .fast_filter(
+                contour[0], contour[1], contour[2], contour[3], 0b1111, false,
+            )
             .unwrap();
 
         assert_eq!(queue.is_empty(), true);
@@ -744,7 +751,9 @@ mod tests {
         let solver = EarcutSolver::new(&contour, FlatEarcutStore::new(&mut triangulation));
 
         let queue = solver
-            .fast_filter(contour[0], contour[1], contour[2], contour[3], 0b1111, false)
+            .fast_filter(
+                contour[0], contour[1], contour[2], contour[3], 0b1111, false,
+            )
             .unwrap();
 
         assert_eq!(queue.is_empty(), false);
@@ -764,7 +773,6 @@ mod tests {
             IntPoint::new(-5, 15),
             IntPoint::new(-15, 5),
         ];
-
 
         fn new_ear() -> Ear {
             Ear {
@@ -1538,7 +1546,7 @@ mod tests {
             IntPoint::new(-4, 0),
             IntPoint::new(-6, -2),
             IntPoint::new(-7, -1),
-            IntPoint::new(-6, 1)
+            IntPoint::new(-6, 1),
         ];
 
         single_test(&contour);

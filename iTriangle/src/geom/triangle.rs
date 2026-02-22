@@ -79,7 +79,7 @@ impl IntTriangle {
             2
         }
     }
-    
+
     #[inline]
     pub(crate) fn abc_by_neighbor(&self, neighbor: usize) -> Abc {
         if neighbor == self.neighbors[0] {
@@ -108,7 +108,11 @@ impl IntTriangle {
             position: 2,
             neighbor: self.neighbors[2],
         };
-        Abc { v0: a, v1: b, v2: c }
+        Abc {
+            v0: a,
+            v1: b,
+            v2: c,
+        }
     }
 
     #[inline]
@@ -128,7 +132,11 @@ impl IntTriangle {
             position: 0,
             neighbor: self.neighbors[0],
         };
-        Abc { v0: a, v1: b, v2: c }
+        Abc {
+            v0: a,
+            v1: b,
+            v2: c,
+        }
     }
 
     #[inline]
@@ -148,6 +156,10 @@ impl IntTriangle {
             position: 1,
             neighbor: self.neighbors[1],
         };
-        Abc { v0: a, v1: b, v2: c }
+        Abc {
+            v0: a,
+            v1: b,
+            v2: c,
+        }
     }
 }
