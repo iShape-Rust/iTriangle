@@ -612,7 +612,7 @@ mod tests {
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
-    use rand::Rng;
+    use rand::RngExt;
     use std::collections::HashSet;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {

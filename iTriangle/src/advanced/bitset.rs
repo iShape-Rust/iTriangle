@@ -90,7 +90,7 @@ mod tests {
     use super::*;
     use alloc::vec;
     use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
+    use rand::{RngExt, SeedableRng};
     use std::collections::HashSet;
 
     #[test]

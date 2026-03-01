@@ -559,7 +559,7 @@ mod tests {
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
     use i_overlay::i_shape::int::shape::IntContour;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn test_ones_start_to_index_0() {

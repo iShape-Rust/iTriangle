@@ -7,7 +7,7 @@ mod tests {
     use i_triangle::float::triangulatable::Triangulatable;
     use i_triangle::float::triangulation::Triangulation;
     use i_triangle::float::triangulator::Triangulator;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn test_0() {
