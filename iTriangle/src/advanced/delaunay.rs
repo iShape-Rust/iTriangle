@@ -274,8 +274,7 @@ impl IntDelaunay {
 
 #[cfg(test)]
 mod tests {
-    use rand::RngExt;
-use crate::advanced::delaunay::DelaunayCondition;
+    use crate::advanced::delaunay::DelaunayCondition;
     use crate::advanced::delaunay::DelaunayRefine;
     use crate::advanced::delaunay::IntDelaunay;
     use crate::advanced::delaunay::Vec;
@@ -289,6 +288,7 @@ use crate::advanced::delaunay::DelaunayCondition;
     use i_overlay::i_float::int::point::IntPoint;
     use i_overlay::i_shape::int::area::Area;
     use i_overlay::i_shape::int::path::IntPath;
+    use rand::RngExt;
 
     fn path(slice: &[[i32; 2]]) -> IntPath {
         slice.iter().map(|p| IntPoint::new(p[0], p[1])).collect()
