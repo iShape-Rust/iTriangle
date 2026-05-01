@@ -4,6 +4,7 @@ pub mod circumcenter;
 pub mod convex;
 pub mod custom;
 pub mod delaunay;
+pub mod locator;
 pub mod triangulatable;
 pub mod triangulation;
 pub mod triangulator;

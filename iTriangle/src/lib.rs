@@ -6,6 +6,7 @@ pub mod float;
 pub mod geom;
 mod index;
 pub mod int;
+pub mod location;
 pub mod tessellation;
 
 pub use i_overlay;
