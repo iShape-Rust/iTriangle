@@ -1,11 +1,10 @@
 use crate::float::delaunay::Delaunay;
 use alloc::vec::Vec;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
-use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::base::data::Contour;
 use i_overlay::i_shape::float::adapter::ShapeToFloat;
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> Delaunay<P, T> {
+impl<P: FloatPointCompatible> Delaunay<P> {
     /// Groups triangles into non-overlapping convex polygons in counter-clockwise order.
     ///
     /// Returns a list of float-based [`Contour<P>`]s.

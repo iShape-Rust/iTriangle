@@ -3,7 +3,6 @@ use crate::int::triangulation::RawIntTriangulation;
 use crate::int::unchecked::IntUncheckedTriangulatable;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
-use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_shape::base::data::{Contour, Shape};
 use i_overlay::i_shape::float::adapter::{PathToInt, ShapeToInt, ShapesToInt};
@@ -17,30 +16,30 @@ use i_overlay::i_shape::float::rect::RectInit;
 /// - Outer contours must be counter-clockwise
 /// - Holes must be clockwise
 /// - Steiner points must lie strictly within the shape
-pub trait UncheckedTriangulatable<P: FloatPointCompatible<T>, T: FloatNumber> {
+pub trait UncheckedTriangulatable<P: FloatPointCompatible> {
     /// Triangulates float geometry without validation or simplification.
-    fn unchecked_triangulate(&self) -> RawTriangulation<P, T>;
+    fn unchecked_triangulate(&self) -> RawTriangulation<P>;
     /// Same as `unchecked_triangulate`, but inserts user-defined Steiner points.
-    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P, T>;
+    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P>;
 }
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> for [P] {
-    fn unchecked_triangulate(&self) -> RawTriangulation<P, T> {
+impl<P: FloatPointCompatible> UncheckedTriangulatable<P> for [P] {
+    fn unchecked_triangulate(&self) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }
 
-    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P, T> {
+    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -49,29 +48,29 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }
 }
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> for [Contour<P>] {
-    fn unchecked_triangulate(&self) -> RawTriangulation<P, T> {
+impl<P: FloatPointCompatible> UncheckedTriangulatable<P> for [Contour<P>] {
+    fn unchecked_triangulate(&self) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }
 
-    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P, T> {
+    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -80,29 +79,29 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }
 }
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> for [Shape<P>] {
-    fn unchecked_triangulate(&self) -> RawTriangulation<P, T> {
+impl<P: FloatPointCompatible> UncheckedTriangulatable<P> for [Shape<P>] {
+    fn unchecked_triangulate(&self) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }
 
-    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P, T> {
+    fn unchecked_triangulate_with_steiner_points(&self, points: &[P]) -> RawTriangulation<P> {
         if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, T>::new(rect);
+            let adapter = FloatPointAdapter::<P>::new(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -111,7 +110,7 @@ impl<P: FloatPointCompatible<T>, T: FloatNumber> UncheckedTriangulatable<P, T> f
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, T>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P>::new(FloatRect::zero()),
             }
         }
     }

@@ -21,6 +21,7 @@ iTriangle is a high-performance 2D polygon triangulation library for Rust. It so
 - [Quick Start](#quick-start)
 - [Documentation](#documentation)
 - [Examples](#examples)
+- [Integer API](#integer-api)
 - [Performance](#performance)
 - [Gallery](#gallery)
 - [Contributing](#contributing)
@@ -73,7 +74,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-i_triangle = "0.36"
+i_triangle = "0.43"
 ```
 
 Minimal example:
@@ -183,7 +184,13 @@ println!("centroids: {:?}", centroids);
 If you need to triangulate many shapes, it is more efficient to use `Triangulator`.
 
 ```rust
-let contours = random_contours(100);
+use i_triangle::float::triangulation::Triangulation;
+use i_triangle::float::triangulator::Triangulator;
+
+let contours = vec![
+    vec![[0.0, 0.0], [4.0, 0.0], [4.0, 4.0], [0.0, 4.0]],
+    vec![[5.0, 0.0], [9.0, 0.0], [9.0, 4.0], [5.0, 4.0]],
+];
 
 let mut triangulator = Triangulator::<u32>::default();
 
@@ -202,6 +209,77 @@ for contour in contours.iter() {
     println!("points: {:?}", triangulation.points);
     println!("indices: {:?}", triangulation.indices);
 }
+```
+
+## Integer API
+
+The integer API is useful when your coordinates are already quantized or when you want direct control over the robust integer core. It avoids float-to-int adapter setup and returns integer points unchanged.
+
+Use `IntPoint` with `IntContour`, `IntShape`, or `IntShapes`-compatible containers:
+
+```rust
+use i_triangle::int::triangulatable::IntTriangulatable;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+
+let contour = vec![
+    IntPoint::new(0, 0),
+    IntPoint::new(10, 0),
+    IntPoint::new(10, 10),
+    IntPoint::new(0, 10),
+];
+
+let triangulation = contour.triangulate().into_triangulation::<u16>();
+
+assert_eq!(triangulation.points.len(), 4);
+assert_eq!(triangulation.indices.len(), 6);
+```
+
+For repeated triangulation, use `IntTriangulator` and reuse its internal buffers:
+
+```rust
+use i_triangle::int::triangulation::IntTriangulation;
+use i_triangle::int::triangulator::IntTriangulator;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+
+let contours = vec![
+    vec![
+        IntPoint::new(0, 0),
+        IntPoint::new(10, 0),
+        IntPoint::new(10, 10),
+        IntPoint::new(0, 10),
+    ],
+    vec![
+        IntPoint::new(20, 0),
+        IntPoint::new(30, 0),
+        IntPoint::new(30, 10),
+        IntPoint::new(20, 10),
+    ],
+];
+
+let mut triangulator = IntTriangulator::<u32>::default();
+let mut output = IntTriangulation::<u32>::default();
+
+for contour in &contours {
+    triangulator.triangulate_contour_into(contour.clone(), &mut output);
+    assert!(!output.indices.is_empty());
+}
+```
+
+If your integer contours are already valid and correctly oriented, the unchecked API skips validation:
+
+```rust
+use i_triangle::int::unchecked::IntUncheckedTriangulatable;
+use i_triangle::i_overlay::i_float::int::point::IntPoint;
+
+let contour = vec![
+    IntPoint::new(0, 0),
+    IntPoint::new(10, 0),
+    IntPoint::new(10, 10),
+    IntPoint::new(0, 10),
+];
+
+let triangulation = contour.uncheck_triangulate().into_triangulation::<u16>();
+assert_eq!(triangulation.indices.len(), 6);
 ```
 
 ## Performance
