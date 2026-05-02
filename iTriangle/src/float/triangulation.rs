@@ -13,10 +13,9 @@ use i_overlay::i_shape::util::reserve::Reserve;
 ///
 /// # Parameters
 /// - `P`: Float point type (e.g., `Vec2`, `[f32; 2]`, etc.)
-/// - `T`: Float scalar type (e.g., `f32`, `f64`)
-pub struct RawTriangulation<P: FloatPointCompatible<T>, T: FloatNumber> {
+pub struct RawTriangulation<P: FloatPointCompatible> {
     pub raw: RawIntTriangulation,
-    pub adapter: FloatPointAdapter<P, T>,
+    pub adapter: FloatPointAdapter<P>,
 }
 
 /// A flat triangulation result consisting of float points and triangle indices.
@@ -29,7 +28,7 @@ pub struct Triangulation<P, I = u16> {
     pub indices: Vec<I>,
 }
 
-impl<P: FloatPointCompatible<T>, T: FloatNumber> RawTriangulation<P, T> {
+impl<P: FloatPointCompatible> RawTriangulation<P> {
     /// Returns the float-mapped points used in the triangulation.
     ///
     /// The points are guaranteed to match the input shape geometry within adapter precision.
@@ -64,13 +63,12 @@ impl<P, I: IndexType> Triangulation<P, I> {
     }
 
     #[inline]
-    pub fn set_with_int<T>(
+    pub fn set_with_int(
         &mut self,
         triangulation: &IntTriangulation<I>,
-        adapter: &FloatPointAdapter<P, T>,
+        adapter: &FloatPointAdapter<P>,
     ) where
-        P: FloatPointCompatible<T>,
-        T: FloatNumber,
+        P: FloatPointCompatible,
     {
         self.points.clear();
         self.points
@@ -85,9 +83,9 @@ impl<P, I: IndexType> Triangulation<P, I> {
 
 impl<I: IndexType> IntTriangulation<I> {
     #[inline]
-    pub fn into_float<P: FloatPointCompatible<T>, T: FloatNumber>(
+    pub fn into_float<P: FloatPointCompatible>(
         self,
-        adapter: &FloatPointAdapter<P, T>,
+        adapter: &FloatPointAdapter<P>,
     ) -> Triangulation<P, I> {
         let points = self
             .points
@@ -101,9 +99,9 @@ impl<I: IndexType> IntTriangulation<I> {
     }
 
     #[inline]
-    pub fn to_float<P: FloatPointCompatible<T>, T: FloatNumber>(
+    pub fn to_float<P: FloatPointCompatible>(
         &self,
-        adapter: &FloatPointAdapter<P, T>,
+        adapter: &FloatPointAdapter<P>,
     ) -> Triangulation<P, I> {
         let points = self
             .points
@@ -118,11 +116,11 @@ impl<I: IndexType> IntTriangulation<I> {
 }
 
 impl<P, I: IndexType> Triangulation<P, I> {
-    pub fn validate<T: FloatNumber>(&self, shape_area: T, epsilon: T)
+    pub fn validate(&self, shape_area: P::Scalar, epsilon: P::Scalar)
     where
-        P: FloatPointCompatible<T>,
+        P: FloatPointCompatible,
     {
-        let mut s = T::from_float(0.0);
+        let mut s = P::Scalar::from_float(0.0);
         let mut i = 0;
         let neg_eps = -epsilon;
         while i < self.indices.len() {
@@ -146,17 +144,17 @@ impl<P, I: IndexType> Triangulation<P, I> {
             s = s + abc;
         }
 
-        s = T::from_float(0.5) * s;
+        s = P::Scalar::from_float(0.5) * s;
 
-        let eps = epsilon * T::from_usize(self.indices.len() / 3);
+        let eps = epsilon * P::Scalar::from_usize(self.indices.len() / 3);
         let delta = (shape_area - s).abs();
 
         assert!(delta <= eps);
     }
 
-    fn triangle_area_x2<T: FloatNumber>(a: &P, b: &P, c: &P) -> T
+    fn triangle_area_x2(a: &P, b: &P, c: &P) -> P::Scalar
     where
-        P: FloatPointCompatible<T>,
+        P: FloatPointCompatible,
     {
         let ax = a.x();
         let ay = a.y();

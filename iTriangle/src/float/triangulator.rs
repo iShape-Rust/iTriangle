@@ -4,7 +4,6 @@ use crate::int::triangulator::IntTriangulator;
 use crate::int::validation::Validation;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
-use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::source::resource::ShapeResource;
 
@@ -80,11 +79,10 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
-    pub fn triangulate<R, P, T>(&mut self, resource: &R) -> Triangulation<P, I>
+    pub fn triangulate<R, P>(&mut self, resource: &R) -> Triangulation<P, I>
     where
-        R: ShapeResource<P, T> + ?Sized,
-        P: FloatPointCompatible<T>,
-        T: FloatNumber,
+        R: ShapeResource<P> + ?Sized,
+        P: FloatPointCompatible,
     {
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
@@ -115,14 +113,10 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
-    pub fn triangulate_into<R, P, T>(
-        &mut self,
-        resource: &R,
-        triangulation: &mut Triangulation<P, I>,
-    ) where
-        R: ShapeResource<P, T> + ?Sized,
-        P: FloatPointCompatible<T>,
-        T: FloatNumber,
+    pub fn triangulate_into<R, P>(&mut self, resource: &R, triangulation: &mut Triangulation<P, I>)
+    where
+        R: ShapeResource<P> + ?Sized,
+        P: FloatPointCompatible,
     {
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
@@ -151,11 +145,10 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
-    pub fn uncheck_triangulate<R, P, T>(&mut self, resource: &R) -> Triangulation<P, I>
+    pub fn uncheck_triangulate<R, P>(&mut self, resource: &R) -> Triangulation<P, I>
     where
-        R: ShapeResource<P, T> + ?Sized,
-        P: FloatPointCompatible<T>,
-        T: FloatNumber,
+        R: ShapeResource<P> + ?Sized,
+        P: FloatPointCompatible,
     {
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
@@ -188,14 +181,13 @@ impl<I: IndexType> Triangulator<I> {
     ///
     /// Uses internal buffers to reduce allocations and preserve performance.
     #[inline]
-    pub fn uncheck_triangulate_into<R, P, T>(
+    pub fn uncheck_triangulate_into<R, P>(
         &mut self,
         resource: &R,
         triangulation: &mut Triangulation<P, I>,
     ) where
-        R: ShapeResource<P, T> + ?Sized,
-        P: FloatPointCompatible<T>,
-        T: FloatNumber,
+        R: ShapeResource<P> + ?Sized,
+        P: FloatPointCompatible,
     {
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
