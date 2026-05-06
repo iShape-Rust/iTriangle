@@ -1,6 +1,7 @@
 mod binder;
 pub mod custom;
 pub mod earcut;
+pub mod locator;
 mod meta;
 pub(crate) mod monotone;
 mod solver;
