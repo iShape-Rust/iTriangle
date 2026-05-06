@@ -1,5 +1,6 @@
 use crate::geom::triangle::IntTriangle;
 use alloc::vec::Vec;
+use core::iter::FusedIterator;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::util::reserve::Reserve;
@@ -77,6 +78,43 @@ pub struct IntTriangulation<I = u16> {
     pub points: Vec<IntPoint>,
     pub indices: Vec<I>,
 }
+
+/// Iterator over resolved triangles in a flat [`IntTriangulation`].
+///
+/// Each item contains the three triangle points addressed by one consecutive
+/// triple in the triangulation index buffer.
+#[derive(Clone)]
+pub struct IntTriangleIterator<'a, I> {
+    points: &'a [IntPoint],
+    indices: core::slice::ChunksExact<'a, I>,
+}
+
+impl<I: IndexType> Iterator for IntTriangleIterator<'_, I> {
+    type Item = [IntPoint; 3];
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let indices = self.indices.next()?;
+        let a = self.points[indices[0].into_usize()];
+        let b = self.points[indices[1].into_usize()];
+        let c = self.points[indices[2].into_usize()];
+        Some([a, b, c])
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indices.size_hint()
+    }
+}
+
+impl<I: IndexType> ExactSizeIterator for IntTriangleIterator<'_, I> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.indices.len()
+    }
+}
+
+impl<I: IndexType> FusedIterator for IntTriangleIterator<'_, I> {}
 
 /// A int triangle mesh produced by the triangulation process.
 ///
@@ -183,6 +221,18 @@ impl<I: IndexType> IntTriangulation<I> {
         self.points.extend_from_slice(&other.points)
     }
 
+    /// Iterates over resolved triangle points.
+    ///
+    /// The iterator walks `indices` in exact triples and yields the matching
+    /// `[IntPoint; 3]` for each triangle.
+    #[inline]
+    pub fn triangles(&self) -> IntTriangleIterator<'_, I> {
+        IntTriangleIterator {
+            points: &self.points,
+            indices: self.indices.chunks_exact(3),
+        }
+    }
+
     #[inline]
     pub fn reserve_and_clear(&mut self, new_len: usize) {
         self.points.reserve_capacity(new_len);
@@ -199,6 +249,44 @@ impl<I: IndexType> IntTriangulation<I> {
         triangulation
             .triangles
             .feed_indices(triangulation.points.len(), &mut self.indices);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::IntTriangulation;
+    use alloc::{vec, vec::Vec};
+    use i_overlay::i_float::int::point::IntPoint;
+
+    #[test]
+    fn triangles_iterates_resolved_points() {
+        let triangulation = IntTriangulation {
+            points: vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(0, 10),
+            ],
+            indices: vec![0_u16, 1, 2, 0, 2, 3],
+        };
+
+        let triangles: Vec<_> = triangulation.triangles().collect();
+
+        assert_eq!(
+            triangles,
+            vec![
+                [
+                    IntPoint::new(0, 0),
+                    IntPoint::new(10, 0),
+                    IntPoint::new(10, 10),
+                ],
+                [
+                    IntPoint::new(0, 0),
+                    IntPoint::new(10, 10),
+                    IntPoint::new(0, 10),
+                ],
+            ]
+        );
     }
 }
 

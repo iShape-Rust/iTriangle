@@ -1,6 +1,5 @@
 use alloc::vec;
 use alloc::vec::Vec;
-use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::IntPoint;
 
 use crate::{
@@ -12,51 +11,38 @@ pub trait IntPointInTriangulationLocator {
     fn locate_points(&self, points: &[IntPoint]) -> Vec<PointLocationInTriangulation>;
 }
 
-impl<I: IndexType> IntTriangulation<I> {
-    pub fn locate_points(&self, points: &[IntPoint]) -> Vec<PointLocationInTriangulation> {
-        let mut result = vec![PointLocationInTriangulation::Outside; points.len()];
+impl<I> IntPointInTriangulationLocator for I
+where
+    I: Iterator<Item = [IntPoint; 3]> + Clone,
+{
+    fn locate_points(&self, points: &[IntPoint]) -> Vec<PointLocationInTriangulation> {
+        locate_points_in_triangles(self.clone(), points)
+    }
+}
 
-        for (index, triangle) in self.indices.chunks_exact(3).enumerate() {
-            let vertex0 = self.points[triangle[0].into_usize()];
-            let vertex1 = self.points[triangle[1].into_usize()];
-            let vertex2 = self.points[triangle[2].into_usize()];
-            let triangle_index = TriangleIndex::new(index);
+fn locate_points_in_triangles(
+    triangles: impl Iterator<Item = [IntPoint; 3]>,
+    points: &[IntPoint],
+) -> Vec<PointLocationInTriangulation> {
+    let mut result = vec![PointLocationInTriangulation::Outside; points.len()];
 
-            for (point_index, &point) in points.iter().enumerate() {
-                if point == vertex0 || point == vertex1 || point == vertex2 {
-                    match &mut result[point_index] {
-                        PointLocationInTriangulation::Outside => {
-                            result[point_index] =
-                                PointLocationInTriangulation::OnVertex(vec![triangle_index]);
-                        }
-                        PointLocationInTriangulation::OnVertex(hits) => {
-                            hits.push(triangle_index);
-                        }
-                        // Shouldn't happen.
-                        _ => {}
+    for (index, triangle) in triangles.enumerate() {
+        let triangle_index = TriangleIndex::new(index);
+
+        for (point_index, &point) in points.iter().enumerate() {
+            match triangle.locate_point(point) {
+                PointLocationInTriangle::Outside => {}
+                PointLocationInTriangle::Inside => match &result[point_index] {
+                    PointLocationInTriangulation::Outside => {
+                        result[point_index] =
+                            PointLocationInTriangulation::InsideTriangle(triangle_index);
                     }
-
-                    continue;
-                }
-
-                if !Triangle::is_contain_point(point, vertex0, vertex1, vertex2) {
-                    continue;
-                }
-
-                if Triangle::is_contain_point_exclude_borders(point, vertex0, vertex1, vertex2) {
-                    match &result[point_index] {
-                        PointLocationInTriangulation::Outside => {
-                            result[point_index] =
-                                PointLocationInTriangulation::InsideTriangle(triangle_index);
-                        }
-                        // Shouldn't happen.
-                        _ => {}
+                    // Shouldn't happen.
+                    _ => {
+                        panic!("Expected outside triangle");
                     }
-
-                    continue;
-                }
-
-                match &result[point_index] {
+                },
+                PointLocationInTriangle::OnEdge => match &result[point_index] {
                     PointLocationInTriangulation::Outside => {
                         result[point_index] =
                             PointLocationInTriangulation::OnExteriorEdge(triangle_index);
@@ -66,12 +52,81 @@ impl<I: IndexType> IntTriangulation<I> {
                             PointLocationInTriangulation::OnInteriorEdge(*i, triangle_index);
                     }
                     // Shouldn't happen.
-                    _ => {}
-                }
+                    _ => {
+                        panic!("More than 2 triangles for one edge");
+                    }
+                },
+                PointLocationInTriangle::OnVertex => match &mut result[point_index] {
+                    PointLocationInTriangulation::Outside => {
+                        result[point_index] =
+                            PointLocationInTriangulation::OnVertex(vec![triangle_index]);
+                    }
+                    PointLocationInTriangulation::OnVertex(hits) => {
+                        hits.push(triangle_index);
+                    }
+                    // Shouldn't happen.
+                    _ => {
+                        panic!("Point must be only on Vertex");
+                    }
+                },
             }
         }
+    }
 
-        result
+    result
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PointLocationInTriangle {
+    Outside,
+    Inside,
+    OnEdge,
+    OnVertex,
+}
+
+trait IntPointInTriangleLocator {
+    fn locate_point(&self, point: IntPoint) -> PointLocationInTriangle;
+}
+
+impl IntPointInTriangleLocator for [IntPoint; 3] {
+    #[inline]
+    fn locate_point(&self, point: IntPoint) -> PointLocationInTriangle {
+        let [p0, p1, p2] = *self;
+
+        if point == p0 || point == p1 || point == p2 {
+            return PointLocationInTriangle::OnVertex;
+        }
+
+        let px = point.x as i64;
+        let py = point.y as i64;
+        let x0 = p0.x as i64;
+        let y0 = p0.y as i64;
+        let x1 = p1.x as i64;
+        let y1 = p1.y as i64;
+        let x2 = p2.x as i64;
+        let y2 = p2.y as i64;
+
+        let q0 = (px - x1) * (y0 - y1) - (py - y1) * (x0 - x1);
+        let q1 = (px - x2) * (y1 - y2) - (py - y2) * (x1 - x2);
+        let q2 = (px - x0) * (y2 - y0) - (py - y0) * (x2 - x0);
+
+        let has_neg = q0 < 0 || q1 < 0 || q2 < 0;
+        let has_pos = q0 > 0 || q1 > 0 || q2 > 0;
+
+        if has_neg && has_pos {
+            PointLocationInTriangle::Outside
+        } else if q0 == 0 || q1 == 0 || q2 == 0 {
+            PointLocationInTriangle::OnEdge
+        } else {
+            PointLocationInTriangle::Inside
+        }
+    }
+}
+
+impl<I: IndexType> IntTriangulation<I> {
+    #[inline]
+    pub fn locate_points(&self, points: &[IntPoint]) -> Vec<PointLocationInTriangulation> {
+        locate_points_in_triangles(self.triangles(), points)
     }
 }
 
