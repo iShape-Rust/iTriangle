@@ -3,9 +3,9 @@ use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::{i_float::adapter::FloatPointAdapter, i_shape::float::adapter::PathToInt};
 
+use crate::int::locator::IntPointInTriangulationLocator;
 use crate::{
-    float::triangulation::Triangulation,
-    int::triangulation::{IndexType, IntTriangulation},
+    float::triangulation::Triangulation, int::triangulation::IndexType,
     location::PointLocationInTriangulation,
 };
 
@@ -23,12 +23,16 @@ impl<P, I: IndexType> Triangulation<P, I> {
     {
         let adapter = FloatPointAdapter::with_iter(self.points.iter().chain(points.iter()));
 
-        let int_triangulation = IntTriangulation {
-            points: self.points.to_int(&adapter),
-            indices: self.indices.clone(),
-        };
+        let int_points = points.to_int(&adapter);
 
-        int_triangulation.locate_points(&points.to_int(&adapter))
+        let triangles = self.indices.chunks_exact(3).map(|triangle| {
+            let a = adapter.float_to_int(&self.points[triangle[0].into_usize()]);
+            let b = adapter.float_to_int(&self.points[triangle[1].into_usize()]);
+            let c = adapter.float_to_int(&self.points[triangle[2].into_usize()]);
+            [a, b, c]
+        });
+
+        triangles.locate_points(&int_points)
     }
 }
 
