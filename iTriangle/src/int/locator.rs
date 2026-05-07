@@ -1,5 +1,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
+use i_key_sort::sort::two_keys::TwoKeysSort;
+use i_overlay::i_float::int::rect::IntRect;
 use i_overlay::i_shape::int::IntPoint;
 
 use crate::{
@@ -25,11 +27,29 @@ fn locate_points_in_triangles(
     points: &[IntPoint],
 ) -> Vec<PointLocationInTriangulation> {
     let mut result = vec![PointLocationInTriangulation::Outside; points.len()];
+    let mut sorted_points: Vec<_> = points
+        .iter()
+        .enumerate()
+        .map(|(index, &point)| IndexedPoint { index, point })
+        .collect();
+    sorted_points.sort_by_two_keys(false, |p| p.point.x, |p| p.point.y);
 
     for (index, triangle) in triangles.enumerate() {
         let triangle_index = TriangleIndex::new(index);
+        let rect = triangle.boundary();
+        let min = IntPoint::new(rect.min_x, rect.min_y);
+        let max = IntPoint::new(rect.max_x, rect.max_y);
+        let start = sorted_points.partition_point(|p| p.point < min);
 
-        for (point_index, &point) in points.iter().enumerate() {
+        for &IndexedPoint {
+            index: point_index,
+            point,
+        } in sorted_points[start..].iter().take_while(|p| p.point <= max)
+        {
+            if point.y < rect.min_y || point.y > rect.max_y {
+                continue;
+            }
+
             match triangle.locate_point(point) {
                 PointLocationInTriangle::Outside => {}
                 PointLocationInTriangle::Inside => match &result[point_index] {
@@ -76,6 +96,12 @@ fn locate_points_in_triangles(
     result
 }
 
+#[derive(Clone, Copy)]
+struct IndexedPoint {
+    index: usize,
+    point: IntPoint,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum PointLocationInTriangle {
     Outside,
@@ -86,6 +112,8 @@ enum PointLocationInTriangle {
 
 trait IntPointInTriangleLocator {
     fn locate_point(&self, point: IntPoint) -> PointLocationInTriangle;
+
+    fn boundary(&self) -> IntRect;
 }
 
 impl IntPointInTriangleLocator for [IntPoint; 3] {
@@ -121,6 +149,14 @@ impl IntPointInTriangleLocator for [IntPoint; 3] {
             PointLocationInTriangle::Inside
         }
     }
+
+    #[inline]
+    fn boundary(&self) -> IntRect {
+        let mut rect = IntRect::with_point(self[0]);
+        rect.unsafe_add_point(&self[1]);
+        rect.unsafe_add_point(&self[2]);
+        rect
+    }
 }
 
 impl<I: IndexType> IntTriangulation<I> {
@@ -139,13 +175,18 @@ impl<I: IndexType> IntPointInTriangulationLocator for IntTriangulation<I> {
 
 #[cfg(test)]
 mod tests {
-    use alloc::vec;
-    use i_overlay::i_shape::int::IntPoint;
-
     use crate::{
         int::triangulation::IntTriangulation,
         location::{PointLocationInTriangulation, TriangleIndex},
     };
+    use alloc::vec;
+    use i_overlay::core::fill_rule::FillRule::NonZero;
+    use i_overlay::core::overlay::IntOverlayOptions;
+    use i_overlay::i_shape::int::IntPoint;
+    use i_overlay::i_shape::int_path;
+    use crate::int::triangulatable::IntTriangulatable;
+    use crate::int::triangulator::IntTriangulator;
+    use crate::int::validation::Validation;
 
     fn square_triangulation() -> IntTriangulation<u16> {
         IntTriangulation {
@@ -200,5 +241,27 @@ mod tests {
             locations[5],
             PointLocationInTriangulation::Outside
         ));
+    }
+
+    #[test]
+    fn test_two_stacked_squares() {
+        let path = int_path![[0, 8], [0, 4], [0, 0], [4, 0], [4, 4], [4, 8]];
+        let validation = Validation {
+            fill_rule: Default::default(),
+            options: IntOverlayOptions::keep_all_points(),
+        };
+        let mut triangulator = IntTriangulator::<u16>::new(32, validation, Default::default());
+        triangulator.delaunay = true;
+        let triangulation = triangulator.triangulate_contour(&path);
+
+        let points_to_locate = int_path![[0, 8], [0, 4], [0, 0], [4, 0], [4, 4], [4, 8]];
+
+        let locations = triangulation.locate_points(&points_to_locate);
+
+        assert!(matches!(
+            locations[0].clone(),
+            PointLocationInTriangulation::OnVertex(vec) if vec[0].index() == 0
+        ));
+
     }
 }

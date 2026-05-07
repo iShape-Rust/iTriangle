@@ -3,12 +3,11 @@ use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::{i_float::adapter::FloatPointAdapter, i_shape::float::adapter::PathToInt};
 
+use crate::int::locator::IntPointInTriangulationLocator;
 use crate::{
-    float::triangulation::Triangulation,
-    int::triangulation::IndexType,
+    float::triangulation::Triangulation, int::triangulation::IndexType,
     location::PointLocationInTriangulation,
 };
-use crate::int::locator::IntPointInTriangulationLocator;
 
 pub trait PointInTriangulationLocator<P> {
     fn locate_points<T>(&self, points: &[P]) -> Vec<PointLocationInTriangulation>

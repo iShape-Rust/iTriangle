@@ -137,6 +137,7 @@ impl<I: IndexType> IntTriangulator<I> {
                 self.triangulator
                     .contour_into_net_triangulation(contour, None, &mut raw);
             }
+
             triangulation.fill_with_raw(&raw);
             self.raw_buffer = Some(raw);
         } else if self.earcut && contour.is_earcut_compatible() {
