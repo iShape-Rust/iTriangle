@@ -175,18 +175,14 @@ impl<I: IndexType> IntPointInTriangulationLocator for IntTriangulation<I> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        int::triangulation::IntTriangulation,
-        location::{PointLocationInTriangulation, TriangleIndex},
-    };
+    use crate::int::triangulator::IntTriangulator;
+    use crate::int::validation::Validation;
+    use crate::{int::triangulation::IntTriangulation, location::PointLocationInTriangulation};
     use alloc::vec;
-    use i_overlay::core::fill_rule::FillRule::NonZero;
+    use alloc::vec::Vec;
     use i_overlay::core::overlay::IntOverlayOptions;
     use i_overlay::i_shape::int::IntPoint;
     use i_overlay::i_shape::int_path;
-    use crate::int::triangulatable::IntTriangulatable;
-    use crate::int::triangulator::IntTriangulator;
-    use crate::int::validation::Validation;
 
     fn square_triangulation() -> IntTriangulation<u16> {
         IntTriangulation {
@@ -214,33 +210,12 @@ mod tests {
 
         let locations = triangulation.locate_points(&points_to_locate);
 
-        assert!(matches!(
-            locations[0],
-            PointLocationInTriangulation::InsideTriangle(t) if t == TriangleIndex::new(0)
-        ));
-        assert!(matches!(
-            locations[1],
-            PointLocationInTriangulation::InsideTriangle(t) if t == TriangleIndex::new(1)
-        ));
-        assert!(matches!(
-            locations[2],
-            PointLocationInTriangulation::OnInteriorEdge(a, b)
-                if a == TriangleIndex::new(0) && b == TriangleIndex::new(1)
-        ));
-        assert!(matches!(
-            locations[3],
-            PointLocationInTriangulation::OnExteriorEdge(t)
-                if t == TriangleIndex::new(0)
-        ));
-        assert!(matches!(
-            locations[4].clone(),
-            PointLocationInTriangulation::OnVertex(triangles)
-                if triangles.as_slice() == [TriangleIndex::new(0), TriangleIndex::new(1)]
-        ));
-        assert!(matches!(
-            locations[5],
-            PointLocationInTriangulation::Outside
-        ));
+        locations[0].assert_inside(0);
+        locations[1].assert_inside(1);
+        locations[2].assert_on_edge(&[0, 1]);
+        locations[3].assert_on_edge(&[0]);
+        locations[4].assert_on_vertex(&[0, 1]);
+        assert_eq!(locations[5], PointLocationInTriangulation::Outside);
     }
 
     #[test]
@@ -254,14 +229,101 @@ mod tests {
         triangulator.delaunay = true;
         let triangulation = triangulator.triangulate_contour(&path);
 
-        let points_to_locate = int_path![[0, 8], [0, 4], [0, 0], [4, 0], [4, 4], [4, 8]];
+        let points_on_vertex = int_path![[0, 8], [0, 4], [0, 0], [4, 0], [4, 4], [4, 8]];
+        let locations_on_vertex = triangulation.locate_points(&points_on_vertex);
 
-        let locations = triangulation.locate_points(&points_to_locate);
+        locations_on_vertex[0].assert_on_vertex(&[2, 3]);
+        locations_on_vertex[1].assert_on_vertex(&[0, 1, 2]);
+        locations_on_vertex[2].assert_on_vertex(&[0]);
+        locations_on_vertex[3].assert_on_vertex(&[0, 1]);
+        locations_on_vertex[4].assert_on_vertex(&[1, 2, 3]);
+        locations_on_vertex[5].assert_on_vertex(&[3]);
 
-        assert!(matches!(
-            locations[0].clone(),
-            PointLocationInTriangulation::OnVertex(vec) if vec[0].index() == 0
-        ));
+        let points_on_edge = int_path![
+            [0, 2],
+            [0, 6],
+            [2, 0],
+            [2, 2],
+            [2, 4],
+            [2, 6],
+            [2, 8],
+            [4, 2],
+            [4, 6]
+        ];
+        let locations_on_edge = triangulation.locate_points(&points_on_edge);
 
+        locations_on_edge[0].assert_on_edge(&[0]);
+        locations_on_edge[1].assert_on_edge(&[2]);
+        locations_on_edge[2].assert_on_edge(&[0]);
+        locations_on_edge[3].assert_on_edge(&[0, 1]);
+        locations_on_edge[4].assert_on_edge(&[1, 2]);
+        locations_on_edge[5].assert_on_edge(&[2, 3]);
+        locations_on_edge[6].assert_on_edge(&[3]);
+        locations_on_edge[7].assert_on_edge(&[1]);
+        locations_on_edge[8].assert_on_edge(&[3]);
+
+        let points_inside = int_path![[1, 1], [3, 3], [1, 5], [3, 7]];
+        let locations_inside = triangulation.locate_points(&points_inside);
+
+        locations_inside[0].assert_inside(0);
+        locations_inside[1].assert_inside(1);
+        locations_inside[2].assert_inside(2);
+        locations_inside[3].assert_inside(3);
+
+        let mut points_outside = Vec::new();
+        for x in -10..=10 {
+            for y in -10..=10 {
+                if (x < 0 || x > 4) && (y < 0 || y > 8) {
+                    points_outside.push(IntPoint::new(x, y));
+                }
+            }
+        }
+
+        let locations_inside = triangulation.locate_points(&points_outside);
+
+        for location in locations_inside {
+            assert_eq!(location, PointLocationInTriangulation::Outside);
+        }
+    }
+
+    impl PointLocationInTriangulation {
+        fn assert_on_vertex(&self, triangles: &[usize]) {
+            if let PointLocationInTriangulation::OnVertex(vec) = self {
+                let mut vertex_triangles: Vec<_> = vec.iter().map(|e| e.index()).collect();
+                vertex_triangles.sort();
+
+                let mut template_triangles = triangles.to_vec();
+                template_triangles.sort();
+
+                assert_eq!(vertex_triangles, template_triangles);
+            } else {
+                assert!(false, "not on Vertex");
+            }
+        }
+
+        fn assert_on_edge(&self, triangles: &[usize]) {
+            match self {
+                PointLocationInTriangulation::OnExteriorEdge(triangle) => {
+                    assert_eq!(triangles[0], triangle.index())
+                }
+                PointLocationInTriangulation::OnInteriorEdge(t0, t1) => {
+                    assert!(
+                        t0.index() == triangles[0] && t1.index() == triangles[1]
+                            || t0.index() == triangles[1] && t1.index() == triangles[0]
+                    );
+                }
+                _ => {
+                    assert!(false, "not on Edge");
+                }
+            }
+        }
+
+        fn assert_inside(&self, index: usize) {
+            if let PointLocationInTriangulation::InsideTriangle(triangle) = self {
+                assert_eq!(triangle.index(), index);
+            } else {
+                assert!(false, "not Inside");
+            }
+        }
     }
 }
