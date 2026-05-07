@@ -18,6 +18,16 @@ pub struct IntDelaunay {
     pub points: Vec<IntPoint>,
 }
 
+impl IntDelaunay {
+    #[inline]
+    pub(crate) fn into_raw(self) -> RawIntTriangulation {
+        RawIntTriangulation {
+            triangles: self.triangles,
+            points: self.points,
+        }
+    }
+}
+
 impl RawIntTriangulation {
     /// Converts an int triangle mesh into a Delaunay triangulation by applying edge flips.
     ///
@@ -28,12 +38,24 @@ impl RawIntTriangulation {
     /// A new [`IntDelaunay`] structure with updated triangle connectivity.
     #[inline]
     pub fn into_delaunay(self) -> IntDelaunay {
+        let mut buffer = DelaunayBuffer::new();
+        self.into_delaunay_with_buffer(&mut buffer)
+    }
+
+    /// Converts an int triangle mesh into a Delaunay triangulation by applying edge flips.
+    ///
+    /// Uses the provided scratch buffer to avoid repeated allocations across calls.
+    ///
+    /// # Returns
+    /// A new [`IntDelaunay`] structure with updated triangle connectivity.
+    #[inline]
+    pub fn into_delaunay_with_buffer(self, buffer: &mut DelaunayBuffer) -> IntDelaunay {
         let mut delaunay = IntDelaunay {
             triangles: self.triangles,
             points: self.points,
         };
 
-        delaunay.triangles.build();
+        delaunay.triangles.build_with_buffer(buffer);
 
         delaunay
     }
