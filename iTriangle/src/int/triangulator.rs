@@ -1,3 +1,4 @@
+use crate::advanced::buffer::DelaunayBuffer;
 use crate::int::earcut::earcut_64::Earcut64;
 use crate::int::monotone::triangulator::MonotoneTriangulator;
 use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
@@ -17,6 +18,7 @@ pub struct IntTriangulator<I> {
     triangulator: MonotoneTriangulator,
     shapes_buffer: Option<IntTriangulation<I>>,
     raw_buffer: Option<RawIntTriangulation>,
+    delaunay_buffer: DelaunayBuffer,
 }
 
 impl<I: IndexType> IntTriangulator<I> {
@@ -30,6 +32,7 @@ impl<I: IndexType> IntTriangulator<I> {
             triangulator: MonotoneTriangulator::default(),
             raw_buffer: None,
             shapes_buffer: None,
+            delaunay_buffer: DelaunayBuffer::default(),
         }
     }
 }
@@ -137,8 +140,9 @@ impl<I: IndexType> IntTriangulator<I> {
                 self.triangulator
                     .contour_into_net_triangulation(contour, None, &mut raw);
             }
-            triangulation.fill_with_raw(&raw);
-            self.raw_buffer = Some(raw);
+            let delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
+            triangulation.fill_with_delaunay(&delaunay);
+            self.raw_buffer = Some(delaunay.into_raw());
         } else if self.earcut && contour.is_earcut_compatible() {
             contour.earcut_flat_triangulate_into(triangulation);
         } else {
@@ -169,8 +173,9 @@ impl<I: IndexType> IntTriangulator<I> {
             let mut raw = self.raw_buffer.take().unwrap_or_default();
             self.triangulator
                 .shape_into_net_triangulation(shape, None, &mut raw);
-            triangulation.fill_with_raw(&raw);
-            self.raw_buffer = Some(raw);
+            let delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
+            triangulation.fill_with_delaunay(&delaunay);
+            self.raw_buffer = Some(delaunay.into_raw());
         } else {
             self.triangulator
                 .shape_into_flat_triangulation(shape, triangulation);
@@ -236,9 +241,9 @@ impl<I: IndexType> IntTriangulator<I> {
                 self.triangulator
                     .flat_into_net_triangulation(flat, &mut raw);
             }
-
-            triangulation.fill_with_raw(&raw);
-            self.raw_buffer = Some(raw);
+            let delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
+            triangulation.fill_with_delaunay(&delaunay);
+            self.raw_buffer = Some(delaunay.into_raw());
         } else if self.earcut && flat.is_earcut_compatible() {
             flat.as_first_contour()
                 .earcut_flat_triangulate_into(triangulation);

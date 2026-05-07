@@ -1,3 +1,4 @@
+use crate::advanced::delaunay::IntDelaunay;
 use crate::geom::triangle::IntTriangle;
 use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
@@ -199,6 +200,16 @@ impl<I: IndexType> IntTriangulation<I> {
         triangulation
             .triangles
             .feed_indices(triangulation.points.len(), &mut self.indices);
+    }
+
+    #[inline]
+    pub fn fill_with_delaunay(&mut self, delaunay: &IntDelaunay) {
+        self.points.clear();
+        self.points.extend_from_slice(&delaunay.points);
+
+        delaunay
+            .triangles
+            .feed_indices(delaunay.points.len(), &mut self.indices);
     }
 }
 

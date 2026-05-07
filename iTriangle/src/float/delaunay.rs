@@ -1,3 +1,4 @@
+use crate::advanced::buffer::DelaunayBuffer;
 use crate::advanced::delaunay::IntDelaunay;
 use crate::float::triangulation::{RawTriangulation, Triangulation};
 use crate::int::triangulation::IndexType;
@@ -18,8 +19,14 @@ pub struct Delaunay<P: FloatPointCompatible> {
 impl<P: FloatPointCompatible> RawTriangulation<P> {
     #[inline]
     pub fn into_delaunay(self) -> Delaunay<P> {
+        let mut buffer = DelaunayBuffer::new();
+        self.into_delaunay_with_buffer(&mut buffer)
+    }
+
+    #[inline]
+    pub fn into_delaunay_with_buffer(self, buffer: &mut DelaunayBuffer) -> Delaunay<P> {
         Delaunay {
-            delaunay: self.raw.into_delaunay(),
+            delaunay: self.raw.into_delaunay_with_buffer(buffer),
             adapter: self.adapter,
         }
     }
