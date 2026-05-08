@@ -4,11 +4,13 @@ use alloc::vec::Vec;
 use i_overlay::i_float::int::point::IntPoint;
 
 impl IntDelaunay {
+    /// Returns the vertex positions in the triangulation.
     #[inline]
     pub fn points(&self) -> &Vec<IntPoint> {
         &self.points
     }
 
+    /// Returns indices forming counter-clockwise triangles.
     #[inline]
     pub fn triangle_indices<I: IndexType>(&self) -> Vec<I> {
         let mut result = Vec::with_capacity(3 * self.triangles.len());
@@ -21,6 +23,15 @@ impl IntDelaunay {
             result.extend_from_slice(&[i0, i1, i2]);
         }
         result
+    }
+
+    /// Returns the indices of each triangle's neighboring triangles.
+    #[inline]
+    pub fn triangle_neighbors(&self) -> Vec<[usize; 3]> {
+        self.triangles
+            .iter()
+            .map(|triangle| triangle.neighbors)
+            .collect()
     }
 
     #[inline]
