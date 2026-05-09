@@ -154,12 +154,20 @@ impl RawIntTriangulation {
     /// Returns a flat list of triangle vertex indices (ABC ordering).
     ///
     /// Each triangle contributes 3 indices into the `points` buffer.
-    ///
     #[inline]
     pub fn triangle_indices<I: IndexType>(&self) -> Vec<I> {
         let mut indices = Vec::new();
         self.triangles.feed_indices(self.points.len(), &mut indices);
         indices
+    }
+
+    /// Returns the indices of each triangle's neighboring triangles.
+    #[inline]
+    pub fn triangle_neighbors(&self) -> Vec<[usize; 3]> {
+        self.triangles
+            .iter()
+            .map(|triangle| triangle.neighbors)
+            .collect()
     }
 
     /// Converts the int triangulation into a simpler index-based mesh.

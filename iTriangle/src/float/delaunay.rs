@@ -45,6 +45,12 @@ impl<P: FloatPointCompatible> Delaunay<P> {
         self.delaunay.triangle_indices()
     }
 
+    /// Returns the indices of each triangle's neighboring triangles.
+    #[inline]
+    pub fn triangle_neighbors(&self) -> Vec<[usize; 3]> {
+        self.delaunay.triangle_neighbors()
+    }
+
     /// Converts this refined mesh into a flat float [`Triangulation`].
     #[inline]
     pub fn to_triangulation<I: IndexType>(&self) -> Triangulation<P, I> {
