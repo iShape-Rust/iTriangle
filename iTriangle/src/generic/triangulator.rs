@@ -1,4 +1,4 @@
-use crate::float::triangulation::Triangulation;
+use crate::generic::triangulation::Triangulation;
 use crate::int::triangulation::{IndexType, IntTriangulation};
 use crate::int::triangulator::IntTriangulator;
 use crate::int::validation::Validation;
@@ -6,11 +6,13 @@ use i_key_sort::sort::key::SortKey;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::int::number::int::IntNumber;
+use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
+use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 use i_overlay::i_shape::source::resource::ShapeResource;
 use i_tree::{Expiration, LayoutNumber};
 
-/// A reusable triangulator that converts float-based shapes into triangle meshes.
+/// A reusable triangulator that converts shapes into triangle meshes.
 pub struct Triangulator<N = u16, I = i32>
 where
     I: IntNumber + Expiration + LayoutNumber + SortKey,
@@ -110,7 +112,7 @@ where
         self.int_triangulator
             .triangulate_flat_into(&mut flat_buffer, &mut int_buffer);
 
-        let triangulation = int_buffer.to_float(&adapter);
+        let triangulation = int_buffer.to_adapted(&adapter);
 
         self.flat_buffer = Some(flat_buffer);
         self.int_buffer = Some(int_buffer);
@@ -175,7 +177,7 @@ where
         self.int_triangulator
             .uncheck_triangulate_flat_into(&flat_buffer, &mut int_buffer);
 
-        let triangulation = int_buffer.to_float(&adapter);
+        let triangulation = int_buffer.to_adapted(&adapter);
 
         self.flat_buffer = Some(flat_buffer);
         self.int_buffer = Some(int_buffer);
@@ -218,5 +220,35 @@ where
 
         self.flat_buffer = Some(flat_buffer);
         self.int_buffer = Some(int_buffer);
+    }
+
+    /// Triangulates an integer contour and returns points as [`IntPoint`]s.
+    #[inline]
+    pub fn triangulate_contour(&mut self, contour: &IntContour<I>) -> Triangulation<IntPoint<I>, N> {
+        let t = self.int_triangulator.triangulate_contour(contour);
+        Triangulation {
+            points: t.points,
+            indices: t.indices,
+        }
+    }
+
+    /// Triangulates an integer shape and returns points as [`IntPoint`]s.
+    #[inline]
+    pub fn triangulate_shape(&mut self, shape: &IntShape<I>) -> Triangulation<IntPoint<I>, N> {
+        let t = self.int_triangulator.triangulate_shape(shape);
+        Triangulation {
+            points: t.points,
+            indices: t.indices,
+        }
+    }
+
+    /// Triangulates integer shapes and returns points as [`IntPoint`]s.
+    #[inline]
+    pub fn triangulate_shapes(&mut self, shapes: &IntShapes<I>) -> Triangulation<IntPoint<I>, N> {
+        let t = self.int_triangulator.triangulate_shapes(shapes);
+        Triangulation {
+            points: t.points,
+            indices: t.indices,
+        }
     }
 }

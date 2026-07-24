@@ -1,4 +1,4 @@
-use crate::float::triangulation::Triangulation;
+use crate::generic::triangulation::Triangulation;
 use crate::int::triangulation::IndexType;
 use alloc::vec::Vec;
 

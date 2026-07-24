@@ -1,7 +1,7 @@
 use std::hint::black_box;
 use std::time::Instant;
-use i_triangle::float::triangulation::Triangulation;
-use i_triangle::float::triangulator::Triangulator;
+use i_triangle::generic::triangulation::Triangulation;
+use i_triangle::generic::triangulator::Triangulator;
 use i_triangle::i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_triangle::i_overlay::i_float::float::number::FloatNumber;
 use i_triangle::i_overlay::i_shape::source::resource::ShapeResource;

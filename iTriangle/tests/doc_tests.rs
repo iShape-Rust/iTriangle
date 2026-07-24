@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use i_overlay::i_shape::base::data::Contour;
-    use i_triangle::float::triangulatable::Triangulatable;
-    use i_triangle::float::triangulation::Triangulation;
-    use i_triangle::float::triangulator::Triangulator;
+    use i_triangle::generic::triangulatable::Triangulatable;
+    use i_triangle::generic::triangulation::Triangulation;
+    use i_triangle::generic::triangulator::Triangulator;
     use rand::RngExt;
 
     #[test]

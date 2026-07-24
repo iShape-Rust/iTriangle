@@ -1,6 +1,6 @@
 use i_mesh::path::butt::ButtStrokeBuilder;
 use i_mesh::path::style::StrokeStyle;
-use i_triangle::float::builder::TriangulationBuilder;
+use i_triangle::generic::builder::TriangulationBuilder;
 use i_triangle::i_overlay::i_float::float::point::FloatPoint;
 use i_triangle::i_overlay::i_float::int::point::IntPoint;
 use iced::{Color, Rectangle, Transformation};

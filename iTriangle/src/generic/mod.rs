@@ -1,3 +1,4 @@
+pub mod adapter;
 pub mod builder;
 pub mod centroid_net;
 pub mod circumcenter;

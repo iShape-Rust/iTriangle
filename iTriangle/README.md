@@ -50,7 +50,8 @@ iTriangle is a high-performance 2D polygon triangulation library for Rust. It tu
 
 iTriangle is designed around a deterministic integer core:
 
-- Floating-point APIs accept `f32` and `f64` compatible point types, then map them into integer coordinates before triangulation.
+- Generic API accepts `f32` and `f64` compatible point types, then maps them into integer coordinates before triangulation.
+- You can also pass `i16`, `i32`, or `i64` coordinates to the generic API - it applies an identity map on them.
 - Integer APIs work directly with `i16`, `i32`, or `i64` coordinates when your geometry is already quantized.
 - `i32` is the default integer coordinate type for floating-point input.
 - `i64` is useful for larger coordinate ranges or finer fixed precision.
@@ -72,7 +73,7 @@ i_triangle = "0.45"
 Minimal example:
 
 ```rust
-use i_triangle::float::triangulatable::Triangulatable;
+use i_triangle::generic::triangulatable::Triangulatable;
 
 let contour = vec![
     [0.0, 0.0],
@@ -90,8 +91,8 @@ coordinates. If your geometry needs a different integer precision, choose it
 explicitly:
 
 ```rust
-use i_triangle::float::triangulatable::Triangulatable;
-use i_triangle::float::triangulator::Triangulator;
+use i_triangle::generic::triangulatable::TriangulatableAs;
+use i_triangle::generic::triangulator::Triangulator;
 
 let shape = vec![vec![
     [0.0, 0.0],
@@ -121,8 +122,8 @@ let mesh = triangulator.triangulate(&shape);
 <img src="readme/cheese_example.svg" width="500"/>
 
 ```rust
-use i_triangle::float::triangulatable::Triangulatable;
-use i_triangle::float::triangulation::Triangulation;
+use i_triangle::generic::triangulatable::Triangulatable;
+use i_triangle::generic::triangulation::Triangulation;
 
 let shape = vec![
     vec![
@@ -199,8 +200,8 @@ println!("centroids: {:?}", centroids);
 If you need to triangulate many shapes, it is more efficient to use `Triangulator`.
 
 ```rust
-use i_triangle::float::triangulation::Triangulation;
-use i_triangle::float::triangulator::Triangulator;
+use i_triangle::generic::triangulation::Triangulation;
+use i_triangle::generic::triangulator::Triangulator;
 
 let contours = vec![
     vec![[0.0, 0.0], [4.0, 0.0], [4.0, 4.0], [0.0, 4.0]],

@@ -3,11 +3,12 @@ use i_key_sort::sort::key::SortKey;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::int::number::int::IntNumber;
-use i_overlay::{i_float::adapter::FloatPointAdapter, i_shape::float::adapter::PathToInt};
+use i_overlay::i_float::adapter::FloatPointAdapter;
 
+use crate::generic::adapter::PointAdapter;
 use crate::int::locator::IntPointInTriangulationLocator;
 use crate::{
-    float::triangulation::Triangulation, int::triangulation::IndexType,
+    generic::triangulation::Triangulation, int::triangulation::IndexType,
     location::PointLocationInTriangulation,
 };
 
@@ -29,12 +30,12 @@ impl<P, N: IndexType> Triangulation<P, N> {
     {
         let adapter = FloatPointAdapter::<P, I>::with_iter(self.points.iter().chain(points.iter()));
 
-        let int_points = points.to_int(&adapter);
+        let int_points = adapter.points_to_int(points);
 
         let triangles = self.indices.chunks_exact(3).map(|triangle| {
-            let a = adapter.float_to_int(&self.points[triangle[0].into_usize()]);
-            let b = adapter.float_to_int(&self.points[triangle[1].into_usize()]);
-            let c = adapter.float_to_int(&self.points[triangle[2].into_usize()]);
+            let a = adapter.to_int_point(&self.points[triangle[0].into_usize()]);
+            let b = adapter.to_int_point(&self.points[triangle[1].into_usize()]);
+            let c = adapter.to_int_point(&self.points[triangle[2].into_usize()]);
             [a, b, c]
         });
 
@@ -60,7 +61,7 @@ mod tests {
     use alloc::vec;
 
     use crate::{
-        float::triangulation::Triangulation,
+        generic::triangulation::Triangulation,
         location::{PointLocationInTriangulation, TriangleIndex},
     };
 
