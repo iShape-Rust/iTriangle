@@ -6,7 +6,6 @@ use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::number::wide_int::WideIntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
-use i_overlay::i_shape::util::reserve::Reserve;
 
 pub trait IndexType: Copy + Clone + TryFrom<usize> + Default {
     const MAX: usize;
@@ -266,10 +265,10 @@ impl<I: IntNumber, N: IndexType> IntTriangulation<I, N> {
 
     #[inline]
     pub fn reserve_and_clear(&mut self, new_len: usize) {
-        self.points.reserve_capacity(new_len);
         self.points.clear();
-        self.indices.reserve_capacity(3 * new_len);
+        self.points.reserve(new_len);
         self.indices.clear();
+        self.indices.reserve(3 * new_len);
     }
 
     #[inline]
@@ -347,8 +346,8 @@ impl<I: IntNumber> IndicesBuilder for [IntTriangle<I>] {
         }
 
         let count = 3 * self.len();
-        indices.reserve_capacity(count);
         indices.clear();
+        indices.reserve(count);
 
         for t in self.iter() {
             let i0 = unsafe { N::try_from(t.vertices[0].index).unwrap_unchecked() };

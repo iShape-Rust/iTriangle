@@ -2,18 +2,16 @@ use crate::float::triangulation::Triangulation;
 use crate::int::triangulation::{IndexType, IntTriangulation};
 use crate::int::triangulator::IntTriangulator;
 use crate::int::validation::Validation;
-use i_key_sort::sort::key::SortKey;
+use i_overlay::core::integer::OverlayInt;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
-use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::source::resource::ShapeResource;
-use i_tree::{Expiration, LayoutNumber};
 
 /// A reusable triangulator that converts float-based shapes into triangle meshes.
 pub struct Triangulator<N = u16, I = i32>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
 {
     flat_buffer: Option<FlatContoursBuffer<I>>,
     int_buffer: Option<IntTriangulation<I, N>>,
@@ -22,7 +20,7 @@ where
 
 impl<N, I> Triangulator<N, I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     /// Enables or disables Delaunay refinement for triangulation.
@@ -73,7 +71,7 @@ where
 
 impl<N, I> Default for Triangulator<N, I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     #[inline]
@@ -84,7 +82,7 @@ where
 
 impl<N, I> Triangulator<N, I>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     /// Performs triangulation on the provided shape resource and returns a new `Triangulation`.

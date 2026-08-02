@@ -85,8 +85,8 @@ fn extract<I: IntNumber>(
     }
 
     if n == 2 {
-        let x = I::from_wide((a.x.wide() + b.x.wide()) / I::Wide::TWO);
-        let y = I::from_wide((a.y.wide() + b.y.wide()) / I::Wide::TWO);
+        let x = I::from_wide((a.x.to_wide() + b.x.to_wide()) / I::Wide::TWO);
+        let y = I::from_wide((a.y.to_wide() + b.y.to_wide()) / I::Wide::TWO);
 
         contour.push(IntPoint::new(x, y));
         contour.push(b);
@@ -96,8 +96,8 @@ fn extract<I: IntNumber>(
     let n_w = I::Wide::from_usize(n);
     for i in 1..n {
         let i_w = I::Wide::from_usize(i);
-        let x = I::from_wide(a.x.wide() + ab.x * i_w / n_w);
-        let y = I::from_wide(a.y.wide() + ab.y * i_w / n_w);
+        let x = I::from_wide(a.x.to_wide() + ab.x * i_w / n_w);
+        let y = I::from_wide(a.y.to_wide() + ab.y * i_w / n_w);
 
         contour.push(IntPoint::new(x, y));
     }

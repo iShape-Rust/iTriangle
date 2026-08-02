@@ -132,8 +132,8 @@ impl<I: IntNumber> IntTriangle<I> {
         let b = self.vertices[1].point;
         let c = self.vertices[2].point;
 
-        let x = a.x.wide() + b.x.wide() + c.x.wide();
-        let y = a.y.wide() + b.y.wide() + c.y.wide();
+        let x = a.x.to_wide() + b.x.to_wide() + c.x.to_wide();
+        let y = a.y.to_wide() + b.y.to_wide() + c.y.to_wide();
 
         IntPoint::new(
             I::from_wide(x / I::Wide::from_usize(3)),
@@ -144,8 +144,8 @@ impl<I: IntNumber> IntTriangle<I> {
 
 #[inline]
 fn middle<I: IntNumber>(a: IntPoint<I>, b: IntPoint<I>) -> IntPoint<I> {
-    let x = a.x.wide() + b.x.wide();
-    let y = a.y.wide() + b.y.wide();
+    let x = a.x.to_wide() + b.x.to_wide();
+    let y = a.y.to_wide() + b.y.to_wide();
     IntPoint::new(
         I::from_wide(x / I::Wide::TWO),
         I::from_wide(y / I::Wide::TWO),

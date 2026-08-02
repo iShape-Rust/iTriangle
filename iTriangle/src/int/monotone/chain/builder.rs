@@ -7,7 +7,6 @@ use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape};
-use i_overlay::i_shape::util::reserve::Reserve;
 
 pub(crate) struct ChainBuilder;
 
@@ -99,8 +98,8 @@ impl<I: IntNumber> ChainVertexExport for [ChainVertex<I>] {
 
     #[inline]
     fn feed_points(&self, points: &mut Vec<IntPoint<I>>) {
-        points.reserve_capacity(self.len());
         points.clear();
+        points.reserve(self.len());
         let mut index = usize::MAX;
         for v in self.iter() {
             if v.index != index {

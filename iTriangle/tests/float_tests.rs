@@ -1,20 +1,18 @@
 #[cfg(test)]
 mod tests {
-    use i_key_sort::sort::key::SortKey;
     use i_overlay::core::fill_rule::FillRule;
+    use i_overlay::core::integer::OverlayInt;
     use i_overlay::float::simplify::SimplifyShape;
-    use i_overlay::i_float::int::number::int::IntNumber;
     use i_overlay::i_shape::base::data::Contour;
     use i_overlay::i_shape::float::area::Area;
-    use i_tree::{Expiration, LayoutNumber};
     use i_triangle::float::triangulatable::Triangulatable;
     use i_triangle::float::triangulation::Triangulation;
     use i_triangle::float::triangulator::Triangulator;
     use rand::RngExt;
 
-    trait TestInt: IntNumber + Expiration + LayoutNumber + SortKey {}
+    trait TestInt: OverlayInt {}
 
-    impl<I> TestInt for I where I: IntNumber + Expiration + LayoutNumber + SortKey {}
+    impl<I: OverlayInt> TestInt for I {}
 
     #[test]
     fn test_0() {

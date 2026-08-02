@@ -1,15 +1,13 @@
 use crate::float::triangulation::RawTriangulation;
 use crate::int::triangulatable::IntTriangulatable;
 use crate::int::triangulation::RawIntTriangulation;
-use i_key_sort::sort::key::SortKey;
+use i_overlay::core::integer::OverlayInt;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::rect::FloatRect;
-use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_shape::base::data::{Contour, Shape};
 use i_overlay::i_shape::float::adapter::{PathToInt, ShapeToInt, ShapesToInt};
 use i_overlay::i_shape::float::rect::RectInit;
-use i_tree::{Expiration, LayoutNumber};
 
 /// A trait for triangulating float-based geometry with default validation.
 ///
@@ -31,7 +29,7 @@ pub trait Triangulatable<P: FloatPointCompatible> {
     /// Triangulates the shape(s) using the requested integer coordinate type.
     fn triangulate_as<I>(&self) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 
     /// Triangulates the shape(s) and inserts the given Steiner points.
     ///
@@ -43,7 +41,7 @@ pub trait Triangulatable<P: FloatPointCompatible> {
     /// Triangulates the shape(s) with Steiner points using the requested integer coordinate type.
     fn triangulate_with_steiner_points_as<I>(&self, points: &[P]) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey;
+        I: OverlayInt;
 }
 
 impl<P> Triangulatable<P> for [P]
@@ -52,7 +50,7 @@ where
 {
     fn triangulate_as<I>(&self) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_path(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -68,7 +66,7 @@ where
 
     fn triangulate_with_steiner_points_as<I>(&self, points: &[P]) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_path(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -92,7 +90,7 @@ where
 {
     fn triangulate_as<I>(&self) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_paths(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -108,7 +106,7 @@ where
 
     fn triangulate_with_steiner_points_as<I>(&self, points: &[P]) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_paths(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -132,7 +130,7 @@ where
 {
     fn triangulate_as<I>(&self) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_list_of_paths(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);
@@ -148,7 +146,7 @@ where
 
     fn triangulate_with_steiner_points_as<I>(&self, points: &[P]) -> RawTriangulation<P, I>
     where
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
+        I: OverlayInt,
     {
         if let Some(rect) = FloatRect::with_list_of_paths(self) {
             let adapter = FloatPointAdapter::<P, I>::new(rect);

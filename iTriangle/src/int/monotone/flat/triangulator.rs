@@ -8,7 +8,6 @@ use alloc::vec::Vec;
 use core::cmp::Ordering;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::triangle::Triangle;
-use i_overlay::i_shape::util::reserve::Reserve;
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
@@ -31,8 +30,8 @@ impl<I: IntNumber> FlatTriangulation<I> for [ChainVertex<I>] {
         triangles_count: usize,
         triangulation: &mut IntTriangulation<I, N>,
     ) {
-        triangulation.indices.reserve_capacity(triangles_count);
         triangulation.indices.clear();
+        triangulation.indices.reserve(triangles_count);
 
         let mut builder = FlatBuilder::new(triangulation);
 
@@ -227,7 +226,7 @@ impl<I: IntNumber> FlatSection<I> {
             let mut split_index = 0;
             let mut min_dist = None;
             for (i, v) in self.points.iter().enumerate() {
-                let dist = a.point.x.wide() - v.point.x.wide();
+                let dist = a.point.x.to_wide() - v.point.x.to_wide();
                 if min_dist.is_none_or(|min_dist| dist < min_dist) {
                     min_dist = Some(dist);
                     split_index = i;

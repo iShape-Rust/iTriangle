@@ -1,10 +1,9 @@
 use crate::int::solver::{ContourSolver, ShapeSolver, ShapesSolver};
 use crate::int::triangulation::RawIntTriangulation;
-use i_key_sort::sort::key::SortKey;
+use i_overlay::core::integer::OverlayInt;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 /// A trait for performing triangulation with default validation settings.
 ///
 /// Provides a simplified interface for converting shapes or contours into triangle meshes.
@@ -35,7 +34,7 @@ pub trait IntTriangulatable<I: IntNumber> {
     fn triangulate_with_steiner_points(&self, points: &[IntPoint<I>]) -> RawIntTriangulation<I>;
 }
 
-impl<I: IntNumber + Expiration + LayoutNumber + SortKey> IntTriangulatable<I> for IntContour<I> {
+impl<I: OverlayInt> IntTriangulatable<I> for IntContour<I> {
     #[inline]
     fn triangulate(&self) -> RawIntTriangulation<I> {
         ContourSolver::triangulate(Default::default(), self)
@@ -47,7 +46,7 @@ impl<I: IntNumber + Expiration + LayoutNumber + SortKey> IntTriangulatable<I> fo
     }
 }
 
-impl<I: IntNumber + Expiration + LayoutNumber + SortKey> IntTriangulatable<I> for IntShape<I> {
+impl<I: OverlayInt> IntTriangulatable<I> for IntShape<I> {
     #[inline]
     fn triangulate(&self) -> RawIntTriangulation<I> {
         ShapeSolver::triangulate(Default::default(), self)
@@ -59,7 +58,7 @@ impl<I: IntNumber + Expiration + LayoutNumber + SortKey> IntTriangulatable<I> fo
     }
 }
 
-impl<I: IntNumber + Expiration + LayoutNumber + SortKey> IntTriangulatable<I> for IntShapes<I> {
+impl<I: OverlayInt> IntTriangulatable<I> for IntShapes<I> {
     #[inline]
     fn triangulate(&self) -> RawIntTriangulation<I> {
         ShapesSolver::triangulate(Default::default(), self)
