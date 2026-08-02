@@ -12,7 +12,6 @@ use core::cmp::Ordering;
 use core::mem::swap;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::triangle::Triangle;
-use i_overlay::i_shape::util::reserve::Reserve;
 use i_tree::set::list::SetList;
 use i_tree::set::sort::SetCollection;
 use i_tree::set::tree::SetTree;
@@ -36,8 +35,8 @@ impl<I: IntNumber> NetTriangulation<I> for [ChainVertex<I>] {
         triangles_count: usize,
         triangulation: &mut RawIntTriangulation<I>,
     ) {
-        triangulation.triangles.reserve_capacity(triangles_count);
         triangulation.triangles.clear();
+        triangulation.triangles.reserve(triangles_count);
         let mut builder = NetBuilder::new(triangulation);
 
         let n = self.len();
@@ -309,9 +308,9 @@ impl<I: IntNumber> Section<I> {
         if i >= edges.len() {
             let last = edges[edges.len() - 1].b;
             let mut index = edges.len();
-            let mut min_dist = vp.point.x.wide() - last.point.x.wide();
+            let mut min_dist = vp.point.x.to_wide() - last.point.x.to_wide();
             for (ei, e) in edges.iter().enumerate() {
-                let dist = vp.point.x.wide() - e.a.point.x.wide();
+                let dist = vp.point.x.to_wide() - e.a.point.x.to_wide();
                 if dist < min_dist {
                     min_dist = dist;
                     index = ei;
@@ -530,9 +529,9 @@ impl<I: IntNumber> Section<I> {
         if i >= edges.len() {
             let last = edges[edges.len() - 1].b;
             let mut index = edges.len();
-            let mut min_dist = vp.point.x.wide() - last.point.x.wide();
+            let mut min_dist = vp.point.x.to_wide() - last.point.x.to_wide();
             for (ei, e) in edges.iter().enumerate() {
-                let dist = vp.point.x.wide() - e.a.point.x.wide();
+                let dist = vp.point.x.to_wide() - e.a.point.x.to_wide();
                 if dist < min_dist {
                     min_dist = dist;
                     index = ei;

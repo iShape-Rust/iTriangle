@@ -234,8 +234,8 @@ impl<I: IntNumber> Abc<I> {
         let b = self.v1.vertex.point;
         let c = self.v2.vertex.point;
 
-        let x = (b.x.wide() + c.x.wide()) >> 1;
-        let y = (b.y.wide() + c.y.wide()) >> 1;
+        let x = (b.x.to_wide() + c.x.to_wide()) >> 1;
+        let y = (b.y.to_wide() + c.y.to_wide()) >> 1;
 
         IntPoint::new(I::from_wide(x), I::from_wide(y))
     }

@@ -9,7 +9,6 @@ use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::number::wide_int::WideIntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_float::int::rect::IntRect;
-use i_overlay::i_shape::util::reserve::Reserve;
 
 pub(super) trait EarcutStore<I: IntNumber> {
     fn collect_triangles(&mut self, contour: &[IntPoint<I>], start: usize, bits: u64, count: u32);
@@ -38,10 +37,8 @@ impl<I: IntNumber> Earcut64<I> for [IntPoint<I>] {
     ) {
         debug_assert!(self.len() <= 64);
 
-        triangulation
-            .indices
-            .reserve_capacity(self.triangles_count(0));
         triangulation.indices.clear();
+        triangulation.indices.reserve(self.triangles_count(0));
 
         EarcutSolver::new(self, FlatEarcutStore::new(triangulation)).triangulate();
 
@@ -52,10 +49,8 @@ impl<I: IntNumber> Earcut64<I> for [IntPoint<I>] {
     fn earcut_net_triangulate_into(&self, triangulation: &mut RawIntTriangulation<I>) {
         debug_assert!(self.len() <= 64);
 
-        triangulation
-            .triangles
-            .reserve_capacity(self.triangles_count(0));
         triangulation.triangles.clear();
+        triangulation.triangles.reserve(self.triangles_count(0));
 
         EarcutSolver::new(self, NetEarcutStore::new(self.len(), triangulation)).triangulate();
 

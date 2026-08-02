@@ -3,17 +3,16 @@ use crate::int::earcut::earcut_64::Earcut64;
 use crate::int::monotone::triangulator::MonotoneTriangulator;
 use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
 use crate::int::validation::Validation;
-use i_key_sort::sort::key::SortKey;
 use i_overlay::core::fill_rule::FillRule;
+use i_overlay::core::integer::OverlayInt;
 use i_overlay::core::overlay::Overlay;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
 
-pub struct IntTriangulator<I: IntNumber + Expiration + LayoutNumber + SortKey, N> {
+pub struct IntTriangulator<I: OverlayInt, N> {
     pub overlay: Overlay<I>,
     pub fill_rule: FillRule,
     pub earcut: bool,
@@ -26,7 +25,7 @@ pub struct IntTriangulator<I: IntNumber + Expiration + LayoutNumber + SortKey, N
 
 impl<I, N> IntTriangulator<I, N>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     #[inline]
@@ -46,7 +45,7 @@ where
 
 impl<I, N> Default for IntTriangulator<I, N>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     #[inline]
@@ -57,7 +56,7 @@ where
 
 impl<I, N> IntTriangulator<I, N>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     #[inline]
@@ -135,7 +134,7 @@ where
 
 impl<I, N> IntTriangulator<I, N>
 where
-    I: IntNumber + Expiration + LayoutNumber + SortKey,
+    I: OverlayInt,
     N: IndexType,
 {
     #[inline]

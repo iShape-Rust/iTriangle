@@ -5,11 +5,12 @@ use crate::int::unchecked::IntUncheckedTriangulatable;
 use crate::int::validation::Validation;
 use alloc::vec::Vec;
 use i_key_sort::sort::key::SortKey;
+use i_overlay::core::integer::OverlayInt;
 use i_overlay::core::simplify::Simplify;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
-use i_tree::{Expiration, LayoutNumber};
+use i_tree::Expiration;
 
 pub(super) struct ShapesSolver;
 pub(super) struct ShapeSolver;
@@ -17,7 +18,7 @@ pub(super) struct ContourSolver;
 
 impl ShapesSolver {
     #[inline]
-    pub(super) fn triangulate<I: IntNumber + Expiration + LayoutNumber + SortKey>(
+    pub(super) fn triangulate<I: OverlayInt>(
         validation: Validation<I>,
         shapes: &IntShapes<I>,
     ) -> RawIntTriangulation<I> {
@@ -68,9 +69,7 @@ impl ShapesSolver {
     }
 
     #[inline]
-    pub(super) fn triangulate_with_steiner_points<
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
-    >(
+    pub(super) fn triangulate_with_steiner_points<I: OverlayInt>(
         validation: Validation<I>,
         shapes: &IntShapes<I>,
         points: &[IntPoint<I>],
@@ -133,7 +132,7 @@ impl ShapesSolver {
 
 impl ShapeSolver {
     #[inline]
-    pub(super) fn triangulate<I: IntNumber + Expiration + LayoutNumber + SortKey>(
+    pub(super) fn triangulate<I: OverlayInt>(
         validation: Validation<I>,
         shape: &IntShape<I>,
     ) -> RawIntTriangulation<I> {
@@ -151,9 +150,7 @@ impl ShapeSolver {
     }
 
     #[inline]
-    pub(super) fn triangulate_with_steiner_points<
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
-    >(
+    pub(super) fn triangulate_with_steiner_points<I: OverlayInt>(
         validation: Validation<I>,
         shape: &IntShape<I>,
         points: &[IntPoint<I>],
@@ -183,7 +180,7 @@ impl ShapeSolver {
 
 impl ContourSolver {
     #[inline]
-    pub(super) fn triangulate<I: IntNumber + Expiration + LayoutNumber + SortKey>(
+    pub(super) fn triangulate<I: OverlayInt>(
         validation: Validation<I>,
         contour: &IntContour<I>,
     ) -> RawIntTriangulation<I> {
@@ -206,9 +203,7 @@ impl ContourSolver {
     }
 
     #[inline]
-    pub(super) fn triangulate_with_steiner_points<
-        I: IntNumber + Expiration + LayoutNumber + SortKey,
-    >(
+    pub(super) fn triangulate_with_steiner_points<I: OverlayInt>(
         validation: Validation<I>,
         contour: &IntContour<I>,
         points: &[IntPoint<I>],

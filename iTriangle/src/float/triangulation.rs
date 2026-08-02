@@ -5,7 +5,6 @@ use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
-use i_overlay::i_shape::util::reserve::Reserve;
 
 /// A triangulation result based on integer computation, with float mapping.
 ///
@@ -72,8 +71,7 @@ impl<P, N: IndexType> Triangulation<P, N> {
         P: FloatPointCompatible,
     {
         self.points.clear();
-        self.points
-            .reserve_capacity(triangulation.points.capacity());
+        self.points.reserve(triangulation.points.capacity());
         self.points
             .extend(triangulation.points.iter().map(|p| adapter.int_to_float(p)));
 
