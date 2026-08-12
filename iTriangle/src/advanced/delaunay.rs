@@ -183,7 +183,7 @@ impl<I: IntNumber> DelaunayRefine<I> for [IntTriangle<I>] {
     }
 }
 
-struct DelaunayCondition;
+pub(crate) struct DelaunayCondition;
 
 impl DelaunayCondition {
     // if p is inside circumscribe circle of a, b, c return false
@@ -191,7 +191,7 @@ impl DelaunayCondition {
     // return true if triangle satisfied condition and do not need flip triangles
     // more detail explanation and demo https://ishape-rust.github.io/iShape-js/triangle/delaunay.html
     #[inline]
-    fn is_flip_not_required<I: IntNumber>(
+    pub(crate) fn is_flip_not_required<I: IntNumber>(
         p: IntPoint<I>,
         a: IntPoint<I>,
         b: IntPoint<I>,

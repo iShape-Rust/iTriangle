@@ -1,4 +1,5 @@
 mod binder;
+mod constraint;
 pub mod custom;
 pub mod earcut;
 pub mod locator;
