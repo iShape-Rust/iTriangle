@@ -18,7 +18,7 @@ use i_overlay::{
 };
 use i_triangle::{
     float::{triangulation::Triangulation, uniform::UniformTriangulatable},
-    tessellation::uniform::IntUniformGrid,
+    tessellation::{split::SliceContour, uniform::IntUniformGrid},
 };
 
 const PANEL_WIDTH: f32 = 270.0;
@@ -27,6 +27,8 @@ struct MeshResult {
     mesh: Triangulation<Point, u32>,
     steiner_points: Vec<Point>,
     offset_shapes: Vec<PolygonShape>,
+    resampled_boundary: Vec<PolygonShape>,
+    max_boundary_edge: f32,
 }
 
 struct UniformGridApp {
@@ -39,6 +41,7 @@ struct UniformGridApp {
     show_fill: bool,
     show_triangles: bool,
     show_boundary: bool,
+    show_resampled_boundary: bool,
     show_offset: bool,
     show_steiner: bool,
     show_vertices: bool,
@@ -58,6 +61,7 @@ impl Default for UniformGridApp {
             show_fill: true,
             show_triangles: true,
             show_boundary: true,
+            show_resampled_boundary: true,
             show_offset: true,
             show_steiner: true,
             show_vertices: false,
@@ -134,6 +138,7 @@ impl UniformGridApp {
         ui.checkbox(&mut self.show_fill, "triangle fill");
         ui.checkbox(&mut self.show_triangles, "Delaunay edges");
         ui.checkbox(&mut self.show_boundary, "input boundary");
+        ui.checkbox(&mut self.show_resampled_boundary, "resampled boundary");
         ui.checkbox(&mut self.show_offset, "inner offset");
         ui.checkbox(&mut self.show_steiner, "uniform Steiner points");
         ui.checkbox(&mut self.show_vertices, "all mesh vertices");
@@ -144,6 +149,22 @@ impl UniformGridApp {
             Ok(result) => {
                 ui.label(format!("Contours: {}", self.active_example().shape.len()));
                 ui.label(format!("Steiner points: {}", result.steiner_points.len()));
+                ui.label(format!(
+                    "Boundary samples: {}",
+                    result
+                        .resampled_boundary
+                        .iter()
+                        .flatten()
+                        .map(Vec::len)
+                        .sum::<usize>()
+                ));
+                ui.colored_label(
+                    Color32::from_rgb(128, 212, 156),
+                    format!(
+                        "Max boundary edge: {:.3} ≤ {:.3}",
+                        result.max_boundary_edge, self.edge_length
+                    ),
+                );
                 ui.label(format!("Mesh vertices: {}", result.mesh.points.len()));
                 ui.label(format!("Triangles: {}", result.mesh.indices.len() / 3));
             }
@@ -226,6 +247,24 @@ impl UniformGridApp {
             self.refresh_result();
         }
 
+        if self.show_resampled_boundary
+            && let Ok(result) = &self.result
+        {
+            paint_contours(
+                &painter,
+                rect,
+                &self.camera,
+                result.resampled_boundary.iter().flatten(),
+                Stroke::new(1.25_f32, Color32::from_rgb(80, 225, 220)),
+            );
+            paint_resampled_boundary_points(
+                &painter,
+                rect,
+                &self.camera,
+                &result.resampled_boundary,
+            );
+        }
+
         paint_camera_readout(&painter, rect, &self.camera);
     }
 
@@ -293,6 +332,26 @@ fn build_mesh_result(
         return Err("edge_length is below integer adapter precision".to_owned());
     }
 
+    // This is the same strict boundary splitting stage used by UniformTriangulatable.
+    let boundary_int = simplified
+        .to_int(&adapter)
+        .slice_contour(int_edge_length as u64);
+    let resampled_boundary = boundary_int
+        .iter()
+        .map(|shape| {
+            shape
+                .iter()
+                .map(|contour| {
+                    contour
+                        .iter()
+                        .map(|point| adapter.int_to_float(point))
+                        .collect()
+                })
+                .collect()
+        })
+        .collect::<Vec<PolygonShape>>();
+    let max_boundary_edge = max_contour_edge(&resampled_boundary);
+
     let inner = if boundary_offset > 0.0 {
         simplified.outline_as::<i32>(&OutlineStyle::new(-boundary_offset))
     } else {
@@ -309,6 +368,8 @@ fn build_mesh_result(
         mesh,
         steiner_points,
         offset_shapes: inner,
+        resampled_boundary,
+        max_boundary_edge,
     })
 }
 
@@ -449,6 +510,43 @@ fn paint_points(
     }
 }
 
+fn paint_resampled_boundary_points(
+    painter: &Painter,
+    rect: Rect,
+    camera: &Camera,
+    shapes: &[PolygonShape],
+) {
+    for contour in shapes.iter().flatten() {
+        paint_points(
+            painter,
+            rect,
+            camera,
+            contour,
+            2.75,
+            Color32::from_rgb(80, 225, 220),
+        );
+    }
+}
+
+fn max_contour_edge(shapes: &[PolygonShape]) -> f32 {
+    shapes
+        .iter()
+        .flatten()
+        .filter(|contour| contour.len() > 1)
+        .flat_map(|contour| {
+            contour
+                .iter()
+                .zip(contour.iter().cycle().skip(1))
+                .take(contour.len())
+                .map(|(a, b)| {
+                    let dx = b[0] - a[0];
+                    let dy = b[1] - a[1];
+                    (dx * dx + dy * dy).sqrt()
+                })
+        })
+        .fold(0.0_f32, f32::max)
+}
+
 #[derive(Clone, Copy)]
 struct Bounds {
     min_x: f32,
@@ -520,6 +618,13 @@ mod tests {
                 !result.mesh.indices.is_empty(),
                 "{} has no triangles",
                 example.name
+            );
+            assert!(
+                result.max_boundary_edge <= example.edge_length + 0.001,
+                "{} has a resampled boundary edge {} longer than edge_length {}",
+                example.name,
+                result.max_boundary_edge,
+                example.edge_length
             );
         }
     }
