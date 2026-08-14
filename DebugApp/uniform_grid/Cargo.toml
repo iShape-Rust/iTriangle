@@ -1,0 +1,11 @@
+[package]
+name = "uniform_grid"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+eframe = "^0.34.0"
+debug_ui = { path = "../debug_ui" }
+i_triangle = { path = "../../iTriangle" }
+i_overlay = { path = "../../../iOverlay/iOverlay" }
