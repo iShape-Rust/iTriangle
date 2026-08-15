@@ -37,6 +37,8 @@ const TRIANGLE_HEIGHT_SHIFT: u32 = 15;
 
 struct MeshResult {
     mesh: Triangulation<Point, u32>,
+    convex_polygons: PolygonShape,
+    centroid_net: PolygonShape,
     resampled_boundary: Vec<PolygonShape>,
     contained_candidates: Vec<Point>,
     clearance_points: Vec<Point>,
@@ -64,6 +66,8 @@ struct UniformGridApp {
     show_contained_candidates: bool,
     show_clearance_points: bool,
     show_vertices: bool,
+    show_convex_decomposition: bool,
+    show_centroid_net: bool,
     result: Result<MeshResult, String>,
 }
 
@@ -85,6 +89,8 @@ impl Default for UniformGridApp {
             show_contained_candidates: true,
             show_clearance_points: true,
             show_vertices: false,
+            show_convex_decomposition: false,
+            show_centroid_net: false,
             result: Err("not calculated".to_owned()),
         };
         app.refresh_result();
@@ -170,6 +176,8 @@ impl UniformGridApp {
         );
         ui.checkbox(&mut self.show_clearance_points, "after edge clearance");
         ui.checkbox(&mut self.show_vertices, "all mesh vertices");
+        ui.checkbox(&mut self.show_convex_decomposition, "convex decomposition");
+        ui.checkbox(&mut self.show_centroid_net, "centroid net");
 
         ui.add_space(8.0);
         ui.separator();
@@ -210,6 +218,12 @@ impl UniformGridApp {
                 ));
                 ui.label(format!("Mesh vertices: {}", result.mesh.points.len()));
                 ui.label(format!("Triangles: {}", result.mesh.indices.len() / 3));
+                if self.show_convex_decomposition {
+                    ui.label(format!("Convex polygons: {}", result.convex_polygons.len()));
+                }
+                if self.show_centroid_net {
+                    ui.label(format!("Centroid cells: {}", result.centroid_net.len()));
+                }
                 if let Some(relaxation) = &result.relaxation {
                     ui.label(format!(
                         "Relax: {} iterations, converged: {}",
@@ -278,6 +292,26 @@ impl UniformGridApp {
                     &result.clearance_points,
                     3.0,
                     Color32::from_rgb(233, 92, 132),
+                );
+            }
+
+            if self.show_convex_decomposition {
+                paint_contours(
+                    &painter,
+                    rect,
+                    &self.camera,
+                    result.convex_polygons.iter(),
+                    Stroke::new(2.25_f32, Color32::from_rgb(255, 156, 72)),
+                );
+            }
+
+            if self.show_centroid_net {
+                paint_contours(
+                    &painter,
+                    rect,
+                    &self.camera,
+                    result.centroid_net.iter(),
+                    Stroke::new(1.75_f32, Color32::from_rgb(115, 225, 150)),
                 );
             }
         }
@@ -372,6 +406,8 @@ fn build_mesh_result(
             converged: result.converged,
         }
     });
+    let convex_polygons = delaunay.to_convex_polygons();
+    let centroid_net = delaunay.to_centroid_net(0.0);
     let mesh = delaunay.to_triangulation::<u32>();
 
     // Reproduce the public float wrapper's single conversion into the integer pipeline.
@@ -398,6 +434,8 @@ fn build_mesh_result(
 
     Ok(MeshResult {
         mesh,
+        convex_polygons,
+        centroid_net,
         resampled_boundary,
         contained_candidates,
         clearance_points,
@@ -720,6 +758,16 @@ mod tests {
             assert!(
                 !result.mesh.indices.is_empty(),
                 "{} has no triangles",
+                example.name
+            );
+            assert!(
+                !result.convex_polygons.is_empty(),
+                "{} has no convex polygons",
+                example.name
+            );
+            assert!(
+                !result.centroid_net.is_empty(),
+                "{} has no centroid cells",
                 example.name
             );
             assert!(

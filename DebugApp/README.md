@@ -6,7 +6,8 @@ boundary resampled by `SliceContour`, lattice candidates after point
 containment, points remaining after the `edge_length / 3` edge-clearance
 filter, and the resulting Delaunay mesh. Every resampled boundary edge is at
 most `edge_length` long. Optional centroid-net relaxation can be enabled in the
-sidebar; its iteration limit defaults to 40.
+sidebar; its iteration limit defaults to 40. Convex decomposition and centroid
+net overlays can be toggled independently on top of the Delaunay mesh.
 
 Run it from the iTriangle repository root:
 
