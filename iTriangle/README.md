@@ -194,6 +194,46 @@ println!("centroids: {:?}", centroids);
 
 > 💡 Output: Triangle indices and vertices, where all triangles oriented in a **counter-clockwise** direction.
 
+### Uniform Mesh Relaxation and Centroid Net
+
+Use uniform triangulation when you need triangles with a predictable target edge
+length. Relaxation moves only interior vertices toward their centroid-net cell
+centers; boundary vertices stay fixed, and Delaunay edges are restored after each
+iteration.
+
+```rust
+use i_triangle::float::relax::RelaxationOptions;
+use i_triangle::float::uniform::UniformTriangulatable;
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_triangle::i_overlay::core::overlay_rule::OverlayRule;
+use i_triangle::i_overlay::float::single::SingleFloatOverlay;
+
+let contours = vec![
+    vec![[0.0, 0.0], [12.0, 0.0], [12.0, 8.0], [0.0, 8.0]],
+    vec![[4.0, 2.0], [8.0, 2.0], [8.0, 6.0], [4.0, 6.0]],
+];
+let empty: Vec<Vec<[f64; 2]>> = Vec::new();
+let shapes = contours.overlay(&empty, OverlayRule::Union, FillRule::EvenOdd);
+let shape = &shapes[0];
+
+let mut delaunay = shape.uniform_triangulate(1.0);
+let relaxation = delaunay.relax_mut(RelaxationOptions::new(24));
+
+let triangles = delaunay.to_triangulation::<u32>();
+let centroid_net = delaunay.to_centroid_net(0.0);
+
+println!("triangles: {}", triangles.indices.len() / 3);
+println!("centroid cells: {}", centroid_net.len());
+println!("relaxation: {relaxation:?}");
+```
+
+| Relaxed Uniform Delaunay Mesh | Centroid Net |
+| --- | --- |
+| <img src="readme/eagle_tessellation.svg" width="360"/> | <img src="readme/eagle_centroid.svg" width="360"/> |
+
+The complete reproducible renderer, including the eagle contours, is available in
+[`examples/eagle_svg.rs`](examples/eagle_svg.rs).
+
 ### Triangulating Multiple Shapes Efficiently
 
 If you need to triangulate many shapes, it is more efficient to use `Triangulator`.
@@ -310,10 +350,6 @@ Benchmarks and interactive demos are available here:
 | Delaunay | Convex Polygons | Steiner Points |
 | --- | --- | --- |
 | <img src="readme/star_triangle.svg" width="200"/> | <img src="readme/star_polygon.svg" width="200"/> | <img src="readme/eagle_triangles_extra_points.svg" width="250"/> |
-
-| Tessellation | Centroid Net | |
-| --- | --- | --- |
-| <img src="readme/eagle_tessellation.svg" width="250"/> | <img src="readme/eagle_centroid.svg" width="250"/> | |
 
 ## Contributing
 
