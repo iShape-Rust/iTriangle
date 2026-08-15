@@ -9,3 +9,4 @@ pub mod triangulatable;
 pub mod triangulation;
 pub mod triangulator;
 pub mod unchecked;
+pub mod uniform;
