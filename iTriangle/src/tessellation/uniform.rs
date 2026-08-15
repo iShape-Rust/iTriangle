@@ -93,6 +93,8 @@ where
         return Vec::new();
     }
 
+    // Fixed-point approximation of sqrt(3) / 2,
+    // the height-to-edge ratio of an equilateral triangle.
     let row_step = (step * I::Wide::from_u32(TRIANGLE_HEIGHT_NUMERATOR)
         + I::Wide::from_u32(1 << (TRIANGLE_HEIGHT_SHIFT - 1)))
         >> TRIANGLE_HEIGHT_SHIFT;
