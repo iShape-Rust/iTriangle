@@ -17,7 +17,7 @@ use i_overlay::{
     i_float::{
         adapter::FloatPointAdapter,
         float::rect::FloatRect,
-        int::{number::wide_int::WideIntNumber, point::IntPoint, rect::IntRect},
+        int::{point::IntPoint, rect::IntRect},
     },
     i_shape::{
         float::adapter::PathToInt,
@@ -25,11 +25,15 @@ use i_overlay::{
     },
 };
 use i_triangle::{
-    float::{triangulation::Triangulation, uniform::UniformTriangulatable},
+    float::{
+        relax::RelaxationOptions, triangulation::Triangulation, uniform::UniformTriangulatable,
+    },
     tessellation::{split::SliceContour, uniform::IntUniformGrid},
 };
 
 const PANEL_WIDTH: f32 = 270.0;
+const TRIANGLE_HEIGHT_NUMERATOR: i64 = 28_378;
+const TRIANGLE_HEIGHT_SHIFT: u32 = 15;
 
 struct MeshResult {
     mesh: Triangulation<Point, u32>,
@@ -37,6 +41,12 @@ struct MeshResult {
     contained_candidates: Vec<Point>,
     clearance_points: Vec<Point>,
     max_boundary_edge: f32,
+    relaxation: Option<RelaxationStats>,
+}
+
+struct RelaxationStats {
+    iterations: usize,
+    converged: bool,
 }
 
 struct UniformGridApp {
@@ -45,6 +55,8 @@ struct UniformGridApp {
     examples: Vec<GridExample>,
     active_example: usize,
     edge_length: f32,
+    relax_enabled: bool,
+    relax_iterations: usize,
     show_fill: bool,
     show_triangles: bool,
     show_boundary: bool,
@@ -62,6 +74,8 @@ impl Default for UniformGridApp {
             camera: Camera::default(),
             grid: Grid::default(),
             edge_length: examples[0].edge_length,
+            relax_enabled: false,
+            relax_iterations: 40,
             examples,
             active_example: 0,
             show_fill: true,
@@ -129,6 +143,20 @@ impl UniformGridApp {
             self.refresh_result();
         }
 
+        let relax_changed = ui.checkbox(&mut self.relax_enabled, "relax mesh").changed();
+        let iterations_changed = ui
+            .add_enabled(
+                self.relax_enabled,
+                egui::DragValue::new(&mut self.relax_iterations)
+                    .prefix("relax iterations  ")
+                    .range(0..=1_000)
+                    .speed(1),
+            )
+            .changed();
+        if relax_changed || iterations_changed {
+            self.refresh_result();
+        }
+
         ui.add_space(8.0);
         ui.separator();
         ui.label("Layers");
@@ -182,6 +210,12 @@ impl UniformGridApp {
                 ));
                 ui.label(format!("Mesh vertices: {}", result.mesh.points.len()));
                 ui.label(format!("Triangles: {}", result.mesh.indices.len() / 3));
+                if let Some(relaxation) = &result.relaxation {
+                    ui.label(format!(
+                        "Relax: {} iterations, converged: {}",
+                        relaxation.iterations, relaxation.converged
+                    ));
+                }
             }
             Err(error) => {
                 ui.colored_label(Color32::from_rgb(240, 118, 118), error);
@@ -297,9 +331,12 @@ impl UniformGridApp {
     fn refresh_result(&mut self) {
         let shape = self.active_example().shape.clone();
         let edge_length = self.edge_length;
+        let relax_enabled = self.relax_enabled;
+        let relax_iterations = self.relax_iterations;
 
-        self.result = match std::panic::catch_unwind(move || build_mesh_result(&shape, edge_length))
-        {
+        self.result = match std::panic::catch_unwind(move || {
+            build_mesh_result(&shape, edge_length, relax_enabled, relax_iterations)
+        }) {
             Ok(result) => result,
             Err(payload) => Err(panic_message(payload)),
         };
@@ -317,14 +354,25 @@ impl UniformGridApp {
     }
 }
 
-fn build_mesh_result(shape: &PolygonShape, edge_length: f32) -> Result<MeshResult, String> {
+fn build_mesh_result(
+    shape: &PolygonShape,
+    edge_length: f32,
+    relax_enabled: bool,
+    relax_iterations: usize,
+) -> Result<MeshResult, String> {
     if !edge_length.is_finite() || edge_length <= 0.0 {
         return Err("edge_length must be finite and positive".to_owned());
     }
     // This is the public high-level API under test.
-    let mesh = shape
-        .uniform_triangulate(edge_length)
-        .to_triangulation::<u32>();
+    let mut delaunay = shape.uniform_triangulate(edge_length);
+    let relaxation = relax_enabled.then(|| {
+        let result = delaunay.relax_mut(RelaxationOptions::new(relax_iterations));
+        RelaxationStats {
+            iterations: result.iterations,
+            converged: result.converged,
+        }
+    });
+    let mesh = delaunay.to_triangulation::<u32>();
 
     // Reproduce the public float wrapper's single conversion into the integer pipeline.
     let rect = FloatRect::with_iter(shape.iter().flatten())
@@ -354,6 +402,7 @@ fn build_mesh_result(shape: &PolygonShape, edge_length: f32) -> Result<MeshResul
         contained_candidates,
         clearance_points,
         max_boundary_edge,
+        relaxation,
     })
 }
 
@@ -370,7 +419,8 @@ fn lattice_after_containment(shapes: &IntShapes<i32>, edge_length: u64) -> Vec<I
 
     // Keep this generator identical to IntUniformGrid's lattice stage. Only the
     // subsequent edge-clearance filter is intentionally omitted here.
-    let row_step = i64::from_rounded_float(0.866_025_403_784_438_6 * step as f64);
+    let row_step = (step * TRIANGLE_HEIGHT_NUMERATOR + (1_i64 << (TRIANGLE_HEIGHT_SHIFT - 1)))
+        >> TRIANGLE_HEIGHT_SHIFT;
     if row_step <= 0 {
         return Vec::new();
     }
@@ -665,7 +715,7 @@ mod tests {
     #[test]
     fn all_examples_build_meshes() {
         for example in load_examples() {
-            let result = build_mesh_result(&example.shape, example.edge_length)
+            let result = build_mesh_result(&example.shape, example.edge_length, false, 40)
                 .unwrap_or_else(|error| panic!("{}: {error}", example.name));
             assert!(
                 !result.mesh.indices.is_empty(),
@@ -694,8 +744,8 @@ mod tests {
             .into_iter()
             .find(|example| example.name == "shape with hole")
             .expect("hole example");
-        let result =
-            build_mesh_result(&example.shape, example.edge_length).expect("hole example mesh");
+        let result = build_mesh_result(&example.shape, example.edge_length, false, 40)
+            .expect("hole example mesh");
 
         for points in [&result.contained_candidates, &result.clearance_points] {
             assert!(points.iter().all(|point| {
@@ -724,8 +774,8 @@ mod tests {
             .into_iter()
             .find(|example| example.name == "narrow contour")
             .expect("narrow example");
-        let result =
-            build_mesh_result(&example.shape, example.edge_length).expect("narrow example mesh");
+        let result = build_mesh_result(&example.shape, example.edge_length, false, 40)
+            .expect("narrow example mesh");
 
         assert!(result.clearance_points.len() <= result.contained_candidates.len());
         assert!(!result.mesh.indices.is_empty());
@@ -737,9 +787,20 @@ mod tests {
             .into_iter()
             .find(|example| example.name == "shape with hole")
             .expect("hole example");
-        let result =
-            build_mesh_result(&example.shape, example.edge_length).expect("hole example mesh");
+        let result = build_mesh_result(&example.shape, example.edge_length, false, 40)
+            .expect("hole example mesh");
 
         assert!(result.contained_candidates.len() > result.clearance_points.len());
+    }
+
+    #[test]
+    fn optional_relax_uses_requested_iteration_limit() {
+        let example = load_examples().remove(0);
+        let result = build_mesh_result(&example.shape, example.edge_length, true, 40)
+            .expect("relaxed example mesh");
+        let relaxation = result.relaxation.expect("relaxation stats");
+
+        assert!(relaxation.iterations <= 40);
+        assert!(!result.mesh.indices.is_empty());
     }
 }
