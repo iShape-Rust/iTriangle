@@ -10,11 +10,19 @@ use debug_ui::{
     grid::{Grid, paint_camera_readout},
 };
 use i_overlay::{
-    core::fill_rule::FillRule,
-    float::simplify::SimplifyShape,
-    i_float::{adapter::FloatPointAdapter, float::rect::FloatRect},
-    i_shape::float::adapter::ShapesToInt,
-    mesh::{outline::offset::OutlineOffset, style::OutlineStyle},
+    core::{
+        fill_rule::FillRule, overlay::IntOverlayOptions, point_location::IntPointContainment,
+        simplify::Simplify,
+    },
+    i_float::{
+        adapter::FloatPointAdapter,
+        float::rect::FloatRect,
+        int::{number::wide_int::WideIntNumber, point::IntPoint, rect::IntRect},
+    },
+    i_shape::{
+        float::adapter::PathToInt,
+        int::shape::{IntShape, IntShapes},
+    },
 };
 use i_triangle::{
     float::{triangulation::Triangulation, uniform::UniformTriangulatable},
@@ -25,9 +33,9 @@ const PANEL_WIDTH: f32 = 270.0;
 
 struct MeshResult {
     mesh: Triangulation<Point, u32>,
-    steiner_points: Vec<Point>,
-    offset_shapes: Vec<PolygonShape>,
     resampled_boundary: Vec<PolygonShape>,
+    contained_candidates: Vec<Point>,
+    clearance_points: Vec<Point>,
     max_boundary_edge: f32,
 }
 
@@ -37,13 +45,12 @@ struct UniformGridApp {
     examples: Vec<GridExample>,
     active_example: usize,
     edge_length: f32,
-    boundary_offset: f32,
     show_fill: bool,
     show_triangles: bool,
     show_boundary: bool,
     show_resampled_boundary: bool,
-    show_offset: bool,
-    show_steiner: bool,
+    show_contained_candidates: bool,
+    show_clearance_points: bool,
     show_vertices: bool,
     result: Result<MeshResult, String>,
 }
@@ -55,15 +62,14 @@ impl Default for UniformGridApp {
             camera: Camera::default(),
             grid: Grid::default(),
             edge_length: examples[0].edge_length,
-            boundary_offset: examples[0].boundary_offset,
             examples,
             active_example: 0,
             show_fill: true,
             show_triangles: true,
             show_boundary: true,
             show_resampled_boundary: true,
-            show_offset: true,
-            show_steiner: true,
+            show_contained_candidates: true,
+            show_clearance_points: true,
             show_vertices: false,
             result: Err("not calculated".to_owned()),
         };
@@ -119,16 +125,7 @@ impl UniformGridApp {
                     .speed(1.0),
             )
             .changed();
-        let offset_changed = ui
-            .add(
-                egui::DragValue::new(&mut self.boundary_offset)
-                    .prefix("boundary_offset  ")
-                    .range(0.0..=500.0)
-                    .speed(1.0),
-            )
-            .changed();
-
-        if edge_changed || offset_changed {
+        if edge_changed {
             self.refresh_result();
         }
 
@@ -139,8 +136,11 @@ impl UniformGridApp {
         ui.checkbox(&mut self.show_triangles, "Delaunay edges");
         ui.checkbox(&mut self.show_boundary, "input boundary");
         ui.checkbox(&mut self.show_resampled_boundary, "resampled boundary");
-        ui.checkbox(&mut self.show_offset, "inner offset");
-        ui.checkbox(&mut self.show_steiner, "uniform Steiner points");
+        ui.checkbox(
+            &mut self.show_contained_candidates,
+            "lattice after containment",
+        );
+        ui.checkbox(&mut self.show_clearance_points, "after edge clearance");
         ui.checkbox(&mut self.show_vertices, "all mesh vertices");
 
         ui.add_space(8.0);
@@ -148,7 +148,18 @@ impl UniformGridApp {
         match &self.result {
             Ok(result) => {
                 ui.label(format!("Contours: {}", self.active_example().shape.len()));
-                ui.label(format!("Steiner points: {}", result.steiner_points.len()));
+                ui.label(format!(
+                    "After containment: {}",
+                    result.contained_candidates.len()
+                ));
+                ui.label(format!(
+                    "After clearance: {}",
+                    result.clearance_points.len()
+                ));
+                ui.label(format!(
+                    "Removed near edges: {}",
+                    result.contained_candidates.len() - result.clearance_points.len()
+                ));
                 ui.label(format!(
                     "Boundary samples: {}",
                     result
@@ -165,6 +176,10 @@ impl UniformGridApp {
                         result.max_boundary_edge, self.edge_length
                     ),
                 );
+                ui.label(format!(
+                    "Clearance: edge_length / 3 = {:.3}",
+                    self.edge_length / 3.0
+                ));
                 ui.label(format!("Mesh vertices: {}", result.mesh.points.len()));
                 ui.label(format!("Triangles: {}", result.mesh.indices.len() / 3));
             }
@@ -180,7 +195,6 @@ impl UniformGridApp {
             let index = self.active_example;
             self.examples[index] = load_examples().remove(index);
             self.edge_length = self.examples[index].edge_length;
-            self.boundary_offset = self.examples[index].boundary_offset;
             self.refresh_result();
             self.fit_active_example();
         }
@@ -211,22 +225,23 @@ impl UniformGridApp {
                 self.show_vertices,
             );
 
-            if self.show_offset {
-                paint_contours(
-                    &painter,
-                    rect,
-                    &self.camera,
-                    result.offset_shapes.iter().flatten(),
-                    Stroke::new(1.5_f32, Color32::from_rgb(240, 163, 72)),
-                );
-            }
-
-            if self.show_steiner {
+            if self.show_contained_candidates {
                 paint_points(
                     &painter,
                     rect,
                     &self.camera,
-                    &result.steiner_points,
+                    &result.contained_candidates,
+                    3.5,
+                    Color32::from_rgba_unmultiplied(190, 130, 255, 135),
+                );
+            }
+
+            if self.show_clearance_points {
+                paint_points(
+                    &painter,
+                    rect,
+                    &self.camera,
+                    &result.clearance_points,
                     3.0,
                     Color32::from_rgb(233, 92, 132),
                 );
@@ -275,7 +290,6 @@ impl UniformGridApp {
     fn select_example(&mut self, index: usize) {
         self.active_example = index;
         self.edge_length = self.examples[index].edge_length;
-        self.boundary_offset = self.examples[index].boundary_offset;
         self.refresh_result();
         self.fit_active_example();
     }
@@ -283,11 +297,9 @@ impl UniformGridApp {
     fn refresh_result(&mut self) {
         let shape = self.active_example().shape.clone();
         let edge_length = self.edge_length;
-        let boundary_offset = self.boundary_offset;
 
-        self.result = match std::panic::catch_unwind(move || {
-            build_mesh_result(&shape, edge_length, boundary_offset)
-        }) {
+        self.result = match std::panic::catch_unwind(move || build_mesh_result(&shape, edge_length))
+        {
             Ok(result) => result,
             Err(payload) => Err(panic_message(payload)),
         };
@@ -305,72 +317,114 @@ impl UniformGridApp {
     }
 }
 
-fn build_mesh_result(
-    shape: &PolygonShape,
-    edge_length: f32,
-    boundary_offset: f32,
-) -> Result<MeshResult, String> {
+fn build_mesh_result(shape: &PolygonShape, edge_length: f32) -> Result<MeshResult, String> {
     if !edge_length.is_finite() || edge_length <= 0.0 {
         return Err("edge_length must be finite and positive".to_owned());
     }
-    if !boundary_offset.is_finite() || boundary_offset < 0.0 {
-        return Err("boundary_offset must be finite and non-negative".to_owned());
-    }
-
     // This is the public high-level API under test.
     let mesh = shape
-        .uniform_triangulate_with_offset(edge_length, boundary_offset)
+        .uniform_triangulate(edge_length)
         .to_triangulation::<u32>();
 
-    // Reproduce the grid-seeding stage so its exact IntUniformGrid output can be inspected.
-    let simplified = shape.simplify_shape_as::<i32>(FillRule::NonZero);
-    let rect = FloatRect::with_iter(simplified.iter().flatten().flatten())
-        .ok_or_else(|| "shape is empty after simplification".to_owned())?;
+    // Reproduce the public float wrapper's single conversion into the integer pipeline.
+    let rect = FloatRect::with_iter(shape.iter().flatten())
+        .ok_or_else(|| "input shape is empty".to_owned())?;
     let adapter = FloatPointAdapter::<Point, i32>::new(rect);
     let int_edge_length = adapter.round_len_to_int(edge_length);
     if int_edge_length <= 1 {
         return Err("edge_length is below integer adapter precision".to_owned());
     }
 
-    // This is the same strict boundary splitting stage used by UniformTriangulatable.
-    let boundary_int = simplified
-        .to_int(&adapter)
-        .slice_contour(int_edge_length as u64);
-    let resampled_boundary = boundary_int
-        .iter()
-        .map(|shape| {
-            shape
-                .iter()
-                .map(|contour| {
-                    contour
-                        .iter()
-                        .map(|point| adapter.int_to_float(point))
-                        .collect()
-                })
-                .collect()
-        })
-        .collect::<Vec<PolygonShape>>();
-    let max_boundary_edge = max_contour_edge(&resampled_boundary);
+    let int_shape: IntShape<i32> = shape.iter().map(|path| path.to_int(&adapter)).collect();
 
-    let inner = if boundary_offset > 0.0 {
-        simplified.outline_as::<i32>(&OutlineStyle::new(-boundary_offset))
-    } else {
-        simplified.clone()
-    };
-    let inner_int = inner.to_int(&adapter);
-    let steiner_points = inner_int
-        .uniform_grid(int_edge_length as u64)
-        .iter()
-        .map(|point| adapter.int_to_float(point))
-        .collect();
+    // These are the same integer stages used by IntUniformTriangulatable.
+    let split_boundary = int_shape.slice_contour(int_edge_length as u64);
+    let resampled_boundary = vec![int_shape_to_float(&split_boundary, &adapter)];
+    let max_boundary_edge = max_contour_edge(&resampled_boundary);
+    let normalized =
+        split_boundary.simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points());
+    let contained_int = lattice_after_containment(&normalized, int_edge_length as u64);
+    let clearance_int = normalized.uniform_grid(int_edge_length as u64);
+    let contained_candidates = int_points_to_float(&contained_int, &adapter);
+    let clearance_points = int_points_to_float(&clearance_int, &adapter);
 
     Ok(MeshResult {
         mesh,
-        steiner_points,
-        offset_shapes: inner,
         resampled_boundary,
+        contained_candidates,
+        clearance_points,
         max_boundary_edge,
     })
+}
+
+fn lattice_after_containment(shapes: &IntShapes<i32>, edge_length: u64) -> Vec<IntPoint<i32>> {
+    let Some(rect) = IntRect::with_iter(shapes.iter().flatten().flatten()) else {
+        return Vec::new();
+    };
+    let Ok(step) = i64::try_from(edge_length) else {
+        return Vec::new();
+    };
+    if step <= 1 {
+        return Vec::new();
+    }
+
+    // Keep this generator identical to IntUniformGrid's lattice stage. Only the
+    // subsequent edge-clearance filter is intentionally omitted here.
+    let row_step = i64::from_rounded_float(0.866_025_403_784_438_6 * step as f64);
+    if row_step <= 0 {
+        return Vec::new();
+    }
+
+    let half_step = step / 2;
+    let min_x = i64::from(rect.min_x);
+    let max_x = i64::from(rect.max_x);
+    let max_y = i64::from(rect.max_y);
+    let mut candidates = Vec::new();
+    let mut row = 0usize;
+    let mut y = i64::from(rect.min_y) + row_step / 2;
+
+    while y < max_y {
+        let row_offset = if row & 1 == 0 { half_step } else { step };
+        let mut x = min_x + row_offset;
+
+        while x < max_x {
+            candidates.push(IntPoint::new(
+                i32::try_from(x).expect("lattice x stays inside i32 bounds"),
+                i32::try_from(y).expect("lattice y stays inside i32 bounds"),
+            ));
+            x += step;
+        }
+
+        row += 1;
+        y += row_step;
+    }
+
+    let contains = shapes.contains_points(&candidates);
+    candidates
+        .into_iter()
+        .zip(contains)
+        .filter_map(|(point, is_inside)| is_inside.then_some(point))
+        .collect()
+}
+
+fn int_shape_to_float(
+    shape: &IntShape<i32>,
+    adapter: &FloatPointAdapter<Point, i32>,
+) -> PolygonShape {
+    shape
+        .iter()
+        .map(|contour| int_points_to_float(contour, adapter))
+        .collect()
+}
+
+fn int_points_to_float(
+    points: &[IntPoint<i32>],
+    adapter: &FloatPointAdapter<Point, i32>,
+) -> Vec<Point> {
+    points
+        .iter()
+        .map(|point| adapter.int_to_float(point))
+        .collect()
 }
 
 fn paint_mesh(
@@ -611,9 +665,8 @@ mod tests {
     #[test]
     fn all_examples_build_meshes() {
         for example in load_examples() {
-            let result =
-                build_mesh_result(&example.shape, example.edge_length, example.boundary_offset)
-                    .unwrap_or_else(|error| panic!("{}: {error}", example.name));
+            let result = build_mesh_result(&example.shape, example.edge_length)
+                .unwrap_or_else(|error| panic!("{}: {error}", example.name));
             assert!(
                 !result.mesh.indices.is_empty(),
                 "{} has no triangles",
@@ -626,22 +679,29 @@ mod tests {
                 result.max_boundary_edge,
                 example.edge_length
             );
+            assert!(
+                result
+                    .clearance_points
+                    .iter()
+                    .all(|point| result.contained_candidates.contains(point))
+            );
         }
     }
 
     #[test]
-    fn hole_case_has_no_steiner_points_in_hole() {
+    fn hole_case_has_no_lattice_points_or_triangles_in_hole() {
         let example = load_examples()
             .into_iter()
             .find(|example| example.name == "shape with hole")
             .expect("hole example");
         let result =
-            build_mesh_result(&example.shape, example.edge_length, example.boundary_offset)
-                .expect("hole example mesh");
+            build_mesh_result(&example.shape, example.edge_length).expect("hole example mesh");
 
-        assert!(result.steiner_points.iter().all(|point| {
-            point[0] <= -95.0 || point[0] >= 105.0 || point[1] <= -65.0 || point[1] >= 75.0
-        }));
+        for points in [&result.contained_candidates, &result.clearance_points] {
+            assert!(points.iter().all(|point| {
+                point[0] <= -95.0 || point[0] >= 105.0 || point[1] <= -65.0 || point[1] >= 75.0
+            }));
+        }
 
         for triangle in result.mesh.indices.chunks_exact(3) {
             let a = result.mesh.points[triangle[0] as usize];
@@ -665,10 +725,21 @@ mod tests {
             .find(|example| example.name == "narrow contour")
             .expect("narrow example");
         let result =
-            build_mesh_result(&example.shape, example.edge_length, example.boundary_offset)
-                .expect("narrow example mesh");
+            build_mesh_result(&example.shape, example.edge_length).expect("narrow example mesh");
 
-        assert!(result.steiner_points.is_empty());
+        assert!(result.clearance_points.len() <= result.contained_candidates.len());
         assert!(!result.mesh.indices.is_empty());
+    }
+
+    #[test]
+    fn clearance_stage_removes_near_boundary_candidates() {
+        let example = load_examples()
+            .into_iter()
+            .find(|example| example.name == "shape with hole")
+            .expect("hole example");
+        let result =
+            build_mesh_result(&example.shape, example.edge_length).expect("hole example mesh");
+
+        assert!(result.contained_candidates.len() > result.clearance_points.len());
     }
 }

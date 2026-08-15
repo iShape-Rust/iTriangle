@@ -6,7 +6,6 @@ pub struct GridExample {
     pub name: &'static str,
     pub shape: Shape,
     pub edge_length: f32,
-    pub boundary_offset: f32,
 }
 
 pub fn load_examples() -> Vec<GridExample> {
@@ -24,7 +23,6 @@ pub fn load_examples() -> Vec<GridExample> {
                 [-115.0, 10.0],
             ]],
             edge_length: 42.0,
-            boundary_offset: 20.0,
         },
         GridExample {
             name: "shape with hole",
@@ -39,7 +37,6 @@ pub fn load_examples() -> Vec<GridExample> {
                 vec![[-95.0, -65.0], [-95.0, 75.0], [105.0, 75.0], [105.0, -65.0]],
             ],
             edge_length: 38.0,
-            boundary_offset: 18.0,
         },
         GridExample {
             name: "narrow contour",
@@ -50,7 +47,6 @@ pub fn load_examples() -> Vec<GridExample> {
                 [-235.0, 28.0],
             ]],
             edge_length: 72.0,
-            boundary_offset: 36.0,
         },
         GridExample {
             name: "narrow passage",
@@ -69,7 +65,6 @@ pub fn load_examples() -> Vec<GridExample> {
                 [-230.0, 175.0],
             ]],
             edge_length: 50.0,
-            boundary_offset: 24.0,
         },
         GridExample {
             name: "two holes",
@@ -89,7 +84,6 @@ pub fn load_examples() -> Vec<GridExample> {
                 vec![[45.0, -80.0], [45.0, 45.0], [160.0, 45.0], [160.0, -80.0]],
             ],
             edge_length: 34.0,
-            boundary_offset: 16.0,
         },
     ]
 }
