@@ -66,7 +66,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-i_triangle = "0.45"
+i_triangle = "0.47"
 ```
 
 Minimal example:
