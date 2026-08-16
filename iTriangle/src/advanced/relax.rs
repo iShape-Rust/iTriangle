@@ -478,7 +478,7 @@ fn debug_assert_positive_areas<I: IntNumber>(_triangles: &[IntTriangle<I>]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{RelaxationOptions, RelaxationResult};
+    use super::{resolve_collisions, RelaxationOptions, RelaxationResult};
     use crate::advanced::delaunay::DelaunayCondition;
     use crate::int::triangulatable::IntTriangulatable;
     use crate::int::uniform::IntUniformTriangulatable;
@@ -612,6 +612,54 @@ mod tests {
             assert_eq!(delaunay.points[index], points[index]);
         }
         assert_is_delaunay(&delaunay);
+    }
+
+    #[test]
+    fn consuming_relaxation_with_default_options_preserves_mesh() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(100, 0),
+            IntPoint::new(100, 100),
+            IntPoint::new(0, 100),
+        ];
+        let delaunay = contour
+            .triangulate_with_steiner_points(&[
+                IntPoint::new(25, 35),
+                IntPoint::new(72, 42),
+                IntPoint::new(43, 79),
+            ])
+            .into_delaunay();
+        let point_count = delaunay.points.len();
+        let triangle_count = delaunay.triangles.len();
+
+        let relaxed = delaunay.relax(RelaxationOptions::default());
+
+        assert_eq!(relaxed.points.len(), point_count);
+        assert_eq!(relaxed.triangles.len(), triangle_count);
+        assert_is_delaunay(&relaxed);
+    }
+
+    #[test]
+    fn collision_resolution_backs_off_movable_vertices() {
+        let points = [
+            IntPoint::new(0i32, 0),
+            IntPoint::new(4, 0),
+            IntPoint::new(8, 0),
+        ];
+        let mut proposals = [IntPoint::new(0, 0); 3];
+        let fixed = [true, false, false];
+        let mut order = [0, 1, 2];
+
+        resolve_collisions(&points, &mut proposals, &fixed, &mut order);
+
+        assert_eq!(
+            proposals,
+            [
+                IntPoint::new(0, 0),
+                IntPoint::new(2, 0),
+                IntPoint::new(4, 0),
+            ]
+        );
     }
 
     fn assert_is_delaunay<I: i_overlay::i_float::int::number::int::IntNumber>(

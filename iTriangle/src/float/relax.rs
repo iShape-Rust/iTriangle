@@ -136,6 +136,21 @@ mod tests {
     }
 
     #[test]
+    fn consuming_relaxation_with_default_options_returns_valid_mesh() {
+        let contour = [[0.0, 0.0], [100.0, 0.0], [100.0, 100.0], [0.0, 100.0]];
+        let steiner = [[25.0, 35.0], [72.0, 42.0], [43.0, 79.0]];
+        let delaunay = contour
+            .triangulate_with_steiner_points(&steiner)
+            .into_delaunay();
+
+        let relaxed = delaunay.relax(RelaxationOptions::default());
+
+        relaxed
+            .to_triangulation::<u32>()
+            .validate(10_000.0, 0.000_001);
+    }
+
+    #[test]
     #[should_panic(expected = "tolerance must be finite and non-negative")]
     fn rejects_negative_tolerance() {
         let contour = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]];

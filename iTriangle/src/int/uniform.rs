@@ -77,6 +77,7 @@ mod tests {
     use super::IntUniformTriangulatable;
     use alloc::vec;
     use i_overlay::i_float::int::point::IntPoint;
+    use i_overlay::i_shape::int::shape::IntShapes;
 
     #[test]
     fn preserves_split_boundary_points() {
@@ -119,5 +120,48 @@ mod tests {
             .points
             .iter()
             .all(|p| p.x <= 40 || 60 <= p.x || p.y <= 40 || 60 <= p.y));
+    }
+
+    #[test]
+    fn triangulates_multiple_disjoint_shapes() {
+        let shapes: IntShapes<i32> = vec![
+            vec![vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(20, 0),
+                IntPoint::new(20, 20),
+                IntPoint::new(0, 20),
+            ]],
+            vec![vec![
+                IntPoint::new(40, 0),
+                IntPoint::new(60, 0),
+                IntPoint::new(60, 20),
+                IntPoint::new(40, 20),
+            ]],
+        ];
+
+        let delaunay = shapes.uniform_triangulate(5u64);
+
+        assert!(delaunay.points.iter().any(|point| point.x <= 20));
+        assert!(delaunay.points.iter().any(|point| point.x >= 40));
+        assert!(delaunay
+            .points
+            .iter()
+            .all(|point| point.x <= 20 || point.x >= 40));
+        assert!(!delaunay.triangles.is_empty());
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "edge_length must be greater than one and fit the integer coordinate budget"
+    )]
+    fn rejects_edge_length_of_one() {
+        let contour = vec![
+            IntPoint::new(0i32, 0),
+            IntPoint::new(10, 0),
+            IntPoint::new(10, 10),
+            IntPoint::new(0, 10),
+        ];
+
+        contour.uniform_triangulate(1u64);
     }
 }

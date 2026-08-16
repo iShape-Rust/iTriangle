@@ -629,6 +629,7 @@ mod tests {
     use crate::int::binder::SteinerInference;
     use crate::int::monotone::triangulator::MonotoneTriangulator;
     use crate::int::triangulation::RawIntTriangulation;
+    use crate::test_util::random_cases;
     use alloc::vec;
     use alloc::vec::Vec;
     use i_overlay::core::fill_rule::FillRule;
@@ -1291,7 +1292,7 @@ mod tests {
 
     #[test]
     fn test_random_0() {
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let path = random(8, 5);
             let shape = vec![path];
             if let Some(first) = shape
@@ -1312,7 +1313,7 @@ mod tests {
 
     #[test]
     fn test_random_1() {
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let path = random(10, 6);
             let shape = vec![path];
             if let Some(first) = shape
@@ -1333,7 +1334,7 @@ mod tests {
 
     #[test]
     fn test_random_2() {
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let path = random(10, 12);
             let shape = vec![path];
             if let Some(first) = shape
@@ -1354,7 +1355,7 @@ mod tests {
 
     #[test]
     fn test_random_3() {
-        for _ in 0..10_000 {
+        for _ in 0..random_cases(10_000) {
             let path = random(20, 20);
             let shape = vec![path];
             if let Some(first) = shape
@@ -1375,7 +1376,7 @@ mod tests {
 
     #[test]
     fn test_random_4() {
-        for _ in 0..2_000 {
+        for _ in 0..random_cases(2_000) {
             let path = random(30, 50);
             let shape = vec![path];
             if let Some(first) = shape
@@ -1396,7 +1397,7 @@ mod tests {
 
     #[test]
     fn test_random_5() {
-        for _ in 0..1_000 {
+        for _ in 0..random_cases(1_000) {
             let main = random(50, 20);
             let mut shape = vec![main];
             for _ in 0..10 {
@@ -1423,7 +1424,7 @@ mod tests {
     fn test_random_6() {
         let shape = vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])];
         let shape_area = shape.area_two();
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let points = random_points(5, 10);
 
             let mut raw = RawIntTriangulation::default();
@@ -1442,7 +1443,7 @@ mod tests {
     fn test_random_7() {
         let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
         let shape_area = shapes.area_two();
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let points = random_points(8, 2);
             let group = shapes.group_by_shapes(&points);
 
@@ -1460,7 +1461,7 @@ mod tests {
 
     #[test]
     fn test_random_8() {
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let points = random_points(15, 1);
             let shape = random(10, 4);
 
@@ -1488,7 +1489,7 @@ mod tests {
 
     #[test]
     fn test_random_9() {
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let points = random_points(10, 2);
             let shape = random(10, 4);
 
@@ -1516,7 +1517,7 @@ mod tests {
 
     #[test]
     fn test_random_10() {
-        for _ in 0..5_000 {
+        for _ in 0..random_cases(5_000) {
             let points = random_points(10, 8);
             let shape = random(10, 8);
 
@@ -1544,7 +1545,7 @@ mod tests {
 
     #[test]
     fn test_random_11() {
-        for _ in 0..2_000 {
+        for _ in 0..random_cases(2_000) {
             let main = random(50, 20);
             let mut shape = vec![main];
             for _ in 0..10 {

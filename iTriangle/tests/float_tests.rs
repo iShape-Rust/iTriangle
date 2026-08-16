@@ -14,6 +14,17 @@ mod tests {
 
     impl<I: OverlayInt> TestInt for I {}
 
+    const QUICK_RANDOM_DIVISOR: usize = 20;
+    const FULL_RANDOM_TESTS_ENV: &str = "ITRIANGLE_FULL_RANDOM_TESTS";
+
+    fn random_cases(full_count: usize) -> usize {
+        if std::env::var_os(FULL_RANDOM_TESTS_ENV).is_some() {
+            full_count
+        } else {
+            full_count.div_ceil(QUICK_RANDOM_DIVISOR)
+        }
+    }
+
     #[test]
     fn test_0() {
         test_0_as::<i16>();
@@ -132,7 +143,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let contour = random(8, 5);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -157,7 +168,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let contour = random(10, 6);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -182,7 +193,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..20_000 {
+        for _ in 0..random_cases(20_000) {
             let contour = random(10, 12);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -207,7 +218,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..10_000 {
+        for _ in 0..random_cases(10_000) {
             let contour = random(20, 20);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -232,7 +243,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..1_000 {
+        for _ in 0..random_cases(1_000) {
             let contour = random(30, 50);
             let area = contour.simplify_shape(FillRule::NonZero).area();
 
@@ -257,7 +268,7 @@ mod tests {
         let mut triangulator = Triangulator::<u32, I>::default();
         let mut t = Triangulation::with_capacity(8);
 
-        for _ in 0..500 {
+        for _ in 0..random_cases(500) {
             let main = random(50, 20);
             let mut shape = vec![main];
             for _ in 0..10 {
