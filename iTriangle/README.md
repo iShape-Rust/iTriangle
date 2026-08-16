@@ -37,10 +37,12 @@ iTriangle provides reliable, deterministic 2D polygon triangulation for complex 
 
 ## Features
 
-- **Sweep-line Triangulation** - Fast and simple triangulation of polygons with or without holes.
+- **Sweep-line Triangulation** - Fast polygon triangulation with `O(n log n)` complexity.
 - **Delaunay Triangulation** - Efficient and robust implementation for generating Delaunay triangulations.
 - **Self-Intersection Handling** – Fully supports self-intersecting polygons with automatic resolution.
 - **Adaptive Tessellation** - Refine Delaunay triangles using circumcenters for better shape quality.
+- **Uniform Delaunay Triangulation** - Generate boundary-conforming meshes with a predictable target edge length.
+- **Mesh Relaxation** - Improve mesh quality by moving interior vertices toward their centroid-net cell centroids.
 - **Convex Decomposition** - Convert triangulation into convex polygons.
 - **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
 - **Steiner Points**: Add custom inner points to influence triangulation.
