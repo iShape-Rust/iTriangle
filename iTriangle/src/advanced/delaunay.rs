@@ -183,7 +183,7 @@ impl<I: IntNumber> DelaunayRefine<I> for [IntTriangle<I>] {
     }
 }
 
-struct DelaunayCondition;
+pub(crate) struct DelaunayCondition;
 
 impl DelaunayCondition {
     // if p is inside circumscribe circle of a, b, c return false
@@ -191,7 +191,7 @@ impl DelaunayCondition {
     // return true if triangle satisfied condition and do not need flip triangles
     // more detail explanation and demo https://ishape-rust.github.io/iShape-js/triangle/delaunay.html
     #[inline]
-    fn is_flip_not_required<I: IntNumber>(
+    pub(crate) fn is_flip_not_required<I: IntNumber>(
         p: IntPoint<I>,
         a: IntPoint<I>,
         b: IntPoint<I>,
@@ -313,6 +313,7 @@ mod tests {
     use crate::geom::point::IndexPoint;
     use crate::geom::triangle::IntTriangle;
     use crate::int::triangulatable::IntTriangulatable;
+    use crate::test_util::random_cases;
     use alloc::vec;
     use i_overlay::core::fill_rule::FillRule;
     use i_overlay::core::overlay::IntOverlayOptions;
@@ -455,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_random_0() {
-        for _ in 0..100_000 {
+        for _ in 0..random_cases(100_000) {
             let shape = vec![random(8, 5)];
 
             if let Some(first) = shape
@@ -474,7 +475,7 @@ mod tests {
 
     #[test]
     fn test_random_1() {
-        for _ in 0..100_000 {
+        for _ in 0..random_cases(100_000) {
             let shape = vec![random(8, 12)];
 
             if let Some(first) = shape
@@ -493,7 +494,7 @@ mod tests {
 
     #[test]
     fn test_random_2() {
-        for _ in 0..2_000 {
+        for _ in 0..random_cases(2_000) {
             let main = random(50, 20);
             let mut shape = vec![main];
             for _ in 0..10 {

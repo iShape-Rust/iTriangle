@@ -1,4 +1,5 @@
 mod binder;
+mod constraint;
 pub mod custom;
 pub mod earcut;
 pub mod locator;
@@ -9,4 +10,5 @@ pub mod triangulatable;
 pub mod triangulation;
 pub mod triangulator;
 pub mod unchecked;
+pub mod uniform;
 pub mod validation;

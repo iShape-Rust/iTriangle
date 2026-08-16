@@ -1,9 +1,14 @@
 #[cfg(test)]
 mod tests {
     use i_overlay::i_shape::base::data::Contour;
+    use i_triangle::float::relax::RelaxationOptions;
     use i_triangle::float::triangulatable::Triangulatable;
     use i_triangle::float::triangulation::Triangulation;
     use i_triangle::float::triangulator::Triangulator;
+    use i_triangle::float::uniform::UniformTriangulatable;
+    use i_triangle::i_overlay::core::fill_rule::FillRule;
+    use i_triangle::i_overlay::core::overlay_rule::OverlayRule;
+    use i_triangle::i_overlay::float::single::SingleFloatOverlay;
     use rand::RngExt;
 
     #[test]
@@ -97,6 +102,26 @@ mod tests {
             println!("points: {:?}", triangulation.points);
             println!("indices: {:?}", triangulation.indices);
         }
+    }
+
+    #[test]
+    fn uniform_relaxation_and_centroid_net() {
+        let contours = vec![
+            vec![[0.0, 0.0], [12.0, 0.0], [12.0, 8.0], [0.0, 8.0]],
+            vec![[4.0, 2.0], [8.0, 2.0], [8.0, 6.0], [4.0, 6.0]],
+        ];
+        let empty: Vec<Vec<[f64; 2]>> = Vec::new();
+        let shapes = contours.overlay(&empty, OverlayRule::Union, FillRule::EvenOdd);
+        let shape = &shapes[0];
+
+        let mut delaunay = shape.uniform_triangulate(1.0);
+        let relaxation = delaunay.relax_mut(RelaxationOptions::new(24));
+        let triangles = delaunay.to_triangulation::<u32>();
+        let centroid_net = delaunay.to_centroid_net(0.0);
+
+        assert!(!triangles.indices.is_empty());
+        assert!(!centroid_net.is_empty());
+        assert!(relaxation.iterations <= 24);
     }
 
     fn random_contours(count: usize) -> Vec<Contour<[f32; 2]>> {

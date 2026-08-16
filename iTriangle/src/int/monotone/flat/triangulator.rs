@@ -387,6 +387,7 @@ mod tests {
 
     use crate::int::monotone::triangulator::MonotoneTriangulator;
     use crate::int::triangulation::IntTriangulation;
+    use crate::test_util::random_cases;
     use alloc::vec;
     use alloc::vec::Vec;
     use i_overlay::core::fill_rule::FillRule;
@@ -820,7 +821,7 @@ mod tests {
     #[test]
     fn test_random_0() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..100_000 {
+        for _ in 0..random_cases(100_000) {
             let path = random(8, 5);
             let shape = vec![path];
             if let Some(first) = shape
@@ -839,7 +840,7 @@ mod tests {
     #[test]
     fn test_random_1() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..100_000 {
+        for _ in 0..random_cases(100_000) {
             let path = random(10, 6);
             let shape = vec![path];
             if let Some(first) = shape
@@ -858,7 +859,7 @@ mod tests {
     #[test]
     fn test_random_2() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..100_000 {
+        for _ in 0..random_cases(100_000) {
             let path = random(10, 12);
             let shape = vec![path];
             if let Some(first) = shape
@@ -877,7 +878,7 @@ mod tests {
     #[test]
     fn test_random_3() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..50_000 {
+        for _ in 0..random_cases(50_000) {
             let path = random(20, 20);
             let shape = vec![path];
             if let Some(first) = shape
@@ -896,7 +897,7 @@ mod tests {
     #[test]
     fn test_random_4() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..5_000 {
+        for _ in 0..random_cases(5_000) {
             let path = random(30, 50);
             let shape = vec![path];
             if let Some(first) = shape
@@ -915,7 +916,7 @@ mod tests {
     #[test]
     fn test_random_5() {
         let mut raw = IntTriangulation::<i32, u32>::default();
-        for _ in 0..2_000 {
+        for _ in 0..random_cases(2_000) {
             let main = random(50, 20);
             let mut shape = vec![main];
             for _ in 0..10 {

@@ -6,6 +6,8 @@ use i_overlay::i_float::int::point::IntPoint;
 use i_overlay::i_shape::int::shape::{IntContour, IntShape, IntShapes};
 
 pub trait SliceContour<I: IntNumber> {
+    /// Splits every contour edge so that no resulting segment is longer than
+    /// `max_edge_length`.
     fn slice_contour(&self, max_edge_length: I::WideUInt) -> Self;
 }
 
@@ -19,7 +21,7 @@ impl<I: IntNumber> SliceContour<I> for IntContour<I> {
         };
 
         let radius = max_edge_length;
-        if radius > I::WideUInt::HALF_MASK {
+        if radius == I::WideUInt::ZERO || radius > I::WideUInt::HALF_MASK {
             return self.clone();
         }
 
@@ -76,13 +78,8 @@ fn extract<I: IntNumber>(
         contour.push(b);
         return;
     }
-    let len = i_overlay::i_float::float::number::FloatNumber::sqrt(sqr_len.to_f64());
-    let n = ((len + 0.5 * radius.to_f64()) / radius.to_f64()) as usize;
 
-    if n <= 1 {
-        contour.push(b);
-        return;
-    }
+    let n = ((sqr_len - I::WideUInt::ONE).isqrt() / radius + I::WideUInt::ONE).to_usize();
 
     if n == 2 {
         let x = I::from_wide((a.x.to_wide() + b.x.to_wide()) / I::Wide::TWO);
@@ -120,18 +117,63 @@ mod tests {
         ];
 
         let s0 = contour.slice_contour(8u64);
-        assert_eq!(s0.len(), 4);
+        assert_eq!(s0.len(), 8);
+        assert_max_edge_length(&s0, 8);
 
         let s1 = contour.slice_contour(7u64);
-        assert_eq!(s1.len(), 4);
+        assert_eq!(s1.len(), 8);
+        assert_max_edge_length(&s1, 7);
 
         let s2 = contour.slice_contour(6u64);
         assert_eq!(s2.len(), 8);
+        assert_max_edge_length(&s2, 6);
 
         let s3 = contour.slice_contour(5u64);
         assert_eq!(s3.len(), 8);
+        assert_max_edge_length(&s3, 5);
 
         let s4 = contour.slice_contour(3u64);
-        assert_eq!(s4.len(), 12);
+        assert_eq!(s4.len(), 16);
+        assert_max_edge_length(&s4, 3);
+    }
+
+    #[test]
+    fn uses_integer_sqrt_segment_count() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(25, 0),
+            IntPoint::new(25, 10),
+            IntPoint::new(0, 10),
+        ];
+
+        let sliced = contour.slice_contour(6u64);
+
+        // 25 / 6 produces five parts and 10 / 6 produces two parts.
+        assert_eq!(sliced.len(), 14);
+    }
+
+    #[test]
+    fn exact_multiple_does_not_add_an_extra_segment() {
+        let contour = vec![
+            IntPoint::new(0, 0),
+            IntPoint::new(4, 0),
+            IntPoint::new(4, 2),
+            IntPoint::new(0, 2),
+        ];
+
+        let sliced = contour.slice_contour(2u64);
+
+        assert_eq!(sliced.len(), 6);
+    }
+
+    fn assert_max_edge_length(contour: &[IntPoint<i32>], max_edge_length: i32) {
+        let mut a = *contour.last().unwrap();
+        let sqr_max = max_edge_length * max_edge_length;
+        for &b in contour {
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            assert!(dx * dx + dy * dy <= sqr_max);
+            a = b;
+        }
     }
 }

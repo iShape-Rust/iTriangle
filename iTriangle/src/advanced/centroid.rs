@@ -110,7 +110,7 @@ impl<I: IntNumber> IntTriangle<I> {
     }
 
     #[inline]
-    fn left_neighbor_and_mid_edge(&self, vertex_index: usize) -> (usize, IntPoint<I>) {
+    pub(crate) fn left_neighbor_and_mid_edge(&self, vertex_index: usize) -> (usize, IntPoint<I>) {
         if self.vertices[0].index == vertex_index {
             let neighbor = self.neighbors[1];
             let mid = middle(self.vertices[0].point, self.vertices[2].point);
@@ -127,7 +127,7 @@ impl<I: IntNumber> IntTriangle<I> {
     }
 
     #[inline]
-    fn center(&self) -> IntPoint<I> {
+    pub(crate) fn center(&self) -> IntPoint<I> {
         let a = self.vertices[0].point;
         let b = self.vertices[1].point;
         let c = self.vertices[2].point;

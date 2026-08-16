@@ -12,6 +12,7 @@ Thanks for your interest in contributing!
 
 - Rust stable toolchain.
 - Run tests: `cargo test`.
+- Run the original full-size randomized suites: `ITRIANGLE_FULL_RANDOM_TESTS=1 cargo test`.
 - Run formatter: `cargo fmt`.
 - Run lints (optional): `cargo clippy`.
 
