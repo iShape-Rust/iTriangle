@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/iShape-Rust/iTriangle/branch/main/graph/badge.svg)](https://codecov.io/gh/iShape-Rust/iTriangle)
 [![license](https://img.shields.io/crates/l/i_triangle.svg)](https://crates.io/crates/i_triangle)
 
-iTriangle is a high-performance 2D polygon triangulation library for Rust. It turns real-world polygon input into triangle meshes, including shapes with holes, self-intersections, and mixed winding. The public API accepts `f32`/`f64` floating-point data and `i16`/`i32`/`i64` integer data, while the triangulation pipeline runs through a deterministic integer core for stable, reproducible output.
+iTriangle provides reliable, deterministic 2D polygon triangulation for complex shapes with holes and self-intersections.
 
 *For detailed performance benchmarks, check out the* [Performance Comparison](https://ishape-rust.github.io/iShape-js/triangle/performance/performance.html)
 
