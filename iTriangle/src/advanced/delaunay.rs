@@ -22,8 +22,12 @@ pub struct IntDelaunay<I: IntNumber> {
 }
 
 impl<I: IntNumber> IntDelaunay<I> {
+    /// Converts a Delaunay triangulation into an int triangle mesh.
+    ///
+    /// # Returns
+    /// A new [`RawIntTriangulation`] with the same triangles.
     #[inline]
-    pub(crate) fn into_raw(self) -> RawIntTriangulation<I> {
+    pub fn into_raw(self) -> RawIntTriangulation<I> {
         RawIntTriangulation {
             triangles: self.triangles,
             points: self.points,
