@@ -7,7 +7,7 @@ use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_shape::float::adapter::PathToInt;
 use i_overlay::i_shape::int::shape::IntShape;
-use i_overlay::i_shape::source::resource::ShapeResource;
+use i_overlay::i_shape::source::float::resource::ShapeResource;
 
 /// Float wrapper for the integer uniform triangulation pipeline.
 ///

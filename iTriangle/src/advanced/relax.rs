@@ -360,7 +360,7 @@ fn displacement_is_safe<I: IntNumber>(
     }
 
     let sqr_displacement = displacement.sqr_length();
-    if sqr_displacement <= I::Wide::ZERO {
+    if sqr_displacement <= I::WideUInt::ZERO {
         return false;
     }
 
@@ -378,13 +378,13 @@ fn displacement_is_safe<I: IntNumber>(
         .sqr_distance(b)
         .max(b.sqr_distance(c))
         .max(c.sqr_distance(a));
-    if max_sqr_edge <= I::Wide::ZERO {
+    if max_sqr_edge <= I::WideUInt::ZERO {
         return false;
     }
 
     let left = <I::WideUInt as UIntNumber>::Product::multiply(
-        sqr_displacement.to_uint(),
-        max_sqr_edge.to_uint(),
+        sqr_displacement,
+        max_sqr_edge,
     );
 
     // |d| < h_min / 4, where h_min = area_two / longest_edge.
@@ -409,12 +409,12 @@ fn displacement_is_safe<I: IntNumber>(
     left16 < right
 }
 
-fn is_within_tolerance<I: IntNumber>(sqr_distance: I::Wide, tolerance: I::WideUInt) -> bool {
-    if sqr_distance < I::Wide::ZERO {
+fn is_within_tolerance<I: IntNumber>(sqr_distance: I::WideUInt, tolerance: I::WideUInt) -> bool {
+    if sqr_distance < I::WideUInt::ZERO {
         return false;
     }
 
-    let distance = <I::WideUInt as UIntNumber>::Product::from_uint(sqr_distance.to_uint());
+    let distance = <I::WideUInt as UIntNumber>::Product::from_uint(sqr_distance);
     let tolerance = <I::WideUInt as UIntNumber>::Product::multiply(tolerance, tolerance);
     distance <= tolerance
 }

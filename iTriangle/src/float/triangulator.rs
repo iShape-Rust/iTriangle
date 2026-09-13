@@ -6,7 +6,7 @@ use i_overlay::core::integer::OverlayInt;
 use i_overlay::core::solver::Solver;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_shape::flat::buffer::FlatContoursBuffer;
-use i_overlay::i_shape::source::resource::ShapeResource;
+use i_overlay::i_shape::source::float::resource::ShapeResource;
 
 /// A reusable triangulator that converts float-based shapes into triangle meshes.
 pub struct Triangulator<N = u16, I = i32>

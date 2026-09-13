@@ -208,22 +208,22 @@ fn is_close_to_edge<I: OverlayInt>(
     let length_sqr = ab.sqr_length();
     let clearance_sqr = clearance * clearance;
 
-    if length_sqr <= I::Wide::ZERO {
-        return ap.sqr_length().to_uint() <= clearance_sqr;
+    if length_sqr <= I::WideUInt::ZERO {
+        return ap.sqr_length() <= clearance_sqr;
     }
 
     let projection = ap.dot_product(ab);
     if projection <= I::Wide::ZERO {
-        return ap.sqr_length().to_uint() <= clearance_sqr;
+        return ap.sqr_length() <= clearance_sqr;
     }
-    if projection >= length_sqr {
-        return (point - edge.b).sqr_length().to_uint() <= clearance_sqr;
+    if projection.to_uint() >= length_sqr {
+        return (point - edge.b).sqr_length() <= clearance_sqr;
     }
 
     let cross = ab.cross_product(ap).unsigned_abs();
     let distance_product = <I::WideUInt as UIntNumber>::Product::multiply(cross, cross);
     let limit_product =
-        <I::WideUInt as UIntNumber>::Product::multiply(clearance_sqr, length_sqr.to_uint());
+        <I::WideUInt as UIntNumber>::Product::multiply(clearance_sqr, length_sqr);
 
     distance_product <= limit_product
 }
