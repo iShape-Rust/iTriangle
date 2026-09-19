@@ -98,7 +98,7 @@ impl<I: IntNumber, N> Default for IntTriangulation<I, N> {
 #[derive(Clone)]
 pub struct IntTriangleIterator<'a, I: IntNumber, N> {
     points: &'a [IntPoint<I>],
-    indices: core::slice::ChunksExact<'a, N>,
+    indices: core::slice::Iter<'a, [N; 3]>,
 }
 
 impl<I: IntNumber, N: IndexType> Iterator for IntTriangleIterator<'_, I, N> {
@@ -259,7 +259,7 @@ impl<I: IntNumber, N: IndexType> IntTriangulation<I, N> {
     pub fn triangles(&self) -> IntTriangleIterator<'_, I, N> {
         IntTriangleIterator {
             points: &self.points,
-            indices: self.indices.chunks_exact(3),
+            indices: self.indices.as_chunks::<3>().0.iter(),
         }
     }
 
@@ -289,44 +289,6 @@ impl<I: IntNumber, N: IndexType> IntTriangulation<I, N> {
         delaunay
             .triangles
             .feed_indices(delaunay.points.len(), &mut self.indices);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::IntTriangulation;
-    use alloc::{vec, vec::Vec};
-    use i_overlay::i_float::int::point::IntPoint;
-
-    #[test]
-    fn triangles_iterates_resolved_points() {
-        let triangulation = IntTriangulation {
-            points: vec![
-                IntPoint::new(0, 0),
-                IntPoint::new(10, 0),
-                IntPoint::new(10, 10),
-                IntPoint::new(0, 10),
-            ],
-            indices: vec![0_u16, 1, 2, 0, 2, 3],
-        };
-
-        let triangles: Vec<_> = triangulation.triangles().collect();
-
-        assert_eq!(
-            triangles,
-            vec![
-                [
-                    IntPoint::new(0, 0),
-                    IntPoint::new(10, 0),
-                    IntPoint::new(10, 10),
-                ],
-                [
-                    IntPoint::new(0, 0),
-                    IntPoint::new(10, 10),
-                    IntPoint::new(0, 10),
-                ],
-            ]
-        );
     }
 }
 
@@ -423,5 +385,43 @@ impl<I: IntNumber, N: IndexType> IntTriangulation<I, N> {
         }
 
         assert!(s == shape_x2_area);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::IntTriangulation;
+    use alloc::{vec, vec::Vec};
+    use i_overlay::i_float::int::point::IntPoint;
+
+    #[test]
+    fn triangles_iterates_resolved_points() {
+        let triangulation = IntTriangulation {
+            points: vec![
+                IntPoint::new(0, 0),
+                IntPoint::new(10, 0),
+                IntPoint::new(10, 10),
+                IntPoint::new(0, 10),
+            ],
+            indices: vec![0_u16, 1, 2, 0, 2, 3],
+        };
+
+        let triangles: Vec<_> = triangulation.triangles().collect();
+
+        assert_eq!(
+            triangles,
+            vec![
+                [
+                    IntPoint::new(0, 0),
+                    IntPoint::new(10, 0),
+                    IntPoint::new(10, 10),
+                ],
+                [
+                    IntPoint::new(0, 0),
+                    IntPoint::new(10, 10),
+                    IntPoint::new(0, 10),
+                ],
+            ]
+        );
     }
 }

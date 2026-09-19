@@ -13,7 +13,7 @@ mod tests {
 
     #[test]
     fn test_0() {
-        let shape = vec![
+        let shape = [
             vec![
                 // body
                 [0.0, 20.0],    // 0

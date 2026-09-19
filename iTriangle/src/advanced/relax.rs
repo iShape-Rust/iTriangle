@@ -382,10 +382,7 @@ fn displacement_is_safe<I: IntNumber>(
         return false;
     }
 
-    let left = <I::WideUInt as UIntNumber>::Product::multiply(
-        sqr_displacement,
-        max_sqr_edge,
-    );
+    let left = <I::WideUInt as UIntNumber>::Product::multiply(sqr_displacement, max_sqr_edge);
 
     // |d| < h_min / 4, where h_min = area_two / longest_edge.
     // Squaring and rearranging avoids both division and square roots:

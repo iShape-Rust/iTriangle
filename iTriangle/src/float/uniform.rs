@@ -4,7 +4,6 @@ use i_overlay::core::integer::OverlayInt;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
-use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_shape::float::adapter::PathToInt;
 use i_overlay::i_shape::int::shape::IntShape;
 use i_overlay::i_shape::source::float::resource::ShapeResource;
@@ -59,9 +58,8 @@ where
             "edge_length must be finite and positive"
         );
 
-        let rect =
-            FloatRect::with_iter(self.iter_paths().flatten()).unwrap_or_else(FloatRect::zero);
-        let adapter = FloatPointAdapter::<P, I>::new(rect);
+        let adapter =
+            FloatPointAdapter::<P, I>::with_iter_conservative(self.iter_paths().flatten());
         let int_edge_length = adapter.round_len_to_int(edge_length);
         assert!(
             int_edge_length > I::ONE,

@@ -64,7 +64,7 @@ fn tessellation_svg(
     append_shape_fill(&mut svg, shape);
 
     let mut edges = BTreeSet::new();
-    for triangle in triangulation.indices.chunks_exact(3) {
+    for triangle in triangulation.indices.as_chunks::<3>().0 {
         for (a, b) in [
             (triangle[0], triangle[1]),
             (triangle[1], triangle[2]),

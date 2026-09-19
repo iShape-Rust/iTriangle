@@ -10,6 +10,7 @@ mod tests {
     use i_triangle::float::triangulator::Triangulator;
     use rand::RngExt;
 
+    // Reference geometry must use the same integer grid as the triangulator.
     trait TestInt: OverlayInt {}
 
     impl<I: OverlayInt> TestInt for I {}
@@ -71,7 +72,7 @@ mod tests {
         triangulator.delaunay(true);
         let t1 = triangulator.triangulate(&contour);
 
-        let area = contour.simplify_shape(FillRule::NonZero).area();
+        let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
         t0.validate(area, 0.001);
         t1.validate(area, 0.001);
@@ -93,7 +94,7 @@ mod tests {
             [0.0, 3.0],
         ];
 
-        let simple = contour.simplify_shape(FillRule::NonZero);
+        let simple = contour.simplify_shape_as::<I>(FillRule::NonZero);
         let area = simple.area();
 
         let mut triangulator = Triangulator::<u32, I>::default();
@@ -126,7 +127,7 @@ mod tests {
         triangulator.delaunay(true);
         let t1 = triangulator.triangulate(&contour);
 
-        let area = contour.simplify_shape(FillRule::NonZero).area();
+        let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
         t0.validate(area, 0.001);
         t1.validate(area, 0.001);
@@ -145,7 +146,7 @@ mod tests {
 
         for _ in 0..random_cases(20_000) {
             let contour = random(8, 5);
-            let area = contour.simplify_shape(FillRule::NonZero).area();
+            let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&contour, &mut t);
@@ -170,7 +171,7 @@ mod tests {
 
         for _ in 0..random_cases(20_000) {
             let contour = random(10, 6);
-            let area = contour.simplify_shape(FillRule::NonZero).area();
+            let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&contour, &mut t);
@@ -195,7 +196,7 @@ mod tests {
 
         for _ in 0..random_cases(20_000) {
             let contour = random(10, 12);
-            let area = contour.simplify_shape(FillRule::NonZero).area();
+            let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&contour, &mut t);
@@ -220,7 +221,7 @@ mod tests {
 
         for _ in 0..random_cases(10_000) {
             let contour = random(20, 20);
-            let area = contour.simplify_shape(FillRule::NonZero).area();
+            let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&contour, &mut t);
@@ -245,7 +246,7 @@ mod tests {
 
         for _ in 0..random_cases(1_000) {
             let contour = random(30, 50);
-            let area = contour.simplify_shape(FillRule::NonZero).area();
+            let area = contour.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&contour, &mut t);
@@ -275,7 +276,7 @@ mod tests {
                 shape.push(random(30, 5));
             }
 
-            let area = shape.simplify_shape(FillRule::NonZero).area();
+            let area = shape.simplify_shape_as::<I>(FillRule::NonZero).area();
 
             triangulator.delaunay(false);
             triangulator.triangulate_into(&shape, &mut t);

@@ -100,10 +100,13 @@ where
         R: ShapeResource<P> + ?Sized,
         P: FloatPointCompatible,
     {
+        let adapter = self
+            .flat_buffer
+            .get_or_insert_with(Default::default)
+            .set_with_resource(resource)
+            .expect("Invalid triangulation bounds");
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
-
-        let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
             .triangulate_flat_into(&mut flat_buffer, &mut int_buffer);
@@ -134,9 +137,13 @@ where
         R: ShapeResource<P> + ?Sized,
         P: FloatPointCompatible,
     {
+        let adapter = self
+            .flat_buffer
+            .get_or_insert_with(Default::default)
+            .set_with_resource(resource)
+            .expect("Invalid triangulation bounds");
         let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
-        let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
             .triangulate_flat_into(&mut flat_buffer, &mut int_buffer);
@@ -166,9 +173,13 @@ where
         R: ShapeResource<P> + ?Sized,
         P: FloatPointCompatible,
     {
-        let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
+        let adapter = self
+            .flat_buffer
+            .get_or_insert_with(Default::default)
+            .set_with_resource(resource)
+            .expect("Invalid triangulation bounds");
+        let flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
-        let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
             .uncheck_triangulate_flat_into(&flat_buffer, &mut int_buffer);
@@ -205,9 +216,13 @@ where
         R: ShapeResource<P> + ?Sized,
         P: FloatPointCompatible,
     {
-        let mut flat_buffer = self.flat_buffer.take().unwrap_or_default();
+        let adapter = self
+            .flat_buffer
+            .get_or_insert_with(Default::default)
+            .set_with_resource(resource)
+            .expect("Invalid triangulation bounds");
+        let flat_buffer = self.flat_buffer.take().unwrap_or_default();
         let mut int_buffer = self.int_buffer.take().unwrap_or_default();
-        let adapter = flat_buffer.set_with_resource(resource);
 
         self.int_triangulator
             .uncheck_triangulate_flat_into(&flat_buffer, &mut int_buffer);

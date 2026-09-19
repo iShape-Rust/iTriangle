@@ -13,7 +13,7 @@ use i_tree::Expiration;
 
 /// A trait for triangulating already valid float-based geometry.
 ///
-/// Skips all validation for performance. Ideal when input is generated programmatically.
+/// Skips topology validation for performance. Coordinate bounds are still validated.
 ///
 /// # Safety Requirements
 /// - Outer contours must be counter-clockwise
@@ -52,14 +52,14 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_path(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -71,8 +71,8 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_path(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -81,7 +81,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -95,14 +95,14 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_paths(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -114,8 +114,8 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_paths(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -124,7 +124,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -138,14 +138,16 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) =
+            FloatRect::with_list_of_paths(self).expect("Invalid triangulation bounds")
+        {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).uncheck_triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -157,8 +159,10 @@ where
     where
         I: IntNumber + Expiration + SortKey,
     {
-        if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) =
+            FloatRect::with_list_of_paths(self).expect("Invalid triangulation bounds")
+        {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -167,7 +171,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }

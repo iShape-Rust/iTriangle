@@ -183,6 +183,6 @@ mod tests {
         assert_eq!(triangulation.points.len(), 4);
         assert_eq!(triangulation.indices.len(), 6);
 
-        triangulation.validate(40.0, 0.000_0001);
+        triangulation.validate(40.0, 0.000_000_1);
     }
 }

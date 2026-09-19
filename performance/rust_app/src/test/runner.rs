@@ -4,7 +4,7 @@ use i_triangle::float::triangulation::Triangulation;
 use i_triangle::float::triangulator::Triangulator;
 use i_triangle::i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_triangle::i_overlay::i_float::float::number::FloatNumber;
-use i_triangle::i_overlay::i_shape::source::resource::ShapeResource;
+use i_triangle::i_overlay::i_shape::source::float::resource::ShapeResource;
 use crate::test::test::TestData;
 
 pub(crate) struct Runner;
@@ -13,8 +13,8 @@ impl Runner {
 
     pub(crate) fn run_triangle<R, P, T>(resource: &R, test: &TestData, delaunay: bool, earcut: bool) -> usize
     where
-        R: ShapeResource<P, T> + ?Sized,
-        P: FloatPointCompatible<T>,
+        R: ShapeResource<P> + ?Sized,
+        P: FloatPointCompatible<Scalar = T>,
         T: FloatNumber,
     {
         let start = Instant::now();

@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_0() {
-        let shapes = vec![vec![path(&[[0, 0], [10, 0], [10, 10], [0, 10]])]];
+        let shapes = [vec![path(&[[0, 0], [10, 0], [10, 10], [0, 10]])]];
 
         let groups = shapes.group_by_shapes(&[
             IntPoint::new(5, 5),
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let shapes = vec![
+        let shapes = [
             vec![path(&[[0, 0], [10, 0], [10, 10], [0, 10]])],
             vec![path(&[[20, 0], [30, 0], [30, 10], [20, 10]])],
         ];
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let shapes = vec![
+        let shapes = [
             vec![path(&[[0, 0], [10, 0], [10, 10], [0, 10]])],
             vec![path(&[[0, 20], [10, 20], [10, 30], [0, 30]])],
             vec![path(&[[0, 40], [10, 40], [10, 50], [0, 50]])],
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_3() {
-        let shapes = vec![vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])]];
+        let shapes = [vec![path(&[[-10, 0], [0, -10], [10, 0], [0, 10]])]];
 
         let groups = shapes.group_by_shapes(&[IntPoint::new(-3, 7)]);
 
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_4() {
-        let shapes = vec![vec![path(&[[3, -2], [-5, 3], [0, -1], [-2, -3]])]];
+        let shapes = [vec![path(&[[3, -2], [-5, 3], [0, -1], [-2, -3]])]];
         let groups = shapes.group_by_shapes(&[IntPoint::new(0, -1)]);
 
         assert_eq!(groups[0].len(), 0);
@@ -284,7 +284,7 @@ mod tests {
 
     #[test]
     fn test_5() {
-        let shapes = vec![vec![path(&[[-1, 2], [-5, -2], [2, -2], [3, 4]])]];
+        let shapes = [vec![path(&[[-1, 2], [-5, -2], [2, -2], [3, 4]])]];
         let groups = shapes.group_by_shapes(&[IntPoint::new(1, 5)]);
 
         assert_eq!(groups[0].len(), 0);
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_6() {
-        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
+        let shapes = [vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
         let groups = shapes.group_by_shapes(&[IntPoint::new(0, 0), IntPoint::new(0, 0)]);
 
         assert_eq!(groups[0].len(), 1);
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_7() {
-        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
+        let shapes = [vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
         let groups = shapes.group_by_shapes(&[IntPoint::new(-4, 3), IntPoint::new(0, 3)]);
 
         assert_eq!(groups[0].len(), 1);
@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_8() {
-        let shapes = vec![vec![path(&[
+        let shapes = [vec![path(&[
             [1, 0],
             [-4, -2],
             [3, 0],
@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn test_9() {
-        let shapes = vec![vec![path(&[[-10, -10], [10, -10], [10, 10], [-10, 10]])]];
+        let shapes = [vec![path(&[[-10, -10], [10, -10], [10, 10], [-10, 10]])]];
         let groups = shapes.group_by_shapes(&[
             IntPoint::new(-10, 10),
             IntPoint::new(-10, 5),
