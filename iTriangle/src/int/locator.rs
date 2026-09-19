@@ -273,7 +273,7 @@ mod tests {
         let mut points_outside = Vec::new();
         for x in -10..=10 {
             for y in -10..=10 {
-                if (x < 0 || x > 4) && (y < 0 || y > 8) {
+                if !(0..=4).contains(&x) && !(0..=8).contains(&y) {
                     points_outside.push(IntPoint::new(x, y));
                 }
             }
@@ -297,7 +297,7 @@ mod tests {
 
                 assert_eq!(vertex_triangles, template_triangles);
             } else {
-                assert!(false, "not on Vertex");
+                panic!("not on Vertex");
             }
         }
 
@@ -313,7 +313,7 @@ mod tests {
                     );
                 }
                 _ => {
-                    assert!(false, "not on Edge");
+                    panic!("not on Edge");
                 }
             }
         }
@@ -322,7 +322,7 @@ mod tests {
             if let PointLocationInTriangulation::InsideTriangle(triangle) = self {
                 assert_eq!(triangle.index(), index);
             } else {
-                assert!(false, "not Inside");
+                panic!("not Inside");
             }
         }
     }

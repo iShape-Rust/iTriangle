@@ -106,7 +106,7 @@ fn boundary_vertices(point_count: usize, indices: &[u32], neighbors: &[[usize; 3
     assert_eq!(neighbors.len(), triangle_count);
 
     let mut result = vec![false; point_count];
-    for (triangle_index, triangle) in indices.chunks_exact(3).enumerate() {
+    for (triangle_index, triangle) in indices.as_chunks::<3>().0.iter().enumerate() {
         for edge in 0..3 {
             if neighbors[triangle_index][edge] >= triangle_count {
                 result[triangle[(edge + 1) % 3] as usize] = true;
@@ -119,7 +119,7 @@ fn boundary_vertices(point_count: usize, indices: &[u32], neighbors: &[[usize; 3
 
 fn mesh_area(case: usize, points: &[[f64; 2]], indices: &[u32]) -> f64 {
     let mut area_two = 0.0;
-    for triangle in indices.chunks_exact(3) {
+    for triangle in indices.as_chunks::<3>().0 {
         let a = points[triangle[0] as usize];
         let b = points[triangle[1] as usize];
         let c = points[triangle[2] as usize];

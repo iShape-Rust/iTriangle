@@ -412,8 +412,9 @@ fn build_mesh_result(
 
     // Reproduce the public float wrapper's single conversion into the integer pipeline.
     let rect = FloatRect::with_iter(shape.iter().flatten())
+        .map_err(|error| format!("invalid input bounds: {error:?}"))?
         .ok_or_else(|| "input shape is empty".to_owned())?;
-    let adapter = FloatPointAdapter::<Point, i32>::new(rect);
+    let adapter = FloatPointAdapter::<Point, i32>::new_conservative(rect);
     let int_edge_length = adapter.round_len_to_int(edge_length);
     if int_edge_length <= 1 {
         return Err("edge_length is below integer adapter precision".to_owned());

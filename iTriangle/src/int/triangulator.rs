@@ -101,7 +101,7 @@ where
 
     #[inline]
     pub fn triangulate_shapes(&mut self, shapes: &IntShapes<I>) -> IntTriangulation<I, N> {
-        let simple = self.overlay.simplify_shapes(shapes, self.fill_rule);
+        let simple = self.overlay.simplify_source(shapes, self.fill_rule);
         self.uncheck_triangulate_shapes(&simple)
     }
 
@@ -111,7 +111,7 @@ where
         shapes: &IntShapes<I>,
         triangulation: &mut IntTriangulation<I, N>,
     ) {
-        let simple = self.overlay.simplify_shapes(shapes, self.fill_rule);
+        let simple = self.overlay.simplify_source(shapes, self.fill_rule);
         self.uncheck_triangulate_shapes_into(&simple, triangulation);
     }
 

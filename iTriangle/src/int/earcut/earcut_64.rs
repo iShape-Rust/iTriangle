@@ -674,7 +674,7 @@ mod tests {
             contour[0], contour[1], contour[2], contour[3], 0b1111, false,
         );
 
-        assert_eq!(queue.is_none(), true);
+        assert!(queue.is_none());
     }
 
     #[test]
@@ -694,7 +694,7 @@ mod tests {
             contour[0], contour[1], contour[2], contour[3], 0b1111, false,
         );
 
-        assert_eq!(queue.is_none(), true);
+        assert!(queue.is_none());
     }
 
     #[test]
@@ -716,7 +716,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(queue.is_empty(), true);
+        assert!(queue.is_empty());
     }
 
     #[test]
@@ -738,7 +738,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(queue.is_empty(), true);
+        assert!(queue.is_empty());
     }
 
     #[test]
@@ -760,7 +760,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(queue.is_empty(), false);
+        assert!(!queue.is_empty());
     }
 
     // find_point
@@ -791,121 +791,121 @@ mod tests {
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, -20), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 2);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, -5), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 2);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(10, -10), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 2);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(15, -15), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 2);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, -1), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 3);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, 0), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 3);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(10, 0), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 3);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(15, 0), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 3);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(20, 0), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 3);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, 5), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 4);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, 10), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 4);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(15, 15), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 4);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(10, 10), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 4);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(-5, 10), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 5);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(-5, 12), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 5);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, 15), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 5);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(0, 20), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 5);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(-10, 10), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 6);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(-15, 15), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 6);
 
         // ----
         let mut ear = new_ear();
         let inner = ear.cut(IntPoint::new(-10, 8), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 6);
     }
 
@@ -928,7 +928,7 @@ mod tests {
             indices: 0b011111,
         };
         let inner = ear.cut(IntPoint::new(5, 10), &contour);
-        assert_eq!(inner, true);
+        assert!(inner);
         assert_eq!(ear.active_index, 3);
     }
 
@@ -956,7 +956,7 @@ mod tests {
             indices: 0b11111,
         };
         let inner = ear.cut(IntPoint::new(10, -10), &contour);
-        assert_eq!(inner, false);
+        assert!(!inner);
         assert_eq!(ear.active_index, 2);
     }
 
@@ -1566,7 +1566,7 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     if !contour.is_empty() {
-                        single_test(&contour);
+                        single_test(contour);
                     }
                 }
             }
@@ -1582,7 +1582,7 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     if !contour.is_empty() {
-                        single_test(&contour);
+                        single_test(contour);
                     }
                 }
             }
@@ -1598,7 +1598,7 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     if !contour.is_empty() {
-                        single_test(&contour);
+                        single_test(contour);
                     }
                 }
             }
@@ -1614,7 +1614,7 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     if !contour.is_empty() {
-                        single_test(&contour);
+                        single_test(contour);
                     }
                 }
             }
@@ -1630,8 +1630,8 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     let n = contour.len();
-                    if 3 <= n && n <= 64 {
-                        single_test(&contour);
+                    if (3..=64).contains(&n) {
+                        single_test(contour);
                     }
                 }
             }
@@ -1647,8 +1647,8 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     let n = contour.len();
-                    if 3 <= n && n <= 64 {
-                        single_test(&contour);
+                    if (3..=64).contains(&n) {
+                        single_test(contour);
                     }
                 }
             }
@@ -1664,8 +1664,8 @@ mod tests {
             {
                 if let Some(contour) = first.first() {
                     let n = contour.len();
-                    if 3 <= n && n <= 64 {
-                        single_test(&contour);
+                    if (3..=64).contains(&n) {
+                        single_test(contour);
                     }
                 }
             }

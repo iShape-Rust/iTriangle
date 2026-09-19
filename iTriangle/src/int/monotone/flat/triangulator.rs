@@ -830,7 +830,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };
@@ -849,7 +849,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };
@@ -868,7 +868,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };
@@ -887,7 +887,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };
@@ -906,7 +906,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };
@@ -929,7 +929,7 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                MonotoneTriangulator::default().shape_into_flat_triangulation(&first, &mut raw);
+                MonotoneTriangulator::default().shape_into_flat_triangulation(first, &mut raw);
 
                 raw.validate(shape_area);
             };

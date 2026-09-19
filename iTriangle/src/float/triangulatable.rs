@@ -52,14 +52,14 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_path(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -68,8 +68,8 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_path(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_path(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -78,7 +78,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -92,14 +92,14 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_paths(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -108,8 +108,8 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) = FloatRect::with_paths(self).expect("Invalid triangulation bounds") {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -118,7 +118,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -132,14 +132,16 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) =
+            FloatRect::with_list_of_paths(self).expect("Invalid triangulation bounds")
+        {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let raw = self.to_int(&adapter).triangulate();
             RawTriangulation { raw, adapter }
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }
@@ -148,8 +150,10 @@ where
     where
         I: OverlayInt,
     {
-        if let Some(rect) = FloatRect::with_list_of_paths(self) {
-            let adapter = FloatPointAdapter::<P, I>::new(rect);
+        if let Some(rect) =
+            FloatRect::with_list_of_paths(self).expect("Invalid triangulation bounds")
+        {
+            let adapter = FloatPointAdapter::<P, I>::new_conservative(rect);
             let float_points = points.to_int(&adapter);
             let raw = self
                 .to_int(&adapter)
@@ -158,7 +162,7 @@ where
         } else {
             RawTriangulation {
                 raw: RawIntTriangulation::default(),
-                adapter: FloatPointAdapter::<P, I>::new(FloatRect::zero()),
+                adapter: FloatPointAdapter::<P, I>::new_conservative(FloatRect::zero()),
             }
         }
     }

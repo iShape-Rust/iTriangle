@@ -73,7 +73,7 @@ fn extract<I: IntNumber>(
     contour: &mut IntContour<I>,
 ) {
     let ab = b - a;
-    let sqr_len = ab.sqr_length().to_uint();
+    let sqr_len = ab.sqr_length();
     if sqr_len <= sqr_radius {
         contour.push(b);
         return;

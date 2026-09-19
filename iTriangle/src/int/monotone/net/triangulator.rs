@@ -1255,7 +1255,7 @@ mod tests {
         let shape = vec![path(&[[1, 0], [-4, -2], [3, 0], [5, 1], [4, 1], [-4, -1]])];
         let points = vec![IntPoint::new(0, 3), IntPoint::new(4, 3)];
         let shape_area = shape.area_two();
-        let group = vec![shape.clone()].group_by_shapes(&points);
+        let group = [shape.clone()].group_by_shapes(&points);
 
         let mut raw = RawIntTriangulation::default();
         MonotoneTriangulator::default().shape_into_net_triangulation(
@@ -1275,7 +1275,7 @@ mod tests {
         let shape = vec![path(&[[-1, 2], [-5, -2], [2, -2], [3, 4]])];
         let points = vec![IntPoint::new(1, 5)];
         let shape_area = shape.area_two();
-        let group = vec![shape.clone()].group_by_shapes(&points);
+        let group = [shape.clone()].group_by_shapes(&points);
 
         let mut raw = RawIntTriangulation::default();
         MonotoneTriangulator::default().shape_into_net_triangulation(
@@ -1302,8 +1302,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1323,8 +1322,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1344,8 +1342,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1365,8 +1362,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1386,8 +1382,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1411,8 +1406,7 @@ mod tests {
                 let shape_area = first.area_two();
 
                 let mut raw = RawIntTriangulation::default();
-                MonotoneTriangulator::default()
-                    .shape_into_net_triangulation(&first, None, &mut raw);
+                MonotoneTriangulator::default().shape_into_net_triangulation(first, None, &mut raw);
 
                 raw.validate();
                 assert_eq!(raw.area_two(), shape_area);
@@ -1441,7 +1435,7 @@ mod tests {
 
     #[test]
     fn test_random_7() {
-        let shapes = vec![vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
+        let shapes = [vec![path(&[[-5, 0], [0, -5], [5, 0], [0, 5]])]];
         let shape_area = shapes.area_two();
         for _ in 0..random_cases(20_000) {
             let points = random_points(8, 2);
@@ -1469,7 +1463,7 @@ mod tests {
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
-                let shapes = vec![first.clone()];
+                let shapes = [first.clone()];
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
@@ -1497,7 +1491,7 @@ mod tests {
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
-                let shapes = vec![first.clone()];
+                let shapes = [first.clone()];
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
@@ -1525,7 +1519,7 @@ mod tests {
                 .simplify(FillRule::NonZero, IntOverlayOptions::keep_all_points())
                 .first()
             {
-                let shapes = vec![first.clone()];
+                let shapes = [first.clone()];
                 let shape_area = shapes.area_two();
 
                 let group = shapes.group_by_shapes(&points);
@@ -1558,11 +1552,11 @@ mod tests {
             {
                 let shape_area = first.area_two();
 
-                let group = vec![first.clone()].group_by_shapes(&points);
+                let group = [first.clone()].group_by_shapes(&points);
 
                 let mut raw = RawIntTriangulation::default();
                 MonotoneTriangulator::default().shape_into_net_triangulation(
-                    &first,
+                    first,
                     Some(&group[0]),
                     &mut raw,
                 );
@@ -1596,6 +1590,6 @@ mod tests {
             points.insert(IntPoint { x, y });
         }
 
-        points.iter().map(|p| p).copied().collect()
+        points.iter().copied().collect()
     }
 }

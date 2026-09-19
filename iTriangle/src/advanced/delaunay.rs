@@ -339,7 +339,7 @@ mod tests {
         let p = IntPoint::new(0, -4);
 
         let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
-        assert_eq!(is_flip_not_required, true);
+        assert!(is_flip_not_required);
     }
 
     #[test]
@@ -351,7 +351,7 @@ mod tests {
         let p = IntPoint::new(0, -2);
 
         let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
-        assert_eq!(is_flip_not_required, true);
+        assert!(is_flip_not_required);
     }
 
     #[test]
@@ -362,7 +362,7 @@ mod tests {
         let p = IntPoint::new(0, -1);
 
         let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
-        assert_eq!(is_flip_not_required, false);
+        assert!(!is_flip_not_required);
     }
 
     #[test]
@@ -373,7 +373,7 @@ mod tests {
         let p = IntPoint::new(0, -1);
 
         let is_flip_not_required = DelaunayCondition::is_flip_not_required(p, a, b, c);
-        assert_eq!(is_flip_not_required, false);
+        assert!(!is_flip_not_required);
     }
 
     #[test]

@@ -1,9 +1,10 @@
 use alloc::vec::Vec;
 use i_key_sort::sort::key::SortKey;
+use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
 use i_overlay::i_float::float::number::FloatNumber;
 use i_overlay::i_float::int::number::int::IntNumber;
-use i_overlay::{i_float::adapter::FloatPointAdapter, i_shape::float::adapter::PathToInt};
+use i_overlay::i_shape::float::adapter::PathToInt;
 
 use crate::int::locator::IntPointInTriangulationLocator;
 use crate::{
@@ -27,11 +28,13 @@ impl<P, N: IndexType> Triangulation<P, N> {
     where
         P: FloatPointCompatible<Scalar = T>,
     {
-        let adapter = FloatPointAdapter::<P, I>::with_iter(self.points.iter().chain(points.iter()));
+        let adapter = FloatPointAdapter::<P, I>::with_iter_conservative(
+            self.points.iter().chain(points.iter()),
+        );
 
         let int_points = points.to_int(&adapter);
 
-        let triangles = self.indices.chunks_exact(3).map(|triangle| {
+        let triangles = self.indices.as_chunks::<3>().0.iter().map(|triangle| {
             let a = adapter.float_to_int(&self.points[triangle[0].into_usize()]);
             let b = adapter.float_to_int(&self.points[triangle[1].into_usize()]);
             let c = adapter.float_to_int(&self.points[triangle[2].into_usize()]);

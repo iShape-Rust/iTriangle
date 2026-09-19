@@ -135,7 +135,9 @@ mod tests {
             .unwrap() as u16;
         triangulation
             .indices
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .any(|triangle| triangle.contains(&a) && triangle.contains(&b))
     }
 
