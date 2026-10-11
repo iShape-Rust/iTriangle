@@ -2,7 +2,6 @@
 //!
 //! Coordinates must be finite, with absolute values at most `2^60` for `f32`
 //! or `2^500` for `f64`. Invalid input bounds panic; empty geometry produces
-//! an empty mesh. Automatic conversion uses the conservative adapter constructors,
 //! reserving `I::BITS - 3` coordinate bits for integer differences, products, and
 //! rounding, including unchecked APIs.
 //! Unchecked APIs skip topology validation. Reusable `Triangulator` methods

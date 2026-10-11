@@ -1,4 +1,5 @@
-use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
+use crate::float::delaunay::Delaunay;
+use crate::int::triangulation::{IndexType, IndicesBuilder, IntTriangulation, RawIntTriangulation};
 use alloc::vec::Vec;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
@@ -54,6 +55,25 @@ impl<P: FloatPointCompatible, I: IntNumber> RawTriangulation<P, I> {
 }
 
 impl<P, N: IndexType> Triangulation<P, N> {
+    /// Fills the triangulation from a Delaunay mesh
+    #[inline]
+    pub fn set_with_delaunay<I: IntNumber>(&mut self, delaunay: &Delaunay<P, I>)
+    where
+        P: FloatPointCompatible,
+    {
+        let mesh = &delaunay.delaunay;
+        mesh.triangles
+            .feed_indices(mesh.points.len(), &mut self.indices);
+
+        self.points.clear();
+        self.points.reserve(mesh.points.len());
+        self.points.extend(
+            mesh.points
+                .iter()
+                .map(|point| delaunay.adapter.int_to_float(point)),
+        );
+    }
+
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
