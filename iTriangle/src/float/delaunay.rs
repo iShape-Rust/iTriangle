@@ -5,16 +5,30 @@ use crate::int::triangulation::IndexType;
 use alloc::vec::Vec;
 use i_overlay::i_float::adapter::FloatPointAdapter;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
+use i_overlay::i_float::float::rect::FloatRect;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_shape::float::adapter::PathToFloat;
 
 /// A Delaunay-refined triangle mesh with float-mapped geometry.
 ///
-/// Produced from [`Triangulation::into_delaunay`] by applying edge flips
+/// Produced from [`RawTriangulation::into_delaunay`] by applying edge flips
 /// to satisfy the Delaunay condition.
 pub struct Delaunay<P: FloatPointCompatible, I: IntNumber = i32> {
     pub(super) delaunay: IntDelaunay<I>,
     pub(super) adapter: FloatPointAdapter<P, I>,
+}
+
+impl<P: FloatPointCompatible, I: IntNumber> Default for Delaunay<P, I> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            delaunay: IntDelaunay {
+                points: Vec::new(),
+                triangles: Vec::new(),
+            },
+            adapter: FloatPointAdapter::new_conservative(FloatRect::zero()),
+        }
+    }
 }
 
 impl<P: FloatPointCompatible, I: IntNumber> RawTriangulation<P, I> {
