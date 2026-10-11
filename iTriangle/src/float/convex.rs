@@ -1,3 +1,4 @@
+pub use crate::advanced::convex::ConvexSplitStrategy;
 use crate::float::delaunay::Delaunay;
 use alloc::vec::Vec;
 use i_overlay::i_float::float::compatible::FloatPointCompatible;
@@ -17,10 +18,17 @@ impl<P: FloatPointCompatible, I: IntNumber> Delaunay<P, I> {
     /// Returns counter-clockwise convex polygons with at most `max_vertices.max(3)` vertices.
     ///
     /// Values of `max_vertices` below 3 are treated as 3.
+    /// Pass [`ConvexSplitStrategy::default()`] to use ear clipping.
+    /// Splitting is performed in integer space before conversion to float coordinates.
+    /// Only oversized regions are split. See [`ConvexSplitStrategy`] for details.
     #[inline]
-    pub fn to_convex_polygons_with_max_vertices(&self, max_vertices: usize) -> Vec<Contour<P>> {
+    pub fn to_convex_polygons_with_max_vertices(
+        &self,
+        max_vertices: usize,
+        strategy: ConvexSplitStrategy,
+    ) -> Vec<Contour<P>> {
         self.delaunay
-            .to_convex_polygons_with_max_vertices(max_vertices)
+            .to_convex_polygons_with_max_vertices(max_vertices, strategy)
             .to_float(&self.adapter)
     }
 }

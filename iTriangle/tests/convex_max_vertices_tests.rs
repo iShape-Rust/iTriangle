@@ -1,5 +1,6 @@
 use i_overlay::core::integer::OverlayInt;
 use i_overlay::i_float::int::point::IntPoint;
+use i_triangle::advanced::convex::ConvexSplitStrategy;
 use i_triangle::advanced::delaunay::IntDelaunay;
 use i_triangle::float::triangulatable::Triangulatable;
 use i_triangle::int::triangulatable::IntTriangulatable;
@@ -22,8 +23,16 @@ fn separated(a: &[Point], b: &[Point]) -> bool {
 }
 
 fn validate(mesh: &IntDelaunay<i32>, limit: usize) -> Vec<Vec<Point>> {
+    validate_strategy(mesh, limit, ConvexSplitStrategy::Fan)
+}
+
+fn validate_strategy(
+    mesh: &IntDelaunay<i32>,
+    limit: usize,
+    strategy: ConvexSplitStrategy,
+) -> Vec<Vec<Point>> {
     let original = mesh.to_convex_polygons();
-    let parts = mesh.to_convex_polygons_with_max_vertices(limit);
+    let parts = mesh.to_convex_polygons_with_max_vertices(limit, strategy);
     assert_eq!(
         parts.iter().map(|p| area_two(p)).sum::<i64>(),
         original.iter().map(|p| area_two(p)).sum::<i64>()
@@ -39,9 +48,9 @@ fn validate(mesh: &IntDelaunay<i32>, limit: usize) -> Vec<Vec<Point>> {
                 ) > 0
             );
         }
-        // Each part stays inside one original convex region and uses its vertices.
+        // Each part stays inside one region; only Centroid may introduce a new vertex.
         assert!(original.iter().any(|region| {
-            part.iter().all(|p| region.contains(p))
+            (strategy == ConvexSplitStrategy::Centroid || part.iter().all(|p| region.contains(p)))
                 && (0..region.len()).all(|j| {
                     part.iter()
                         .all(|&p| cross(region[j], region[(j + 1) % region.len()], p) >= 0)
@@ -63,13 +72,15 @@ fn convex_contours_have_minimal_balanced_parts() {
         assert_eq!(original.len(), 1);
         assert_eq!(original[0].len(), n as usize);
         for limit in [3, 4, 5, 6, 9, n as usize, usize::MAX] {
-            let parts = validate(&mesh, limit);
-            assert_eq!(parts.len(), (n as usize - 2).div_ceil(limit - 2));
-            let min = parts.iter().map(Vec::len).min().unwrap();
-            let max = parts.iter().map(Vec::len).max().unwrap();
-            assert!(max - min <= 1);
-            if n as usize <= limit {
-                assert_eq!(parts, original);
+            for strategy in [ConvexSplitStrategy::EarClipping, ConvexSplitStrategy::Fan] {
+                let parts = validate_strategy(&mesh, limit, strategy);
+                assert_eq!(parts.len(), (n as usize - 2).div_ceil(limit - 2));
+                let min = parts.iter().map(Vec::len).min().unwrap();
+                let max = parts.iter().map(Vec::len).max().unwrap();
+                assert!(max - min <= 1);
+                if n as usize <= limit {
+                    assert_eq!(parts, original);
+                }
             }
         }
     }
@@ -105,8 +116,14 @@ fn decomposition_preserves_a_hole() {
         .into();
     let mesh = vec![outer, hole].triangulate().into_delaunay();
     for limit in [3, 4, 6] {
-        let parts = validate(&mesh, limit);
-        assert_eq!(parts.iter().map(|p| area_two(p)).sum::<i64>(), 600);
+        for strategy in [
+            ConvexSplitStrategy::EarClipping,
+            ConvexSplitStrategy::Fan,
+            ConvexSplitStrategy::Centroid,
+        ] {
+            let parts = validate_strategy(&mesh, limit, strategy);
+            assert_eq!(parts.iter().map(|p| area_two(p)).sum::<i64>(), 600);
+        }
     }
 }
 
@@ -117,14 +134,27 @@ fn empty_mesh_and_limits_below_three() {
         points: Vec::new(),
     };
     for limit in 0..=3 {
-        assert!(mesh.to_convex_polygons_with_max_vertices(limit).is_empty());
+        for strategy in [
+            ConvexSplitStrategy::EarClipping,
+            ConvexSplitStrategy::Fan,
+            ConvexSplitStrategy::Centroid,
+        ] {
+            assert!(mesh
+                .to_convex_polygons_with_max_vertices(limit, strategy)
+                .is_empty());
+        }
     }
 
     let contour: Vec<_> = (0..11).map(|x| Point::new(x, x * x)).collect();
     let mesh = contour.triangulate().into_delaunay();
-    let triangles = validate(&mesh, 3);
-    for limit in 0..3 {
-        assert_eq!(mesh.to_convex_polygons_with_max_vertices(limit), triangles);
+    for strategy in [ConvexSplitStrategy::EarClipping, ConvexSplitStrategy::Fan] {
+        let triangles = validate_strategy(&mesh, 3, strategy);
+        for limit in 0..3 {
+            assert_eq!(
+                mesh.to_convex_polygons_with_max_vertices(limit, strategy),
+                triangles
+            );
+        }
     }
 }
 
@@ -141,7 +171,7 @@ fn check_float<I: OverlayInt>() {
     let original = mesh.to_convex_polygons();
     assert_eq!(original.len(), 1);
     assert_eq!(original[0].len(), 11);
-    let parts = mesh.to_convex_polygons_with_max_vertices(6);
+    let parts = mesh.to_convex_polygons_with_max_vertices(6, ConvexSplitStrategy::Fan);
     assert_eq!(parts.iter().map(Vec::len).collect::<Vec<_>>(), [5, 5, 5]);
     let area = |p: &Vec<[f64; 2]>| {
         (0..p.len())
@@ -154,10 +184,149 @@ fn check_float<I: OverlayInt>() {
     };
     assert!((parts.iter().map(area).sum::<f64>() - area(&original[0])).abs() < 1e-8);
     assert!(parts.iter().flatten().all(|p| original[0].contains(p)));
-    assert_eq!(mesh.to_convex_polygons_with_max_vertices(11), original);
-    let triangles = mesh.to_convex_polygons_with_max_vertices(3);
+    let clipped = mesh.to_convex_polygons_with_max_vertices(6, ConvexSplitStrategy::default());
+    assert_eq!(clipped.iter().map(Vec::len).collect::<Vec<_>>(), [5, 5, 5]);
+    assert!((clipped.iter().map(area).sum::<f64>() - area(&original[0])).abs() < 1e-8);
+    assert!(clipped.iter().flatten().all(|p| original[0].contains(p)));
+    assert!(clipped
+        .windows(2)
+        .all(|parts| parts[0].last() == parts[1].first()));
+    let centered = mesh.to_convex_polygons_with_max_vertices(6, ConvexSplitStrategy::Centroid);
+    assert!(centered.iter().all(|p| (3..=6).contains(&p.len())));
+    assert!(centered.iter().all(|p| p[0] == centered[0][0]));
+    assert!(!original[0].contains(&centered[0][0]));
+    assert!((centered.iter().map(area).sum::<f64>() - area(&original[0])).abs() < 1e-8);
+    assert_eq!(
+        mesh.to_convex_polygons_with_max_vertices(11, ConvexSplitStrategy::Centroid),
+        original
+    );
+    assert_eq!(
+        mesh.to_convex_polygons_with_max_vertices(11, ConvexSplitStrategy::Fan),
+        original
+    );
+    let triangles = mesh.to_convex_polygons_with_max_vertices(3, ConvexSplitStrategy::Fan);
     assert!(triangles.iter().all(|p| p.len() == 3));
     for limit in 0..3 {
-        assert_eq!(mesh.to_convex_polygons_with_max_vertices(limit), triangles);
+        assert_eq!(
+            mesh.to_convex_polygons_with_max_vertices(limit, ConvexSplitStrategy::Fan),
+            triangles
+        );
     }
+}
+
+#[test]
+fn centroid_parts_preserve_convexity_and_coverage() {
+    for n in 4..=40 {
+        let contour: Vec<_> = (0..n).map(|x| Point::new(10 * x, 10 * x * x)).collect();
+        let mesh = contour.triangulate().into_delaunay();
+        for limit in [3, 4, 6, 9, n as usize, usize::MAX] {
+            let parts = validate_strategy(&mesh, limit, ConvexSplitStrategy::Centroid);
+            if n as usize <= limit {
+                assert_eq!(parts, mesh.to_convex_polygons());
+            } else {
+                assert!(parts.iter().all(|part| part[0] == parts[0][0]));
+                assert!(!contour.contains(&parts[0][0]));
+            }
+        }
+    }
+}
+
+#[test]
+fn centroid_is_weighted_by_area_and_low_limits_are_clamped() {
+    let contour = vec![
+        Point::new(0, 0),
+        Point::new(15, 0),
+        Point::new(6, 6),
+        Point::new(0, 6),
+    ];
+    let mesh = contour.triangulate().into_delaunay();
+    let parts = validate_strategy(&mesh, 3, ConvexSplitStrategy::Centroid);
+    assert_eq!(parts.len(), 4);
+    // Area centroid is (39/7, 18/7); vertex average is (21/4, 3).
+    assert!(parts.iter().all(|part| part[0] == Point::new(6, 3)));
+    for limit in 0..3 {
+        assert_eq!(
+            mesh.to_convex_polygons_with_max_vertices(limit, ConvexSplitStrategy::Centroid),
+            parts
+        );
+    }
+}
+
+#[test]
+fn centroid_rounding_to_boundary_or_outside_falls_back_to_fan() {
+    for contour in [
+        vec![
+            Point::new(0, 0),
+            Point::new(1, 0),
+            Point::new(1, 1),
+            Point::new(0, 1),
+        ],
+        vec![
+            Point::new(0, 0),
+            Point::new(2, 3),
+            Point::new(3, 5),
+            Point::new(1, 2),
+        ],
+    ] {
+        let mesh = contour.triangulate().into_delaunay();
+        assert_eq!(
+            validate_strategy(&mesh, 3, ConvexSplitStrategy::Centroid),
+            validate(&mesh, 3)
+        );
+    }
+}
+
+#[test]
+fn centroid_groups_sectors_without_reflex_angles() {
+    let contour: Vec<_> = [
+        [-3, -1],
+        [-1, -3],
+        [1, -3],
+        [3, -1],
+        [3, 1],
+        [1, 3],
+        [-1, 3],
+        [-3, 1],
+    ]
+    .map(|[x, y]| Point::new(x, y))
+    .into();
+    let mesh = contour.triangulate().into_delaunay();
+    let parts = validate_strategy(&mesh, 5, ConvexSplitStrategy::Centroid);
+    assert_eq!(parts.iter().map(Vec::len).collect::<Vec<_>>(), [5, 5, 4]);
+    assert!(parts.iter().all(|part| part[0] == Point::new(0, 0)));
+    // Two equal groups would each have a flat angle at the center.
+    let parts = validate_strategy(&mesh, 7, ConvexSplitStrategy::Centroid);
+    assert!(parts.len() > 2);
+}
+
+#[test]
+fn ear_clipping_is_default_and_moves_the_diagonal_origin() {
+    assert_eq!(
+        ConvexSplitStrategy::default(),
+        ConvexSplitStrategy::EarClipping
+    );
+    let contour: Vec<_> = (0..12).map(|x| Point::new(x, x * x)).collect();
+    let mesh = contour.triangulate().into_delaunay();
+    let original = mesh.to_convex_polygons();
+    let vertices = &original[0];
+    let parts = validate_strategy(&mesh, 6, ConvexSplitStrategy::default());
+    assert_eq!(
+        parts,
+        vec![
+            vertices[0..=5].to_vec(),
+            vertices[5..=9].to_vec(),
+            vec![
+                vertices[9],
+                vertices[10],
+                vertices[11],
+                vertices[0],
+                vertices[5]
+            ],
+        ]
+    );
+    // A triangle limit makes the ring wrap around more than once.
+    let triangles = validate_strategy(&mesh, 3, ConvexSplitStrategy::EarClipping);
+    assert!(triangles
+        .windows(2)
+        .all(|parts| parts[0].last() == parts[1].first()));
 }

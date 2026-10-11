@@ -1,4 +1,5 @@
 use crate::advanced::delaunay::IntDelaunay;
+use crate::geom::centroid::polygon_centroid;
 use crate::geom::triangle::IntTriangle;
 use crate::index::Index;
 use alloc::vec;
@@ -6,8 +7,27 @@ use alloc::vec::Vec;
 use i_overlay::i_float::int::number::int::IntNumber;
 use i_overlay::i_float::int::number::wide_int::WideIntNumber;
 use i_overlay::i_float::int::point::IntPoint;
+use i_overlay::i_float::triangle::Triangle;
 use i_overlay::i_shape::int::shape::IntContour;
 use i_overlay::i_shape::int::simple::Simplify;
+
+/// Strategy for splitting convex regions that exceed the vertex limit.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum ConvexSplitStrategy {
+    /// Clips consecutive parts, starting each at the last vertex of the previous part.
+    /// Uses only existing vertices and produces the minimum number of parts per
+    /// region with balanced vertex counts. This is the default strategy.
+    #[default]
+    EarClipping,
+    /// Uses an existing vertex as the fan origin, introducing no new points.
+    /// Produces the minimum number of parts per region with balanced vertex counts.
+    Fan,
+    /// Uses the area centroid, rounded to the integer grid, as a new fan origin.
+    /// Adjacent sectors are grouped while respecting convexity and the vertex limit.
+    /// May produce more parts than `Fan`. Falls back to `Fan` if the centroid
+    /// cannot be computed or does not lie strictly inside the region after rounding.
+    Centroid,
+}
 
 #[derive(Debug, Clone, Copy)]
 struct Node<I: IntNumber> {
@@ -212,20 +232,31 @@ impl<I: IntNumber> IntDelaunay<I> {
     /// assert!(!polygons.is_empty());
     /// ```
     pub fn to_convex_polygons(&self) -> Vec<IntContour<I>> {
-        self.convex_polygons(usize::MAX)
+        self.convex_polygons(usize::MAX, ConvexSplitStrategy::default())
     }
 
     /// Returns counter-clockwise convex polygons with at most `max_vertices.max(3)` vertices.
     ///
     /// First builds the same convex regions as [`Self::to_convex_polygons`], then
-    /// splits oversized, simplified contours into a fan using existing vertices.
+    /// splits oversized, simplified contours using `strategy`. New edges may cross
+    /// original Delaunay triangles. Parts have disjoint interiors and preserve
+    /// the mesh area. Regions within the limit are returned unchanged.
     ///
     /// Values of `max_vertices` below 3 are treated as 3.
-    pub fn to_convex_polygons_with_max_vertices(&self, max_vertices: usize) -> Vec<IntContour<I>> {
-        self.convex_polygons(max_vertices.max(3))
+    /// Pass [`ConvexSplitStrategy::default()`] to use ear clipping.
+    pub fn to_convex_polygons_with_max_vertices(
+        &self,
+        max_vertices: usize,
+        strategy: ConvexSplitStrategy,
+    ) -> Vec<IntContour<I>> {
+        self.convex_polygons(max_vertices.max(3), strategy)
     }
 
-    fn convex_polygons(&self, max_vertices: usize) -> Vec<IntContour<I>> {
+    fn convex_polygons(
+        &self,
+        max_vertices: usize,
+        strategy: ConvexSplitStrategy,
+    ) -> Vec<IntContour<I>> {
         let mut result = Vec::new();
         let n = self.triangles.len();
 
@@ -252,10 +283,54 @@ impl<I: IntNumber> IntDelaunay<I> {
                 }
             }
 
-            append_fan_parts(builder.to_contour(), max_vertices, &mut result);
+            let contour = builder.to_contour();
+            if contour.len() <= max_vertices {
+                result.push(contour);
+            } else {
+                match strategy {
+                    ConvexSplitStrategy::EarClipping => {
+                        append_ear_clipping_parts(contour, max_vertices, &mut result)
+                    }
+                    ConvexSplitStrategy::Fan => {
+                        append_fan_parts(contour, max_vertices, &mut result)
+                    }
+                    ConvexSplitStrategy::Centroid => {
+                        append_centroid_parts(contour, max_vertices, &mut result)
+                    }
+                }
+            }
         }
 
         result
+    }
+}
+
+fn append_ear_clipping_parts<I: IntNumber>(
+    contour: IntContour<I>,
+    max_vertices: usize,
+    result: &mut Vec<IntContour<I>>,
+) {
+    let n = contour.len();
+    let triangle_count = n - 2;
+    let part_count = triangle_count.div_ceil(max_vertices - 2);
+    let triangles_per_part = triangle_count / part_count;
+    let extra = triangle_count % part_count;
+    // Bypass clipped vertices in a ring, without shifting or copying the remainder.
+    let mut next: Vec<_> = (1..n).chain(core::iter::once(0)).collect();
+    let mut start = 0;
+
+    for i in 0..part_count {
+        let vertex_count = triangles_per_part + usize::from(i < extra) + 2;
+        let mut part = Vec::with_capacity(vertex_count);
+        part.push(contour[start]);
+        let mut end = start;
+        for _ in 1..vertex_count {
+            end = next[end];
+            part.push(contour[end]);
+        }
+        result.push(part);
+        next[start] = end;
+        start = end;
     }
 }
 
@@ -264,11 +339,6 @@ fn append_fan_parts<I: IntNumber>(
     max_vertices: usize,
     result: &mut Vec<IntContour<I>>,
 ) {
-    if contour.len() <= max_vertices {
-        result.push(contour);
-        return;
-    }
-
     let triangle_count = contour.len() - 2;
     let part_count = triangle_count.div_ceil(max_vertices - 2);
     let triangles_per_part = triangle_count / part_count;
@@ -282,6 +352,48 @@ fn append_fan_parts<I: IntNumber>(
         part.extend_from_slice(&contour[start..=end]);
         result.push(part);
         start = end;
+    }
+}
+
+fn append_centroid_parts<I: IntNumber>(
+    contour: IntContour<I>,
+    max_vertices: usize,
+    result: &mut Vec<IntContour<I>>,
+) {
+    let n = contour.len();
+    let center = polygon_centroid(&contour, contour[0]).filter(|&center| {
+        (0..n).all(|i| Triangle::area_two(contour[i], contour[(i + 1) % n], center) > I::Wide::ZERO)
+    });
+    let Some(center) = center else {
+        append_fan_parts(contour, max_vertices, result);
+        return;
+    };
+
+    // There is one radial triangle per boundary edge. Balance target group sizes;
+    // split a group early if its angle at the center would reach or exceed 180°.
+    let part_count = n.div_ceil(max_vertices - 2);
+    let edges_per_part = n / part_count;
+    let extra = n % part_count;
+    let mut start = 0;
+    let mut target_end = 0;
+    for i in 0..part_count {
+        target_end += edges_per_part + usize::from(i < extra);
+        while start < target_end {
+            let mut end = start + 1;
+            while end < target_end
+                && Triangle::area_two(center, contour[start], contour[(end + 1) % n])
+                    > I::Wide::ZERO
+            {
+                end += 1;
+            }
+            let mut part = Vec::with_capacity(end - start + 2);
+            part.push(center);
+            for j in start..=end {
+                part.push(contour[j % n]);
+            }
+            result.push(part);
+            start = end;
+        }
     }
 }
 

@@ -177,11 +177,13 @@ let convex_polygons = shape.triangulate().into_delaunay().to_convex_polygons();
 println!("convex polygons: {:?}", convex_polygons);
 
 // Limit each convex polygon to at most 6 vertices (limits below 3 are treated as 3).
-// Oversized regions are split into a fan; new diagonals may cross mesh triangles.
+// EarClipping (default) and Fan use existing vertices; Centroid adds the area centroid.
+// Only oversized regions are split; new edges may cross mesh triangles.
+use i_triangle::float::convex::ConvexSplitStrategy;
 let bounded_convex_polygons = shape
     .triangulate()
     .into_delaunay()
-    .to_convex_polygons_with_max_vertices(6);
+    .to_convex_polygons_with_max_vertices(6, ConvexSplitStrategy::default());
 
 let tessellation: Triangulation<[f64; 2], u16> = shape
     .triangulate()
