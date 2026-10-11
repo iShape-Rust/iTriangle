@@ -1,4 +1,5 @@
 use crate::advanced::buffer::DelaunayBuffer;
+use crate::advanced::delaunay::IntDelaunay;
 use crate::int::earcut::earcut_64::Earcut64;
 use crate::int::monotone::triangulator::MonotoneTriangulator;
 use crate::int::triangulation::{IndexType, IntTriangulation, RawIntTriangulation};
@@ -59,6 +60,64 @@ where
     I: OverlayInt,
     N: IndexType,
 {
+    /// Simplifies a contour and fills a Delaunay mesh
+    #[inline]
+    pub fn delaunay_contour_into(
+        &mut self,
+        contour: &IntContour<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        match self.overlay.simplify_contour(contour, self.fill_rule) {
+            None => self.uncheck_delaunay_contour_into(contour, delaunay),
+            Some(shapes) if shapes.is_empty() => {
+                delaunay.points.clear();
+                delaunay.triangles.clear();
+            }
+            Some(shapes) => self.uncheck_delaunay_shapes_into(&shapes, delaunay),
+        }
+    }
+
+    /// Simplifies a shape and fills a Delaunay mesh
+    #[inline]
+    pub fn delaunay_shape_into(&mut self, shape: &IntShape<I>, delaunay: &mut IntDelaunay<I>) {
+        match self.overlay.simplify_shape(shape, self.fill_rule) {
+            None => self.uncheck_delaunay_shape_into(shape, delaunay),
+            Some(shapes) if shapes.is_empty() => {
+                delaunay.points.clear();
+                delaunay.triangles.clear();
+            }
+            Some(shapes) => self.uncheck_delaunay_shapes_into(&shapes, delaunay),
+        }
+    }
+
+    /// Simplifies shapes and fills a Delaunay mesh
+    #[inline]
+    pub fn delaunay_shapes_into(&mut self, shapes: &IntShapes<I>, delaunay: &mut IntDelaunay<I>) {
+        let simple = self.overlay.simplify_source(shapes, self.fill_rule);
+        if simple.is_empty() {
+            delaunay.points.clear();
+            delaunay.triangles.clear();
+        } else {
+            self.uncheck_delaunay_shapes_into(&simple, delaunay);
+        }
+    }
+
+    /// Simplifies flat contours in place and fills a Delaunay mesh
+    #[inline]
+    pub fn delaunay_flat_into(
+        &mut self,
+        flat: &mut FlatContoursBuffer<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        self.overlay.simplify_flat_buffer(flat, self.fill_rule);
+        if flat.is_empty() {
+            delaunay.points.clear();
+            delaunay.triangles.clear();
+        } else {
+            self.uncheck_delaunay_flat_into(flat, delaunay);
+        }
+    }
+
     #[inline]
     pub fn triangulate_contour(&mut self, contour: &IntContour<I>) -> IntTriangulation<I, N> {
         match self.overlay.simplify_contour(contour, self.fill_rule) {
@@ -170,6 +229,110 @@ where
             self.triangulator
                 .contour_into_flat_triangulation(contour, triangulation);
         }
+    }
+
+    /// Fills a Delaunay mesh from a prepared contour
+    #[inline]
+    pub fn uncheck_delaunay_contour_into(
+        &mut self,
+        contour: &IntContour<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        debug_assert!(contour.len() >= 3);
+
+        let mut raw = RawIntTriangulation {
+            points: core::mem::take(&mut delaunay.points),
+            triangles: core::mem::take(&mut delaunay.triangles),
+        };
+
+        if self.earcut && contour.is_earcut_compatible() {
+            contour.earcut_net_triangulate_into(&mut raw);
+        } else {
+            self.triangulator
+                .contour_into_net_triangulation(contour, None, &mut raw);
+        }
+
+        *delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
+    }
+
+    /// Fills a Delaunay mesh from a prepared shape
+    #[inline]
+    pub fn uncheck_delaunay_shape_into(
+        &mut self,
+        shape: &IntShape<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        debug_assert!(!shape.is_empty());
+        debug_assert!(shape.iter().all(|contour| contour.len() >= 3));
+
+        if shape.len() == 1 {
+            self.uncheck_delaunay_contour_into(&shape[0], delaunay);
+            return;
+        }
+
+        let mut raw = RawIntTriangulation {
+            points: core::mem::take(&mut delaunay.points),
+            triangles: core::mem::take(&mut delaunay.triangles),
+        };
+        self.triangulator
+            .shape_into_net_triangulation(shape, None, &mut raw);
+        *delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
+    }
+
+    /// Fills a Delaunay mesh from prepared shapes
+    #[inline]
+    pub fn uncheck_delaunay_shapes_into(
+        &mut self,
+        shapes: &IntShapes<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        debug_assert!(!shapes.is_empty());
+
+        self.uncheck_delaunay_shape_into(&shapes[0], delaunay);
+        if shapes.len() == 1 {
+            return;
+        }
+
+        let mut raw = self.raw_buffer.take().unwrap_or_default();
+        for shape in &shapes[1..] {
+            let mut buffer = IntDelaunay {
+                points: raw.points,
+                triangles: raw.triangles,
+            };
+            self.uncheck_delaunay_shape_into(shape, &mut buffer);
+            raw = buffer.into_raw();
+            raw.shift(delaunay.points.len(), delaunay.triangles.len());
+            delaunay.points.append(&mut raw.points);
+            delaunay.triangles.append(&mut raw.triangles);
+        }
+        self.raw_buffer = Some(raw);
+    }
+
+    /// Fills a Delaunay mesh from prepared flat contours
+    #[inline]
+    pub fn uncheck_delaunay_flat_into(
+        &mut self,
+        flat: &FlatContoursBuffer<I>,
+        delaunay: &mut IntDelaunay<I>,
+    ) {
+        debug_assert!(!flat.is_empty());
+        debug_assert!(!flat.ranges.is_empty());
+        debug_assert!(flat.ranges.iter().all(|range| {
+            range.start <= range.end && range.end <= flat.points.len() && range.len() >= 3
+        }));
+
+        let mut raw = RawIntTriangulation {
+            points: core::mem::take(&mut delaunay.points),
+            triangles: core::mem::take(&mut delaunay.triangles),
+        };
+        if self.earcut && flat.is_earcut_compatible() {
+            flat.as_first_contour()
+                .earcut_net_triangulate_into(&mut raw);
+        } else {
+            self.triangulator
+                .flat_into_net_triangulation(flat, &mut raw);
+        }
+        *delaunay = raw.into_delaunay_with_buffer(&mut self.delaunay_buffer);
     }
 
     #[inline]
