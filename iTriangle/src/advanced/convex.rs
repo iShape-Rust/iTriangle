@@ -212,6 +212,20 @@ impl<I: IntNumber> IntDelaunay<I> {
     /// assert!(!polygons.is_empty());
     /// ```
     pub fn to_convex_polygons(&self) -> Vec<IntContour<I>> {
+        self.convex_polygons(usize::MAX)
+    }
+
+    /// Returns counter-clockwise convex polygons with at most `max_vertices.max(3)` vertices.
+    ///
+    /// First builds the same convex regions as [`Self::to_convex_polygons`], then
+    /// splits oversized, simplified contours into a fan using existing vertices.
+    ///
+    /// Values of `max_vertices` below 3 are treated as 3.
+    pub fn to_convex_polygons_with_max_vertices(&self, max_vertices: usize) -> Vec<IntContour<I>> {
+        self.convex_polygons(max_vertices.max(3))
+    }
+
+    fn convex_polygons(&self, max_vertices: usize) -> Vec<IntContour<I>> {
         let mut result = Vec::new();
         let n = self.triangles.len();
 
@@ -238,10 +252,36 @@ impl<I: IntNumber> IntDelaunay<I> {
                 }
             }
 
-            result.push(builder.to_contour())
+            append_fan_parts(builder.to_contour(), max_vertices, &mut result);
         }
 
         result
+    }
+}
+
+fn append_fan_parts<I: IntNumber>(
+    contour: IntContour<I>,
+    max_vertices: usize,
+    result: &mut Vec<IntContour<I>>,
+) {
+    if contour.len() <= max_vertices {
+        result.push(contour);
+        return;
+    }
+
+    let triangle_count = contour.len() - 2;
+    let part_count = triangle_count.div_ceil(max_vertices - 2);
+    let triangles_per_part = triangle_count / part_count;
+    let extra = triangle_count % part_count;
+    let mut start = 1;
+
+    for i in 0..part_count {
+        let end = start + triangles_per_part + usize::from(i < extra);
+        let mut part = Vec::with_capacity(end - start + 2);
+        part.push(contour[0]);
+        part.extend_from_slice(&contour[start..=end]);
+        result.push(part);
+        start = end;
     }
 }
 

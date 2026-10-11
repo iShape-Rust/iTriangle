@@ -13,4 +13,14 @@ impl<P: FloatPointCompatible, I: IntNumber> Delaunay<P, I> {
     pub fn to_convex_polygons(&self) -> Vec<Contour<P>> {
         self.delaunay.to_convex_polygons().to_float(&self.adapter)
     }
+
+    /// Returns counter-clockwise convex polygons with at most `max_vertices.max(3)` vertices.
+    ///
+    /// Values of `max_vertices` below 3 are treated as 3.
+    #[inline]
+    pub fn to_convex_polygons_with_max_vertices(&self, max_vertices: usize) -> Vec<Contour<P>> {
+        self.delaunay
+            .to_convex_polygons_with_max_vertices(max_vertices)
+            .to_float(&self.adapter)
+    }
 }
