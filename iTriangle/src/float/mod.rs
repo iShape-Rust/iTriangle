@@ -15,6 +15,7 @@ pub mod convex;
 pub mod custom;
 pub mod delaunay;
 pub mod locator;
+pub mod minkowski;
 pub mod relax;
 pub mod triangulatable;
 pub mod triangulation;

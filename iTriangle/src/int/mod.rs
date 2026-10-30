@@ -4,6 +4,8 @@ pub mod custom;
 pub mod earcut;
 pub mod locator;
 mod meta;
+pub mod minkowski;
+mod minkowski_sum;
 pub(crate) mod monotone;
 mod solver;
 pub mod triangulatable;

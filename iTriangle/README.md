@@ -23,6 +23,7 @@ iTriangle provides reliable, deterministic 2D polygon triangulation for complex 
 - [Documentation](#documentation)
 - [Examples](#examples)
 - [Integer API](#integer-api)
+- [Minkowski Operations](#minkowski-operations)
 - [Performance](#performance)
 - [Gallery](#gallery)
 - [Contributing](#contributing)
@@ -44,6 +45,7 @@ iTriangle provides reliable, deterministic 2D polygon triangulation for complex 
 - **Uniform Delaunay Triangulation** - Generate boundary-conforming meshes with a predictable target edge length.
 - **Mesh Relaxation** - Improve mesh quality by moving interior vertices toward their centroid-net cell centroids.
 - **Convex Decomposition** - Convert triangulation into convex polygons.
+- **Minkowski Sum and Difference** - Prepare and reuse filled polygon regions, including holes and disconnected components.
 - **Centroidal Polygon Net**: Build per-vertex dual polygons using triangle centers and edge midpoints.
 - **Steiner Points**: Add custom inner points to influence triangulation.
 - **GPU-Friendly Layout**: Triangles and vertices are naturally ordered by X due to the sweep-line algorithm, improving cache locality for rendering.
@@ -348,6 +350,75 @@ let contour = vec![
 let triangulation = contour.uncheck_triangulate().into_triangulation::<u16>();
 assert_eq!(triangulation.indices.len(), 6);
 ```
+
+## Minkowski Operations
+
+The Minkowski sum is `A + B = {a + b}`. Minkowski difference here means
+`A + (-B) = {a - b}`: it reflects the second region through the origin. It is
+not erosion or Boolean subtraction, and it does not undo a sum.
+
+For a single operation, the convenience functions use `i32` and automatically
+choose a common domain containing both sources and the result. Both sources use
+the same fill rule:
+
+```rust
+use i_triangle::float::minkowski::{minkowski_difference, minkowski_sum};
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+
+let square = [[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0]];
+let sum = minkowski_sum(&square, &square, FillRule::NonZero).unwrap();
+let difference = minkowski_difference(&square, &square, FillRule::NonZero).unwrap();
+assert!(sum[0][0].contains(&[4.0, 4.0]));
+assert!(difference[0][0].contains(&[-2.0, -2.0]));
+
+let empty: Vec<[f64; 2]> = Vec::new();
+assert!(minkowski_sum(&square, &empty, FillRule::NonZero).unwrap().is_empty());
+```
+
+For repeated operations, select a fixed domain that contains the original
+sources and every requested result. Each source is converted, normalized with
+its fill rule, triangulated, and decomposed only during preparation:
+
+```rust
+use i_triangle::float::minkowski::MinkowskiSolver;
+use i_triangle::i_overlay::core::fill_rule::FillRule;
+use i_triangle::i_overlay::i_float::float::rect::FloatRect;
+
+let domain = FloatRect::new(-16.0, 16.0, -16.0, 16.0).unwrap();
+let mut solver = MinkowskiSolver::<[f64; 2]>::new(domain);
+let source = [[0.0, 0.0], [4.0, 0.0], [4.0, 4.0], [0.0, 4.0]];
+let kernel = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+let a = solver.prepare(&source, FillRule::NonZero).unwrap().unwrap();
+let b = solver.prepare(&kernel, FillRule::NonZero).unwrap().unwrap();
+let sum = solver.sum(&a, &b).unwrap();
+solver.clear();
+let difference = solver.difference(&a, &b).unwrap();
+assert!(sum[0][0].contains(&[5.0, 5.0]));
+assert!(difference[0][0].contains(&[-1.0, -1.0]));
+```
+
+`prepare` returns `Ok(None)` for empty or unfilled regions, points, segments,
+and geometry collapsed by the integer grid. A prepared float operand belongs
+to its creating solver; another solver returns `MinkowskiError::ForeignOperand`
+even with identical bounds. Moving or clearing the original solver preserves
+its operands. Original source and result bounds outside the domain return
+`OutsideDomain`; invalid coordinates or unsupported numeric result bounds return
+`CoordinateOutOfRange`. Invalid constructor bounds panic.
+
+The adapter's grid stays fixed for the solver's lifetime. A larger domain can
+reduce precision; `MinkowskiSolver::<[f64; 2], i64>` provides a larger integer
+budget. Inspect `solver.adapter().inv_scale()` for the grid step. Rounding can
+alter small features, and snapped output can lie slightly outside the domain.
+`with_options(domain, capacity, true)` retains collinear vertices in the final
+union; pairwise collinear edges are always merged, so original source vertices
+are not all preserved.
+
+For already quantized geometry, use
+`i_triangle::int::minkowski::{IntMinkowskiOperand, IntMinkowskiSolver}`. Integer
+operands can be reused across integer solvers of the same coordinate type.
+Input must satisfy the overlay integer coordinate range; conservative result
+bounds are checked before pairwise operations. See the module rustdoc for
+executable examples and the full range and precision contracts.
 
 ## Performance
 
