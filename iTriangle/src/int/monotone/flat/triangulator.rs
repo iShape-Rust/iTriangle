@@ -31,7 +31,7 @@ impl<I: IntNumber> FlatTriangulation<I> for [ChainVertex<I>] {
         triangulation: &mut IntTriangulation<I, N>,
     ) {
         triangulation.indices.clear();
-        triangulation.indices.reserve(triangles_count);
+        triangulation.indices.reserve(3 * triangles_count);
 
         let mut builder = FlatBuilder::new(triangulation);
 
