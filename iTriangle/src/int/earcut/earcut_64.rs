@@ -38,7 +38,7 @@ impl<I: IntNumber> Earcut64<I> for [IntPoint<I>] {
         debug_assert!(self.len() <= 64);
 
         triangulation.indices.clear();
-        triangulation.indices.reserve(self.triangles_count(0));
+        triangulation.indices.reserve(3 * self.triangles_count(0));
 
         EarcutSolver::new(self, FlatEarcutStore::new(triangulation)).triangulate();
 
